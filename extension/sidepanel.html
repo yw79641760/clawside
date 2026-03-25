@@ -25,6 +25,9 @@
       <button class="action-btn" id="tabSummarize" data-tab="summarize">
         📄 Summarize
       </button>
+      <button class="action-btn" id="tabAsk" data-tab="ask">
+        💬 Ask
+      </button>
       <button class="action-btn" id="tabHistory" data-tab="history">
         📜 History
       </button>
@@ -92,6 +95,34 @@
         <div class="status-msg hidden" id="summarizeStatus"></div>
       </section>
 
+      <!-- Ask Panel -->
+      <section class="panel hidden" id="panelAsk">
+        <div class="selection-card" id="askSelectionCard">
+          <div class="selection-label">Context (selected text)</div>
+          <div class="selection-text" id="askSelectedText">No text selected - will use page context only</div>
+        </div>
+
+        <div class="input-area">
+          <textarea id="askQuestion" placeholder="Ask anything about the selected text or page..." rows="3"></textarea>
+        </div>
+
+        <button class="btn-primary" id="askBtn">
+          Ask
+        </button>
+
+        <!-- Result -->
+        <div class="result-card hidden" id="askResult">
+          <div class="result-header">
+            <span class="result-icon">💬</span>
+            <span class="result-title">Answer</span>
+            <button class="btn-copy" id="copyAskResult">📋 Copy</button>
+          </div>
+          <div class="result-body" id="askResultText"></div>
+        </div>
+
+        <div class="status-msg hidden" id="askStatus"></div>
+      </section>
+
       <!-- History Panel -->
       <section class="panel hidden" id="panelHistory">
         <div class="history-header">
@@ -104,7 +135,7 @@
         <div class="empty-state hidden" id="historyEmpty">
           <div class="empty-icon">📭</div>
           <div class="empty-text">No interactions yet</div>
-          <div class="empty-hint">Translate or summarize something to get started</div>
+          <div class="empty-hint">Right-click selected text to get started</div>
         </div>
       </section>
 

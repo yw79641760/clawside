@@ -55,12 +55,21 @@ Click ⚙️ in the ClawSide side panel:
 
 ### 🌐 Translate
 Select text on any page → click **Translate** in the side panel.
+Or right-click → **ClawSide → 翻译**
 
 ### 📄 Summarize
 Click **Summarize This Page** to get a 3-5 sentence summary.
+Or right-click → **ClawSide → 总结**
 
-### 📜 History
-All interactions are stored locally in Chrome. View, expand, and clear history.
+### 💬 Ask
+Ask questions about selected text or the current page.
+Or right-click → **ClawSide → 提问**
+
+### Context Menu
+Right-click any selected text to see ClawSide options:
+- 🌐 翻译 — translate to your target language
+- 📄 总结 — summarize the page
+- 💬 提问 — ask anything about the text or page
 
 ## Project Structure
 

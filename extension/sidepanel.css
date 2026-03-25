@@ -515,6 +515,36 @@ body {
   border-color: var(--primary);
 }
 
+/* === Input Area === */
+.input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-area textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--transition);
+}
+
+.input-area textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.input-area textarea::placeholder {
+  color: var(--text-muted);
+}
+
 .setting-note {
   font-size: 11px;
   color: var(--text-muted);
