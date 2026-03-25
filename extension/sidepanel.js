@@ -268,9 +268,10 @@
     showLoading('Translating...');
     try {
       await loadSettings();
+      // Read from DOM first (user's current selection), fallback to settings for 'auto'
       let targetLang = targetLangSelect.value;
       if (targetLang === 'auto') {
-        targetLang = browserLang;
+        targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
       }
       const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
       // Stream chunks into result
