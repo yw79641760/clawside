@@ -280,7 +280,6 @@
     let pageContent = '';
     let extractionFailed = false;
     try {
-      // Inject script to extract main content
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab?.id) {
         const results = await chrome.scripting.executeScript({
@@ -288,7 +287,7 @@
           func: extractPageContent
         });
         pageContent = results?.[0]?.result || '';
-        if (!pageContent || pageContent.length < 50) {
+        if (!pageContent || pageContent.trim().length < 100) {
           extractionFailed = true;
         }
       } else {
@@ -298,11 +297,18 @@
       extractionFailed = true;
     }
 
+    if (extractionFailed) {
+      hideLoading();
+      showStatus(summarizeStatus, 'Cannot extract page content — page may be dynamically loaded, require login, or use non-standard rendering. Try selecting specific text and using the Ask feature instead.');
+      summarizeBtn.disabled = false;
+      return;
+    }
+
     showLoading('Summarizing...');
     try {
       await loadSettings();
       let prompt;
-      if (pageContent && !extractionFailed) {
+      if (pageContent) {
         prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
       } else {
         prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
@@ -334,6 +340,7 @@
     showLoading('Extracting page context...');
 
     let pageContent = '';
+    let extractionFailed = false;
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab?.id) {
@@ -342,16 +349,26 @@
           func: extractPageContent
         });
         pageContent = results?.[0]?.result || '';
+        if (!pageContent || pageContent.trim().length < 100) {
+          extractionFailed = true;
+        }
+      } else {
+        extractionFailed = true;
       }
     } catch (err) {
-      // Fallback silently
+      extractionFailed = true;
+    }
+
+    if (extractionFailed) {
+      // For Ask, we can still work with selectedText + URL even if page content extraction fails
+      pageContent = '';
     }
 
     showLoading('Thinking...');
     try {
       await loadSettings();
       let prompt;
-      if (pageContent) {
+      if (pageContent && !extractionFailed) {
         if (selectedText) {
           prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
         } else {
@@ -396,49 +413,39 @@
   // This function runs in the context of the web page
   function extractPageContent() {
     try {
-      // Strategy 1: clone body, remove noise, get innerText
+      // Clone body to avoid mutating the actual page
       const clone = document.body.cloneNode(true);
 
-      // Remove noise elements
+      // Remove obvious noise
       const noiseSelectors = [
-        'nav', 'header:not(article header)', 'footer', 'aside',
-        '.sidebar', '#sidebar', '[role="navigation"]', '[role="complementary"]',
-        '.nav', '.menu', '.footer', '.advertisement', '.ad', '.ads', '.advert',
-        '.social-share', '.related-posts', '.comments', '#comments', '.comment',
         'script', 'style', 'noscript', 'iframe', 'svg', 'button', 'input',
-        '.breadcrumb', '.pagination', '.nav-links', '.menu-menu'
+        'nav', 'footer', 'aside',
+        '.ad', '.ads', '.advert', '.advertisement',
+        '.sidebar', '#sidebar', '.nav', '.menu', '.footer',
+        '.social', '.share', '.related', '.comment', '#comments',
+        '.pagination', '.breadcrumb', '.nav-links'
       ];
       noiseSelectors.forEach(sel => {
         try { clone.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
       });
 
-      // Try semantic content containers first
-      const contentSelectors = [
-        'article', '[role="main"]', 'main',
-        '.post-content', '.article-content', '.entry-content', '.post-body',
-        '.content', '#content', '.post', '.article', '.topic-content',
-        '.thread-content', '.article-body', '.story-body', '.bbs-content'
-      ];
+      // Strategy 1: try innerText (visible rendered text)
+      let text = clone.innerText?.trim() || '';
 
-      for (const sel of contentSelectors) {
-        try {
-          const el = clone.querySelector(sel);
-          if (el) {
-            const text = el.innerText?.trim();
-            if (text && text.length > 200) {
-              return text.replace(/\s+/g, ' ').slice(0, 12000).trim();
-            }
-          }
-        } catch {}
+      // Strategy 2: if innerText is too short, use textContent
+      if (text.length < 200) {
+        text = (clone.textContent || '').trim();
       }
 
-      // Strategy 2: get all text nodes from body
-      const text = clone.innerText?.trim();
-      if (text && text.length > 100) {
-        return text.replace(/\s+/g, ' ').slice(0, 12000).trim();
-      }
+      // Clean up: collapse whitespace, remove unicode whitespace
+      text = text.replace(/[\r\n]+/g, '\n').replace(/[ \t]+/g, ' ').replace(/[\u200b-\u200f\u2028-\u202f]/g, '').trim();
 
-      return '';
+      // Remove very short lines (likely UI noise)
+      const lines = text.split('\n').filter(line => line.trim().length > 10);
+      text = lines.join('\n');
+
+      // Truncate to avoid token limits
+      return text.slice(0, 10000).trim();
     } catch (err) {
       return '';
     }
