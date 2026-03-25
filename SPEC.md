@@ -44,18 +44,13 @@ MVP focus: lightweight, fast, works offline except for LLM calls.
 
 ```
 Chrome Side Panel (UI)
-       ↓ HTTP POST (localhost:18792)
-ClawSide Bridge Server (Node.js)
-       ↓ WebSocket (localhost:18789)
-OpenClaw Gateway
+       ↓ HTTP POST (chrome-extension → 127.0.0.1:18789)
+OpenClaw Gateway (direct /v1/chat/completions)
        ↓
-LLM (GLM-5 / configured provider)
+LLM (configured provider: GLM-5 via Minimax)
 ```
 
-**Why a bridge server?**
-OpenClaw Gateway uses a WebSocket-based protocol with challenge-response auth. Chrome service workers can't speak this protocol directly. The bridge server is a thin (~100 LOC) WebSocket<→HTTP proxy purpose-built for ClawSide.
-
-**Port**: `18792` (derived from OpenClaw port 18789 + 3)
+**No bridge server needed** — Chrome extensions can access localhost directly with `host_permissions` declared in manifest.
 
 ---
 
@@ -63,40 +58,58 @@ OpenClaw Gateway uses a WebSocket-based protocol with challenge-response auth. C
 
 ### MVP (this version)
 
-#### 4.1 Text Translation
-- **Trigger**: User selects text on any page → clicks "Translate" button in side panel (or uses keyboard shortcut)
-- **Flow**: Selected text → bridge server → OpenClaw LLM → translated text → side panel
-- **Output**: Translated text displayed in a card, with "Copy" button
-- **Memory**: Interaction stored: `{ type: "translate", original, result, url, timestamp }`
+#### 4.1 Context Menu (Primary UX)
+- **Trigger**: User selects text on any page → right-click → ClawSide menu
+- **Menu items**:
+  - 🌐 翻译 — translate to target language
+  - 📄 总结 — summarize the page
+  - 💬 提问 — ask a question about selected text or page
+- **Flow**: Click → side panel opens → action auto-triggers → result displayed
+- **Memory**: All interactions stored
 
-#### 4.2 Page Summarization
-- **Trigger**: User clicks "Summarize Page" button in side panel
-- **Flow**: Page URL/content → bridge server → OpenClaw (web_fetch tool) → summary → side panel
-- **Output**: 3-5 sentence summary in a card
-- **Memory**: Interaction stored: `{ type: "summarize", url, summary, timestamp }`
+#### 4.2 Text Translation
+- **Trigger**: Click "Translate" button OR context menu → 翻译
+- **Flow**: Selected text → `/v1/chat/completions` → translated text → side panel
+- **Output**: Translated text in card with "Copy" button
+- **Memory**: `{ type: "translate", original, result, lang, url, timestamp }`
 
-#### 4.3 Interaction History
-- **Trigger**: User clicks "History" tab in side panel
-- **Flow**: Read from chrome.storage.local
-- **Output**: Chronological list of past translate/summarize interactions, most recent first
-- **Limit**: Last 50 interactions
+#### 4.3 Page Summarization
+- **Trigger**: Click "Summarize" button OR context menu → 总结
+- **Flow**: Page URL → `/v1/chat/completions` → 3-5 sentence summary → side panel
+- **Output**: Summary in card with "Copy" button
+- **Memory**: `{ type: "summarize", url, title, summary, timestamp }`
 
-#### 4.4 Clear Memory
-- **Trigger**: "Clear History" button in History tab
-- **Flow**: Clear chrome.storage.local
-- **Output**: Empty state with message
+#### 4.4 Ask
+- **Trigger**: Click "Ask" tab OR context menu → 提问
+- **Flow**: Selected text + question → `/v1/chat/completions` → answer → side panel
+- **Context**: If no text selected, uses current page URL as context
+- **Output**: Answer in card with "Copy" button
+- **Memory**: `{ type: "ask", question, answer, context, url, timestamp }`
+
+#### 4.5 Interaction History
+- **Trigger**: Click "History" tab
+- **Flow**: Read from `chrome.storage.local`
+- **Output**: Chronological list, expandable items, last 50 interactions
+
+#### 4.6 Clear Memory
+- **Trigger**: "Clear All" button in History tab
+- **Output**: Empty state
 
 ### Interactions Detail
 
 | Element | Hover | Click | Loading State |
 |---------|-------|-------|---------------|
-| Translate button | bg lighten | → spinner, disable | "Translating..." |
-| Copy button | scale 1.05 | → "Copied!" 1.5s | — |
-| History item | border highlight | expand to show full text | — |
+| Translate button | bg lighten | → spinner, auto-scroll | "Translating..." |
 | Summarize button | bg lighten | → spinner | "Summarizing..." |
+| Ask button | bg lighten | → spinner | "Thinking..." |
+| Copy button | scale 1.05 | → "Copied!" 1.5s | — |
+| History item | border highlight | expand/collapse | — |
+| Context menu | native browser | auto open side panel | — |
 
 ### Error Handling
-- Network error → show "Cannot reach OpenClaw. Is the bridge server running?"
+- Network error → "Failed to fetch" — check gateway is running
+- 401 → Gateway auth required — enter token in settings
+- Empty selection for Ask → uses page context only
 - LLM error → show error message from OpenClaw
 - Empty selection → "Please select some text first"
 
