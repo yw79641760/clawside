@@ -398,7 +398,7 @@
     showLoading('Thinking...');
     try {
       await loadSettings();
-      let targetLang = settings.language === 'auto' ? browserLang : settings.language;
+      let targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
       let lang = targetLang;
       let prompt;
       if (pageContent) {
