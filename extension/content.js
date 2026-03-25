@@ -382,16 +382,19 @@
 
       } else if (action === 'summarize') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${url}`;
+        const const lang = settings.language && settings.language !== "auto" ? settings.language : "English";
+        const prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ${lang}. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ${url}`;
         await apiCall(prompt, port, token);
 
       } else if (action === 'ask') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         let prompt;
         if (text) {
-          prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`;
+          const lang = settings.language && settings.language !== "auto" ? settings.language : "English";
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`;
         } else {
-          prompt = `You are a helpful assistant. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
+          const lang = settings.language && settings.language !== "auto" ? settings.language : "English";
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
         }
         await apiCall(prompt, port, token);
       }

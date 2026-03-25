@@ -338,7 +338,7 @@
       if (pageContent) {
         prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
       } else {
-        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
+        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences in ${lang}. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
       }
       await apiCall(prompt, {
         onChunk: (chunk) => {
@@ -398,18 +398,20 @@
     showLoading('Thinking...');
     try {
       await loadSettings();
+      let targetLang = settings.language === 'auto' ? browserLang : settings.language;
+      let lang = targetLang;
       let prompt;
       if (pageContent) {
         if (selectedText) {
-          prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
         } else {
-          prompt = `You are a helpful assistant. The user is viewing this webpage. The page content is provided below.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this webpage. The page content is provided below.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
         }
       } else {
         if (selectedText) {
-          prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
         } else {
-          prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
+          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
         }
       }
       await apiCall(prompt, {
