@@ -118,6 +118,33 @@
       .cs-popup-error {
         padding: 12px; color: #f85149; font-size: 13px;
       }
+
+      /* === Persistent Dock Ball === */
+      .cs-dock {
+        position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
+        width: 48px; height: 48px; border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.45);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-size: 22px; transition: transform 0.2s, box-shadow 0.2s;
+        user-select: none; border: none;
+      }
+      .cs-dock:hover {
+        transform: scale(1.12);
+        box-shadow: 0 6px 28px rgba(102, 126, 234, 0.6);
+      }
+      .cs-dock:active {
+        transform: scale(0.95);
+      }
+      .cs-dock-tooltip {
+        position: absolute; right: 58px; bottom: 6px;
+        background: #161b22; border: 1px solid #30363d;
+        color: #c9d1d9; font-size: 13px; white-space: nowrap;
+        padding: 6px 12px; border-radius: 8px;
+        pointer-events: none; opacity: 0; transition: opacity 0.15s;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .cs-dock:hover .cs-dock-tooltip { opacity: 1; }
     `;
     document.head.appendChild(s);
   }
@@ -494,7 +521,24 @@
     return true;
   });
 
+  // === Persistent Dock Ball ===
+  let dock = null;
+  function createDock() {
+    if (dock) return;
+    dock = document.createElement('button');
+    dock.className = 'cs-dock';
+    dock.id = 'cs-dock';
+    dock.title = 'ClawSide';
+    dock.innerHTML = '🦖<span class=cs-dock-tooltip>ClawSide</span>';
+    dock.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch(() => {});
+    });
+    document.body.appendChild(dock);
+  }
+
   // Init
   injectStyles();
+  createDock();
   chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
 })();
