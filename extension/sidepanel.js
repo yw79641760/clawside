@@ -11,7 +11,8 @@
   let currentUrl = '';
   let currentPageTitle = '';
   let history = [];
-  let settings = { gatewayPort: DEFAULT_PORT, authToken: '' };
+  let browserLang = 'English';
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto' };
 
   // === DOM ===
   const $ = (id) => document.getElementById(id);
@@ -108,17 +109,24 @@
     panelSettings.classList.toggle('hidden', tab !== 'settings');
 
     if (tab === 'history') renderHistory();
-    if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); }
+    if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
     if (tab === 'ask') askQuestion.focus();
   }
 
   // === Settings ===
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '' };
+    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto' };
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
+    settingLanguage.value = settings.language || 'auto';
     updateTokenStatus();
+    applyLanguage();
+  }
+
+  function applyLanguage() {
+    const lang = settings.language === 'auto' ? browserLang : settings.language;
+    targetLangSelect.value = lang;
   }
 
   function updateTokenStatus() {
@@ -181,8 +189,10 @@
   async function saveSettings() {
     settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
     settings.authToken = settingAuthToken.value.trim();
+    settings.language = settingLanguage.value || 'auto';
     await chrome.storage.local.set({ clawside_settings: settings });
     updateTokenStatus();
+    applyLanguage();
     showStatus(settingsStatus, 'Settings saved!', 'success');
   }
 
@@ -258,7 +268,10 @@
     showLoading('Translating...');
     try {
       await loadSettings();
-      const targetLang = targetLangSelect.value;
+      let targetLang = targetLangSelect.value;
+      if (targetLang === 'auto') {
+        targetLang = browserLang;
+      }
       const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
       // Stream chunks into result
       await apiCall(prompt, {
@@ -665,6 +678,10 @@
 
   // Settings
   settingAuthToken.addEventListener('input', updateTokenStatus);
+  settingLanguage.addEventListener('change', () => {
+    settings.language = settingLanguage.value;
+    applyLanguage();
+  });
   toggleTokenBtn.addEventListener('click', () => {
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
@@ -675,6 +692,17 @@
 
   // === Init ===
   async function init() {
+    // Detect browser language
+    const lang = navigator.language || navigator.userLanguage || 'en';
+    const langMap = {
+      'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'Chinese', 'zh-HK': 'Chinese',
+      'ja': 'Japanese', 'ko': 'Korean',
+      'fr': 'French', 'de': 'German', 'es': 'Spanish', 'ru': 'Russian',
+      'en': 'English'
+    };
+    browserLang = langMap[lang] || langMap[lang.split('-')[0]] || 'English';
+    if (browserLangHint) browserLangHint.textContent = `Browser language: ${lang} → ${browserLang}`;
+
     await loadSettings();
     await updateCurrentTab();
     showTab('translate');

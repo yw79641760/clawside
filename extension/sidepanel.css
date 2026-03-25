@@ -583,6 +583,28 @@ body {
 .token-status.empty { color: var(--text-muted); }
 .token-status.error { color: var(--error); }
 
+.setting-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+select#settingLanguage {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+select#settingLanguage:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 .token-row .btn-icon {
   flex-shrink: 0;
 }

@@ -14,6 +14,14 @@
   let currentAction = null;
   let pendingRequests = new Map();
   let pendingTimeouts = new Map();
+  let settings = { gatewayPort: '18789', authToken: '', language: 'auto' };
+
+  // Load settings from storage
+  chrome.storage.local.get(['clawside_settings']).then((result) => {
+    if (result.clawside_settings) {
+      settings = { ...settings, ...result.clawside_settings };
+    }
+  });
 
   // === Styles ===
   function injectStyles() {
@@ -364,7 +372,11 @@
       let cite = '';
       if (action === 'translate') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const targetLang = 'Chinese';
+        const targetLang = settings.language && settings.language !== 'auto'
+          ? settings.language
+          : (navigator.language?.startsWith('zh') ? 'Chinese'
+             : navigator.language?.startsWith('ja') ? 'Japanese'
+             : 'English');
         const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
         await apiCall(prompt, port, token);
 

@@ -145,6 +145,22 @@
         <h3>Settings</h3>
 
         <div class="setting-item">
+          <label>Default Target Language</label>
+          <select id="settingLanguage">
+            <option value="auto">🌐 Browser Language</option>
+            <option value="Chinese">中文 (Chinese)</option>
+            <option value="English">English</option>
+            <option value="Japanese">日本語 (Japanese)</option>
+            <option value="Korean">한국어 (Korean)</option>
+            <option value="French">Français (French)</option>
+            <option value="German">Deutsch (German)</option>
+            <option value="Spanish">Español (Spanish)</option>
+            <option value="Russian">Русский (Russian)</option>
+          </select>
+          <div class="setting-hint" id="browserLangHint">Detecting browser language...</div>
+        </div>
+
+        <div class="setting-item">
           <label>OpenClaw Gateway Port</label>
           <input type="number" id="settingBridgePort" value="18789" placeholder="18789">
         </div>
