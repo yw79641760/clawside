@@ -278,6 +278,7 @@
     showLoading('Extracting page content...');
 
     let pageContent = '';
+    let extractionFailed = false;
     try {
       // Inject script to extract main content
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -287,16 +288,21 @@
           func: extractPageContent
         });
         pageContent = results?.[0]?.result || '';
+        if (!pageContent || pageContent.length < 50) {
+          extractionFailed = true;
+        }
+      } else {
+        extractionFailed = true;
       }
     } catch (err) {
-      // Fallback: use URL only
+      extractionFailed = true;
     }
 
     showLoading('Summarizing...');
     try {
       await loadSettings();
       let prompt;
-      if (pageContent) {
+      if (pageContent && !extractionFailed) {
         prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
       } else {
         prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
@@ -389,42 +395,53 @@
   // === Page Content Extraction (injected into page) ===
   // This function runs in the context of the web page
   function extractPageContent() {
-    // Remove elements that are typically navigation/boilerplate
-    const toRemove = [
-      'nav', 'header:not(article header)', 'footer', 'aside',
-      '.sidebar', '#sidebar', '[role="navigation"]', '[role="complementary"]',
-      '.nav', '.menu', '.footer', '.advertisement', '.ad', '.ads',
-      '.social-share', '.related-posts', '.comments', '#comments',
-      'script', 'style', 'noscript', 'iframe:not([src*="youtube"]):not([src*="bilibili"])'
-    ];
-    toRemove.forEach(sel => {
-      try { document.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
-    });
+    try {
+      // Strategy 1: clone body, remove noise, get innerText
+      const clone = document.body.cloneNode(true);
 
-    // Try common content selectors
-    const contentSelectors = [
-      'article', '[role="main"]', 'main',
-      '.post-content', '.article-content', '.entry-content',
-      '.content', '#content', '.post', '.article',
-      '.story-body', '.article-body'
-    ];
+      // Remove noise elements
+      const noiseSelectors = [
+        'nav', 'header:not(article header)', 'footer', 'aside',
+        '.sidebar', '#sidebar', '[role="navigation"]', '[role="complementary"]',
+        '.nav', '.menu', '.footer', '.advertisement', '.ad', '.ads', '.advert',
+        '.social-share', '.related-posts', '.comments', '#comments', '.comment',
+        'script', 'style', 'noscript', 'iframe', 'svg', 'button', 'input',
+        '.breadcrumb', '.pagination', '.nav-links', '.menu-menu'
+      ];
+      noiseSelectors.forEach(sel => {
+        try { clone.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
+      });
 
-    let content = '';
-    for (const sel of contentSelectors) {
-      const el = document.querySelector(sel);
-      if (el && el.innerText.trim().length > 200) {
-        content = el.innerText.trim();
-        break;
+      // Try semantic content containers first
+      const contentSelectors = [
+        'article', '[role="main"]', 'main',
+        '.post-content', '.article-content', '.entry-content', '.post-body',
+        '.content', '#content', '.post', '.article', '.topic-content',
+        '.thread-content', '.article-body', '.story-body', '.bbs-content'
+      ];
+
+      for (const sel of contentSelectors) {
+        try {
+          const el = clone.querySelector(sel);
+          if (el) {
+            const text = el.innerText?.trim();
+            if (text && text.length > 200) {
+              return text.replace(/\s+/g, ' ').slice(0, 12000).trim();
+            }
+          }
+        } catch {}
       }
-    }
 
-    // Fallback: body text
-    if (!content) {
-      content = document.body.innerText.trim();
-    }
+      // Strategy 2: get all text nodes from body
+      const text = clone.innerText?.trim();
+      if (text && text.length > 100) {
+        return text.replace(/\s+/g, ' ').slice(0, 12000).trim();
+      }
 
-    // Clean up whitespace
-    return content.replace(/\s+/g, ' ').slice(0, 12000).trim();
+      return '';
+    } catch (err) {
+      return '';
+    }
   }
 
   // === Tab Switch Detection ===
