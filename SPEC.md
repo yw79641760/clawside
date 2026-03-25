@@ -58,13 +58,15 @@ LLM (configured provider: GLM-5 via Minimax)
 
 ### MVP (this version)
 
-#### 4.1 Context Menu (Primary UX)
-- **Trigger**: User selects text on any page → right-click → ClawSide menu
-- **Menu items**:
-  - 🌐 翻译 — translate to target language
-  - 📄 总结 — summarize the page
-  - 💬 提问 — ask a question about selected text or page
-- **Flow**: Click → side panel opens → action auto-triggers → result displayed
+#### 4.1 Floating Bubble (Primary UX)
+- **Trigger**: User selects text on any page → floating bubble appears after ~300ms
+- **Bubble buttons**:
+  - 🌐 translate
+  - 📄 summarize
+  - 💬 ask
+- **Flow**: Click button → side panel opens → action auto-triggers → result displayed
+- **Auto-hide**: Bubble disappears on click outside or when selection cleared
+- **Position**: Below selection, clamped to viewport. If near bottom, shows above.
 - **Memory**: All interactions stored
 
 #### 4.2 Text Translation
@@ -104,7 +106,7 @@ LLM (configured provider: GLM-5 via Minimax)
 | Ask button | bg lighten | → spinner | "Thinking..." |
 | Copy button | scale 1.05 | → "Copied!" 1.5s | — |
 | History item | border highlight | expand/collapse | — |
-| Context menu | native browser | auto open side panel | — |
+| Floating bubble | fade + scale in | open side panel, auto-trigger action | — |
 
 ### Error Handling
 - Network error → "Failed to fetch" — check gateway is running
@@ -162,65 +164,37 @@ LLM (configured provider: GLM-5 via Minimax)
 └─────────────────────────────────┘
 ```
 
-### Settings Panel
-- OpenClaw URL: `http://127.0.0.1:18789` (default, editable)
-- Bridge Server Port: `18792` (default, editable)
-- Target Language: dropdown (English, Chinese, Japanese, etc.)
-
 ---
 
 ## 6. Technical Approach
 
 ### Chrome Extension (Manifest V3)
-- `sidepanel.js` — main UI logic
-- `content.js` — captures text selection, sends to side panel via `chrome.runtime.sendMessage`
-- `background.js` — service worker, handles message routing
+- `sidepanel.js` — main UI logic, tab management, history
+- `content.js` — floating bubble UI, selection detection, positioning
+- `background.js` — service worker, message routing
 - `manifest.json` — extension config
 
-### Bridge Server (`server/bridge.js`)
-- Node.js HTTP server on port 18792
-- WebSocket client connects to OpenClaw Gateway (ws://127.0.0.1:18789)
-- Translates HTTP requests from extension → WebSocket frames to Gateway
-- Returns LLM responses as HTTP JSON responses
-- Auth: passes through Bearer token from config
+### Direct Gateway Integration
+- Extension calls `http://127.0.0.1:18789/v1/chat/completions` directly
+- No bridge server or separate process needed
+- Chrome `host_permissions` allows localhost access
 
 ### API Design
 
-**Extension → Bridge Server**
+**Extension → OpenClaw Gateway HTTP**
 
 ```
-POST /translate
-Body: { text: string, targetLang: string }
-Response: { result: string }
-
-POST /summarize
-Body: { url: string }
-Response: { summary: string }
-
-GET /history
-Response: { items: MemoryItem[] }
-
-DELETE /history
-Response: { ok: true }
+POST /v1/chat/completions
+Headers: Authorization: Bearer <token>
+Body: { model: "main", messages: [{role:"user", content: "<prompt>"}] }
+Response: { choices: [{message: {content: "..."}}] }
 ```
 
-**Bridge → OpenClaw Gateway (WebSocket)**
-
-For translate:
-```json
-{
-  "type": "req",
-  "id": "req-1",
-  "method": "tools.invoke",
-  "params": {
-    "name": "llm",
-    "input": {
-      "prompt": "Translate to Chinese: {text}",
-      "model": "auto"
-    }
-  }
-}
-```
+### Floating Bubble
+- Created by content script on text selection (300ms debounce)
+- Positioned via `getBoundingClientRect()` + viewport clamping
+- Auto-hides on click outside or selection cleared
+- z-index: 2147483647 (max safe integer)
 
 ### Memory Storage
 - `chrome.storage.local` — key `clawside_memory`
@@ -230,7 +204,7 @@ For translate:
   "items": [
     {
       "id": "uuid",
-      "type": "translate" | "summarize",
+      "type": "translate" | "summarize" | "ask",
       "original": "...",
       "result": "...",
       "url": "https://...",
@@ -245,28 +219,24 @@ For translate:
 clawside/
 ├── SPEC.md
 ├── README.md
-├── extension/
-│   ├── manifest.json
-│   ├── background.js
-│   ├── content.js
-│   ├── sidepanel.html
-│   ├── sidepanel.css
-│   ├── sidepanel.js
-│   └── icons/
-│       ├── icon16.png
-│       ├── icon48.png
-│       └── icon128.png
-└── server/
-    ├── package.json
-    └── bridge.js
+└── extension/
+    ├── manifest.json
+    ├── background.js
+    ├── content.js
+    ├── sidepanel.html
+    ├── sidepanel.css
+    ├── sidepanel.js
+    └── icons/
+        ├── icon16.png
+        ├── icon48.png
+        └── icon128.png
 ```
 
 ---
 
 ## 7. MVP Out of Scope
 
-- Multiple target languages (UI selects but LLM prompt hardcoded to Chinese for now)
-- Persistent server (bridge should auto-start, but no launchd/systemd config yet)
-- Authentication flow (OpenClaw token stored in chrome.storage.local, insecure for MVP)
 - Streaming responses
 - Error retry logic
+- Multi-language prompt templates
+- Custom prompt input for Ask tab

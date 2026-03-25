@@ -53,23 +53,18 @@ Click ⚙️ in the ClawSide side panel:
 
 ## Features
 
-### 🌐 Translate
-Select text on any page → click **Translate** in the side panel.
-Or right-click → **ClawSide → 翻译**
-
-### 📄 Summarize
-Click **Summarize This Page** to get a 3-5 sentence summary.
-Or right-click → **ClawSide → 总结**
-
-### 💬 Ask
-Ask questions about selected text or the current page.
-Or right-click → **ClawSide → 提问**
-
-### Context Menu
-Right-click any selected text to see ClawSide options:
+### ✨ Floating Bubble (Primary)
+Select text on any page → floating bubble appears → click an icon:
 - 🌐 翻译 — translate to your target language
 - 📄 总结 — summarize the page
 - 💬 提问 — ask anything about the text or page
+
+### Side Panel Tabs
+Alternatively use the side panel tabs directly:
+- 🌐 Translate — translate selected text
+- 📄 Summarize — summarize the current page
+- 💬 Ask — ask custom questions
+- 📜 History — view past interactions
 
 ## Project Structure
 
