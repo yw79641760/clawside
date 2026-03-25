@@ -249,6 +249,7 @@
     translateBtn.disabled = true;
     showLoading('Translating...');
     try {
+      await loadSettings(); // Reload to handle SW restart
       const targetLang = targetLangSelect.value;
       const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
       const result = await apiCall(prompt);
@@ -276,6 +277,7 @@
     summarizeBtn.disabled = true;
     showLoading('Summarizing...');
     try {
+      await loadSettings(); // Reload to handle SW restart
       const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
       const summary = await apiCall(prompt);
       summarizeResultText.textContent = summary;
@@ -303,6 +305,7 @@
     askBtn.disabled = true;
     showLoading('Thinking...');
     try {
+      await loadSettings(); // Reload to handle SW restart
       let prompt;
       if (selectedText) {
         prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
