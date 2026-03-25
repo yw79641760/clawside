@@ -275,10 +275,32 @@
     }
     summarizeResult.classList.add('hidden');
     summarizeBtn.disabled = true;
+    showLoading('Extracting page content...');
+
+    let pageContent = '';
+    try {
+      // Inject script to extract main content
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: extractPageContent
+        });
+        pageContent = results?.[0]?.result || '';
+      }
+    } catch (err) {
+      // Fallback: use URL only
+    }
+
     showLoading('Summarizing...');
     try {
-      await loadSettings(); // Reload to handle SW restart
-      const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
+      await loadSettings();
+      let prompt;
+      if (pageContent) {
+        prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
+      } else {
+        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
+      }
       const summary = await apiCall(prompt);
       summarizeResultText.textContent = summary;
       summarizeResult.classList.remove('hidden');
@@ -303,14 +325,38 @@
     }
     askResult.classList.add('hidden');
     askBtn.disabled = true;
+    showLoading('Extracting page context...');
+
+    let pageContent = '';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: extractPageContent
+        });
+        pageContent = results?.[0]?.result || '';
+      }
+    } catch (err) {
+      // Fallback silently
+    }
+
     showLoading('Thinking...');
     try {
-      await loadSettings(); // Reload to handle SW restart
+      await loadSettings();
       let prompt;
-      if (selectedText) {
-        prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
+      if (pageContent) {
+        if (selectedText) {
+          prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
+        } else {
+          prompt = `You are a helpful assistant. The user is viewing this webpage. The page content is provided below.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
+        }
       } else {
-        prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
+        if (selectedText) {
+          prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
+        } else {
+          prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
+        }
       }
       const answer = await apiCall(prompt);
       askResultText.textContent = answer;
@@ -338,6 +384,47 @@
     btn.textContent = '✓ Copied';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
+  }
+
+  // === Page Content Extraction (injected into page) ===
+  // This function runs in the context of the web page
+  function extractPageContent() {
+    // Remove elements that are typically navigation/boilerplate
+    const toRemove = [
+      'nav', 'header:not(article header)', 'footer', 'aside',
+      '.sidebar', '#sidebar', '[role="navigation"]', '[role="complementary"]',
+      '.nav', '.menu', '.footer', '.advertisement', '.ad', '.ads',
+      '.social-share', '.related-posts', '.comments', '#comments',
+      'script', 'style', 'noscript', 'iframe:not([src*="youtube"]):not([src*="bilibili"])'
+    ];
+    toRemove.forEach(sel => {
+      try { document.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
+    });
+
+    // Try common content selectors
+    const contentSelectors = [
+      'article', '[role="main"]', 'main',
+      '.post-content', '.article-content', '.entry-content',
+      '.content', '#content', '.post', '.article',
+      '.story-body', '.article-body'
+    ];
+
+    let content = '';
+    for (const sel of contentSelectors) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText.trim().length > 200) {
+        content = el.innerText.trim();
+        break;
+      }
+    }
+
+    // Fallback: body text
+    if (!content) {
+      content = document.body.innerText.trim();
+    }
+
+    // Clean up whitespace
+    return content.replace(/\s+/g, ' ').slice(0, 12000).trim();
   }
 
   // === Tab Switch Detection ===
