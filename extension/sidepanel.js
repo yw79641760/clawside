@@ -279,27 +279,31 @@
 
     let pageContent = '';
     let extractionFailed = false;
+    let debugInfo = '';
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
+      debugInfo = `tab: ${tab?.url?.slice(0,30)}, id: ${tab?.id}`;
+      if (!tab?.id) {
+        extractionFailed = true;
+      } else {
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: extractPageContent
         });
         pageContent = results?.[0]?.result || '';
+        debugInfo += `, content length: ${pageContent.length}`;
         if (!pageContent || pageContent.trim().length < 100) {
           extractionFailed = true;
         }
-      } else {
-        extractionFailed = true;
       }
     } catch (err) {
+      debugInfo = `error: ${err.message}`;
       extractionFailed = true;
     }
 
     if (extractionFailed) {
       hideLoading();
-      showStatus(summarizeStatus, 'Cannot extract page content — page may be dynamically loaded, require login, or use non-standard rendering. Try selecting specific text and using the Ask feature instead.');
+      showStatus(summarizeStatus, `Cannot extract page content. ${debugInfo}. Try selecting specific text and using the Ask feature instead.`);
       summarizeBtn.disabled = false;
       return;
     }
