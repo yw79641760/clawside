@@ -13,7 +13,7 @@ async function apiCall(prompt, port, token) {
       'Authorization': 'Bearer ' + token
     },
     body: JSON.stringify({
-      model: 'main',
+      model: 'openclaw/main',
       messages: [{ role: 'user', content: prompt }]
     })
   });

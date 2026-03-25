@@ -155,7 +155,7 @@
         'Authorization': 'Bearer ' + settings.authToken
       },
       body: JSON.stringify({
-        model: 'main',
+        model: 'openclaw/main',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2048
       })
