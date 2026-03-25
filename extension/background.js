@@ -1,15 +1,50 @@
 // ClawSide - Service Worker (Background)
-// Handles message routing between content script and side panel
+// Handles API calls (fetch to Gateway) + message routing
+
+// API call runs here (not in content script) for better security
+async function apiCall(prompt, port, token) {
+  port = String(port || '18789');
+  token = String(token || '').trim();
+
+  const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({
+      model: 'main',
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
 
 // === Message Routing ===
-// Forward messages between content script and side panel
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // API call request from content script or side panel
+  if (msg.type === 'clawside-api') {
+    const { prompt, port, token, requestId } = msg;
+    apiCall(prompt, port, token)
+      .then((result) => {
+        chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
+      })
+      .catch((err) => {
+        chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
+      });
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  // From floating bubble → handle bubble action (no longer auto-open side panel)
   if (msg.type === 'clawside-action') {
-    // From floating bubble → open side panel and handle action
-    chrome.sidePanel.open({}).then(() => {
-      // Forward to side panel via broadcast
-      chrome.runtime.sendMessage(msg).catch(() => {});
-    }).catch(() => {});
+    // Handled by content script directly now
   }
 
   if (msg.type === 'open-sidepanel') {
@@ -17,7 +52,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'text_selected' || msg.type === 'page_info' || msg.type === 'content_ready') {
-    // From content script → side panel
     chrome.runtime.sendMessage(msg).catch(() => {});
   }
 

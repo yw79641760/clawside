@@ -12,6 +12,8 @@
   let popup = null;
   let hideTimer = null;
   let currentAction = null;
+  let pendingRequests = new Map();
+  let pendingTimeouts = new Map();
 
   // === Styles ===
   function injectStyles() {
@@ -252,63 +254,71 @@
     setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
-  // === API Call (direct from content script) ===
-  async function apiCall(prompt) {
-    // Read settings from extension storage
-    const result = await chrome.storage.local.get(['clawside_settings']);
-    const settings = result.clawside_settings || { gatewayPort: '18789', authToken: '' };
-    const port = settings.gatewayPort || '18789';
-    const token = settings.authToken || '';
+  // === API Call (via background script) ===
+  // Background script makes the actual fetch to Gateway (avoids CORS / ISO-8859-1 issues)
+  function apiCall(prompt, port, token) {
+    return new Promise((resolve, reject) => {
+      const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      pendingRequests.set(requestId, { resolve, reject });
 
-    const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({
-        model: 'main',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 2048
-      })
+      // Timeout after 60s
+      const timer = setTimeout(() => {
+        const req = pendingRequests.get(requestId);
+        if (req) {
+          pendingRequests.delete(requestId);
+          req.reject(new Error('Request timeout'));
+        }
+      }, 60000);
+
+      // Store timer for cleanup
+      pendingTimeouts.set(requestId, timer);
+
+      chrome.runtime.sendMessage({
+        type: 'clawside-api',
+        prompt,
+        port: String(port || '18789'),
+        token: String(token || '').trim(),
+        requestId
+      });
+
+      // Response handled by message listener
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || '';
   }
 
   async function doAction(action, text, url, title, question) {
     url = url || window.location.href;
     title = title || document.title;
 
+    // Get settings
+    const stored = await chrome.storage.local.get(['clawside_settings']);
+    const settings = stored.clawside_settings || { gatewayPort: '18789', authToken: '' };
+    const port = String(settings.gatewayPort || '18789');
+    const token = String(settings.authToken || '').trim();
+
     showPopup(action, text, null);
 
     try {
       let result, cite = '';
       if (action === 'translate') {
-        cite = url.length > 40 ? '...' + url.slice(-37) : url;
-        const targetLang = 'Chinese'; // TODO: make configurable
+        cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
+        const targetLang = 'Chinese';
         const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
-        result = await apiCall(prompt);
+        result = await apiCall(prompt, port, token);
 
       } else if (action === 'summarize') {
-        cite = url.length > 40 ? '...' + url.slice(-37) : url;
+        cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${url}`;
-        result = await apiCall(prompt);
+        result = await apiCall(prompt, port, token);
 
       } else if (action === 'ask') {
-        cite = url.length > 40 ? '...' + url.slice(-37) : url;
+        cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         let prompt;
         if (text) {
           prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`;
         } else {
           prompt = `You are a helpful assistant. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
         }
-        result = await apiCall(prompt);
+        result = await apiCall(prompt, port, token);
       }
 
       setPopupResult(result, cite);
@@ -363,15 +373,32 @@
     hideBubble();
   });
 
-  // Listen for messages from side panel (for future integration)
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Listen for API results from background script
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'clawside-api-result') {
+      const req = pendingRequests.get(msg.requestId);
+      if (req) {
+        pendingRequests.delete(msg.requestId);
+        clearTimeout(pendingTimeouts.get(msg.requestId));
+        pendingTimeouts.delete(msg.requestId);
+        req.resolve(msg.result);
+      }
+    }
+    if (msg.type === 'clawside-api-error') {
+      const req = pendingRequests.get(msg.requestId);
+      if (req) {
+        pendingRequests.delete(msg.requestId);
+        clearTimeout(pendingTimeouts.get(msg.requestId));
+        pendingTimeouts.delete(msg.requestId);
+        req.reject(new Error(msg.error));
+      }
+    }
     if (msg.type === 'get_selection') {
       const text = window.getSelection()?.toString().trim() || '';
       lastSelectedText = text;
       chrome.runtime.sendMessage({
         type: 'text_selected', text, url: window.location.href, title: document.title
       }).catch(() => {});
-      sendResponse({ ok: true });
     }
     return true;
   });
