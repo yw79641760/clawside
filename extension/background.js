@@ -1,7 +1,7 @@
 // ClawSide - Service Worker (Background)
-// Handles API calls (fetch to Gateway) + message routing
+// Handles API calls + tab switch events + message routing
 
-// API call runs here (not in content script) for better security
+// === API Call ===
 async function apiCall(prompt, port, token) {
   port = String(port || '18789');
   token = String(token || '').trim();
@@ -28,7 +28,7 @@ async function apiCall(prompt, port, token) {
 
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  // API call request from content script or side panel
+  // API call request
   if (msg.type === 'clawside-api') {
     const { prompt, port, token, requestId } = msg;
     apiCall(prompt, port, token)
@@ -42,15 +42,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // From floating bubble → handle bubble action (no longer auto-open side panel)
-  if (msg.type === 'clawside-action') {
-    // Handled by content script directly now
-  }
-
+  // Open side panel
   if (msg.type === 'open-sidepanel') {
     chrome.sidePanel.open({}).catch(() => {});
   }
 
+  // Forward messages from content script to side panel
   if (msg.type === 'text_selected' || msg.type === 'page_info' || msg.type === 'content_ready') {
     chrome.runtime.sendMessage(msg).catch(() => {});
   }
@@ -58,7 +55,35 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
-// Open side panel when extension icon is clicked
+// === Tab Switch Events ===
+// Notify side panel when user switches browser tabs
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    chrome.runtime.sendMessage({
+      type: 'text_selected',
+      text: '',
+      url: tab.url || '',
+      title: tab.title || ''
+    }).catch(() => {});
+  } catch (err) {
+    // Tab may not be accessible
+  }
+});
+
+// Also listen for URL changes
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url || changeInfo.title) {
+    chrome.runtime.sendMessage({
+      type: 'text_selected',
+      text: '',
+      url: changeInfo.url || tab.url || '',
+      title: changeInfo.title || tab.title || ''
+    }).catch(() => {});
+  }
+});
+
+// === Open side panel on extension icon click ===
 chrome.action?.onClicked?.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId });
 });

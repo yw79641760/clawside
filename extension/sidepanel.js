@@ -1,10 +1,9 @@
-// ClawSide - Side Panel UI Logic
+// ClawSide - Full Side Panel Logic
 
 (function () {
   'use strict';
 
-  // === Config ===
-  const DEFAULT_GATEWAY_PORT = '18789';
+  const DEFAULT_PORT = '18789';
 
   // === State ===
   let currentTab = 'translate';
@@ -12,33 +11,35 @@
   let currentUrl = '';
   let currentPageTitle = '';
   let history = [];
-  let settings = { gatewayPort: DEFAULT_GATEWAY_PORT, authToken: '' };
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '' };
 
-  // === DOM refs ===
+  // === DOM ===
   const $ = (id) => document.getElementById(id);
 
+  // Tabs
   const tabTranslate = $('tabTranslate');
   const tabSummarize = $('tabSummarize');
   const tabAsk = $('tabAsk');
   const tabHistory = $('tabHistory');
   const settingsBtn = $('settingsBtn');
 
+  // Panels
   const panelTranslate = $('panelTranslate');
   const panelSummarize = $('panelSummarize');
   const panelAsk = $('panelAsk');
   const panelHistory = $('panelHistory');
   const panelSettings = $('panelSettings');
 
-  // Translate panel
-  const selectedTextEl = $('selectedText');
-  const translateBtn = $('translateBtn');
+  // Translate
+  const translateInput = $('translateInput');
   const targetLangSelect = $('targetLang');
+  const translateBtn = $('translateBtn');
   const translateResult = $('translateResult');
   const translateResultText = $('translateResultText');
   const copyTranslateResult = $('copyTranslateResult');
   const translateStatus = $('translateStatus');
 
-  // Summarize panel
+  // Summarize
   const pageUrlEl = $('pageUrl');
   const summarizeBtn = $('summarizeBtn');
   const summarizeResult = $('summarizeResult');
@@ -46,9 +47,8 @@
   const copySummarizeResult = $('copySummarizeResult');
   const summarizeStatus = $('summarizeStatus');
 
-  // Ask panel
-  const askSelectionCard = $('askSelectionCard');
-  const askSelectedText = $('askSelectedText');
+  // Ask
+  const askContextText = $('askContextText');
   const askQuestion = $('askQuestion');
   const askBtn = $('askBtn');
   const askResult = $('askResult');
@@ -56,7 +56,7 @@
   const copyAskResult = $('copyAskResult');
   const askStatus = $('askStatus');
 
-  // History panel
+  // History
   const historyList = $('historyList');
   const historyCount = $('historyCount');
   const historyEmpty = $('historyEmpty');
@@ -65,6 +65,10 @@
   // Settings
   const settingBridgePort = $('settingBridgePort');
   const settingAuthToken = $('settingAuthToken');
+  const tokenStatusEl = $('tokenStatus');
+  const gatewayStatusEl = $('gatewayStatus');
+  const testConnBtn = $('testConnBtn');
+  const testConnStatus = $('testConnStatus');
   const saveSettingsBtn = $('saveSettingsBtn');
   const settingsStatus = $('settingsStatus');
 
@@ -72,8 +76,8 @@
   const loadingOverlay = $('loadingOverlay');
   const loadingText = $('loadingText');
 
-  // === Utility ===
-  function showLoading(text = 'Processing...') {
+  // === Utilities ===
+  function showLoading(text) {
     loadingText.textContent = text;
     loadingOverlay.classList.remove('hidden');
   }
@@ -86,7 +90,7 @@
     el.textContent = message;
     el.className = `status-msg ${type}`;
     el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 6000);
+    setTimeout(() => el.classList.add('hidden'), 5000);
   }
 
   function showTab(tab) {
@@ -103,29 +107,58 @@
     panelSettings.classList.toggle('hidden', tab !== 'settings');
 
     if (tab === 'history') renderHistory();
+    if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); }
     if (tab === 'ask') askQuestion.focus();
   }
 
   // === Settings ===
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || {
-      gatewayPort: DEFAULT_GATEWAY_PORT,
-      authToken: ''
-    };
-    settingBridgePort.value = settings.gatewayPort || DEFAULT_GATEWAY_PORT;
+    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '' };
+    settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
+    updateTokenStatus();
+  }
+
+  function updateTokenStatus() {
+    if (!settingAuthToken) return;
+    const token = settingAuthToken.value?.trim();
+    if (!token) {
+      tokenStatusEl.textContent = 'No token';
+      tokenStatusEl.className = 'token-status empty';
+    } else {
+      tokenStatusEl.textContent = 'Token set ✓';
+      tokenStatusEl.className = 'token-status ok';
+    }
+  }
+
+  async function checkGatewayStatus() {
+    gatewayStatusEl.textContent = 'Checking...';
+    try {
+      const port = settingBridgePort.value?.trim() || DEFAULT_PORT;
+      const token = settingAuthToken.value?.trim() || '';
+      const res = await fetch(`http://127.0.0.1:${port}/v1/models`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        gatewayStatusEl.textContent = '✓ Gateway reachable';
+        gatewayStatusEl.style.color = 'var(--success)';
+      } else {
+        gatewayStatusEl.textContent = `✗ HTTP ${res.status}`;
+        gatewayStatusEl.style.color = 'var(--error)';
+      }
+    } catch (err) {
+      gatewayStatusEl.textContent = '✗ Cannot reach gateway';
+      gatewayStatusEl.style.color = 'var(--error)';
+    }
   }
 
   async function saveSettings() {
-    settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_GATEWAY_PORT;
+    settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
     settings.authToken = settingAuthToken.value.trim();
     await chrome.storage.local.set({ clawside_settings: settings });
+    updateTokenStatus();
     showStatus(settingsStatus, 'Settings saved!', 'success');
-  }
-
-  function getApiBase() {
-    return `http://127.0.0.1:${settings.gatewayPort}`;
   }
 
   // === Memory ===
@@ -145,73 +178,83 @@
     await saveHistory(items);
   }
 
-  // === API calls ===
-  async function apiCall(prompt) {
-    const base = getApiBase();
-    const res = await fetch(`${base}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + settings.authToken
-      },
-      body: JSON.stringify({
-        model: 'openclaw/main',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 2048
-      })
+  // === API via background script ===
+  function apiCall(prompt) {
+    return new Promise((resolve, reject) => {
+      const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const pendingKey = requestId;
+
+      chrome.runtime.sendMessage({
+        type: 'clawside-api',
+        prompt,
+        port: settings.gatewayPort || DEFAULT_PORT,
+        token: settings.authToken || '',
+        requestId
+      });
+
+      const timeout = setTimeout(() => {
+        chrome.runtime.onMessage.removeListener(handler);
+        reject(new Error('Request timeout'));
+      }, 60000);
+
+      const handler = (msg) => {
+        if (msg.type === 'clawside-api-result' && msg.requestId === requestId) {
+          clearTimeout(timeout);
+          chrome.runtime.onMessage.removeListener(handler);
+          resolve(msg.result);
+        }
+        if (msg.type === 'clawside-api-error' && msg.requestId === requestId) {
+          clearTimeout(timeout);
+          chrome.runtime.onMessage.removeListener(handler);
+          reject(new Error(msg.error));
+        }
+      };
+      chrome.runtime.onMessage.addListener(handler);
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || '';
   }
 
   // === Actions ===
-  async function doTranslate(autoTrigger = false) {
-    if (!selectedText.trim() && !autoTrigger) {
-      showStatus(translateStatus, 'Please select some text first');
+  async function doTranslate() {
+    const text = translateInput.value.trim();
+    if (!text) {
+      showStatus(translateStatus, 'Please enter or select text to translate');
       return;
     }
-    const targetLang = targetLangSelect.value;
-    showLoading('Translating...');
     translateResult.classList.add('hidden');
-
+    translateBtn.disabled = true;
+    showLoading('Translating...');
     try {
-      const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${selectedText}`;
+      const targetLang = targetLangSelect.value;
+      const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
       const result = await apiCall(prompt);
-
       translateResultText.textContent = result;
       translateResult.classList.remove('hidden');
-
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
-        original: selectedText, result, lang: targetLang,
+        original: text, result, lang: targetLang,
         url: currentUrl, timestamp: Date.now()
       });
     } catch (err) {
       showStatus(translateStatus, err.message);
     } finally {
       hideLoading();
+      translateBtn.disabled = false;
     }
   }
 
   async function doSummarize() {
     if (!currentUrl) {
-      showStatus(summarizeStatus, 'Cannot detect current page URL');
+      showStatus(summarizeStatus, 'No current page detected. Navigate to a page first.');
       return;
     }
-    showLoading('Summarizing...');
     summarizeResult.classList.add('hidden');
-
+    summarizeBtn.disabled = true;
+    showLoading('Summarizing...');
     try {
       const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
       const summary = await apiCall(prompt);
-
       summarizeResultText.textContent = summary;
       summarizeResult.classList.remove('hidden');
-
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'summarize',
         url: currentUrl, title: currentPageTitle,
@@ -221,65 +264,108 @@
       showStatus(summarizeStatus, err.message);
     } finally {
       hideLoading();
+      summarizeBtn.disabled = false;
     }
   }
 
-  async function doAsk(autoTrigger = false) {
+  async function doAsk() {
     const question = askQuestion.value.trim();
-    if (!question && !autoTrigger) {
+    if (!question) {
       showStatus(askStatus, 'Please enter a question');
       return;
     }
-
-    showLoading('Thinking...');
     askResult.classList.add('hidden');
-
+    askBtn.disabled = true;
+    showLoading('Thinking...');
     try {
       let prompt;
       if (selectedText) {
-        prompt = `You are a helpful assistant. The user has selected the following text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`;
+        prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
       } else {
-        prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question || 'Please provide a summary of this page.'}`;
+        prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
       }
-
       const answer = await apiCall(prompt);
-
       askResultText.textContent = answer;
       askResult.classList.remove('hidden');
-
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'ask',
-        question: question || '(summary request)',
-        answer, context: selectedText || currentUrl,
+        question, answer,
+        context: selectedText || currentUrl,
         url: currentUrl, timestamp: Date.now()
       });
     } catch (err) {
       showStatus(askStatus, err.message);
     } finally {
       hideLoading();
+      askBtn.disabled = false;
     }
   }
 
   async function doCopy(text, btn) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
+    try { await navigator.clipboard.writeText(text); } catch {
       const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     }
     btn.textContent = '✓ Copied';
     btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = '📋 Copy';
-      btn.classList.remove('copied');
-    }, 1500);
+    setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
-  // === History Rendering ===
+  // === Tab Switch Detection ===
+  // Listen for tab changes so we can update current page URL
+  async function updateCurrentTab() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        const prevUrl = currentUrl;
+        currentUrl = tab.url || '';
+        currentPageTitle = tab.title || '';
+
+        // Update URL display in summarize and ask panels
+        pageUrlEl.textContent = currentUrl || '—';
+
+        if (selectedText) {
+          askContextText.textContent = `"${truncate(selectedText, 100)}" from ${truncateUrl(currentUrl)}`;
+          askContextText.classList.remove('empty');
+        } else if (currentUrl) {
+          askContextText.textContent = truncateUrl(currentUrl);
+          askContextText.classList.remove('empty');
+        } else {
+          askContextText.textContent = 'No page context — enter a question below';
+          askContextText.classList.add('empty');
+        }
+
+        // If URL changed significantly, clear old selection
+        if (prevUrl && prevUrl !== currentUrl) {
+          selectedText = '';
+          translateInput.value = '';
+        }
+
+        // Try to get selected text from content script
+        chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
+      }
+    } catch (err) {
+      // Ignore
+    }
+  }
+
+  function truncate(str, max) {
+    if (!str) return '';
+    return str.length > max ? str.slice(0, max) + '…' : str;
+  }
+
+  function truncateUrl(url) {
+    if (!url) return '—';
+    try {
+      const u = new URL(url);
+      return u.hostname + (u.pathname !== '/' ? u.pathname : '');
+    } catch {
+      return url.length > 40 ? '...' + url.slice(-37) : url;
+    }
+  }
+
+  // === History ===
   function formatTime(ts) {
     const d = new Date(ts);
     const diffMs = Date.now() - d;
@@ -291,11 +377,6 @@
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return d.toLocaleDateString();
-  }
-
-  function truncate(str, max) {
-    if (!str) return '';
-    return str.length > max ? str.slice(0, max) + '…' : str;
   }
 
   function escapeHtml(str) {
@@ -335,32 +416,16 @@
           <div class="history-item-preview">${preview}</div>
           <div class="history-item-detail">
             ${item.type === 'translate' ? `
-              <div class="history-item-detail-row">
-                <span class="history-item-detail-label">Original:</span>
-                <span class="history-item-detail-value">${escapeHtml(item.original)}</span>
-              </div>
-              <div class="history-item-detail-row">
-                <span class="history-item-detail-label">Result:</span>
-                <span class="history-item-detail-value">${escapeHtml(item.result)}</span>
-              </div>
+              <div class="history-item-detail-row"><span class="history-item-detail-label">Original:</span><span class="history-item-detail-value">${escapeHtml(item.original)}</span></div>
+              <div class="history-item-detail-row"><span class="history-item-detail-label">Result:</span><span class="history-item-detail-value">${escapeHtml(item.result)}</span></div>
             ` : item.type === 'summarize' ? `
-              <div class="history-item-detail-row">
-                <span class="history-item-detail-label">Summary:</span>
-                <span class="history-item-detail-value">${escapeHtml(item.summary)}</span>
-              </div>
+              <div class="history-item-detail-row"><span class="history-item-detail-label">Summary:</span><span class="history-item-detail-value">${escapeHtml(item.summary)}</span></div>
             ` : `
-              <div class="history-item-detail-row">
-                <span class="history-item-detail-label">Q:</span>
-                <span class="history-item-detail-value">${escapeHtml(item.question)}</span>
-              </div>
-              <div class="history-item-detail-row">
-                <span class="history-item-detail-label">A:</span>
-                <span class="history-item-detail-value">${escapeHtml(item.answer)}</span>
-              </div>
+              <div class="history-item-detail-row"><span class="history-item-detail-label">Q:</span><span class="history-item-detail-value">${escapeHtml(item.question)}</span></div>
+              <div class="history-item-detail-row"><span class="history-item-detail-label">A:</span><span class="history-item-detail-value">${escapeHtml(item.answer)}</span></div>
             `}
             ${item.url ? `<a class="history-item-source" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${truncate(item.url, 50)}</a>` : ''}
           </div>`;
-
         el.addEventListener('click', () => el.classList.toggle('expanded'));
         historyList.appendChild(el);
       });
@@ -372,54 +437,53 @@
     renderHistory();
   }
 
-  // === Message from background / content script ===
+  // === Messages from content script ===
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'text_selected') {
       selectedText = msg.text || '';
       currentUrl = msg.url || '';
       currentPageTitle = msg.title || '';
 
-      if (selectedText) {
-        selectedTextEl.textContent = selectedText;
-        selectedTextEl.classList.remove('empty');
-        askSelectedText.textContent = selectedText;
-        askSelectedText.classList.remove('empty');
-      } else {
-        selectedTextEl.textContent = 'No text selected - use the Ask tab to query the page';
-        selectedTextEl.classList.add('empty');
-        askSelectedText.textContent = 'No text selected - using page context only';
-        askSelectedText.classList.add('empty');
+      // Update translate input
+      if (selectedText && !translateInput.value) {
+        translateInput.value = selectedText;
       }
 
-      pageUrlEl.textContent = currentUrl || 'Unknown page';
-    }
+      // Update ask context
+      if (selectedText) {
+        askContextText.textContent = `"${truncate(selectedText, 100)}" from ${truncateUrl(currentUrl)}`;
+        askContextText.classList.remove('empty');
+      } else if (currentUrl) {
+        askContextText.textContent = truncateUrl(currentUrl);
+        askContextText.classList.remove('empty');
+      }
 
-    if (msg.type === 'page_info') {
-      currentUrl = msg.url || '';
-      currentPageTitle = msg.title || '';
-      pageUrlEl.textContent = currentUrl || 'Unknown page';
+      // Update summarize URL
+      pageUrlEl.textContent = currentUrl || '—';
     }
+    return true;
   });
 
-  // === Event listeners ===
+  // === Event Listeners ===
   tabTranslate.addEventListener('click', () => showTab('translate'));
   tabSummarize.addEventListener('click', () => showTab('summarize'));
   tabAsk.addEventListener('click', () => showTab('ask'));
   tabHistory.addEventListener('click', () => showTab('history'));
   settingsBtn.addEventListener('click', () => showTab('settings'));
 
-  translateBtn.addEventListener('click', () => doTranslate());
-  summarizeBtn.addEventListener('click', () => doSummarize());
-  askBtn.addEventListener('click', () => doAsk());
+  translateBtn.addEventListener('click', doTranslate);
+  summarizeBtn.addEventListener('click', doSummarize);
+  askBtn.addEventListener('click', doAsk);
 
-  copyTranslateResult.addEventListener('click', () => doCopy(translateResultText.textContent, copyTranslateResult));
-  copySummarizeResult.addEventListener('click', () => doCopy(summarizeResultText.textContent, copySummarizeResult));
-  copyAskResult.addEventListener('click', () => doCopy(askResultText.textContent, copyAskResult));
+  // Ctrl+Enter in translate input
+  translateInput.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      doTranslate();
+    }
+  });
 
-  clearHistoryBtn.addEventListener('click', doClearHistory);
-  saveSettingsBtn.addEventListener('click', saveSettings);
-
-  // Ctrl+Enter to submit in Ask panel
+  // Ctrl+Enter in ask textarea
   askQuestion.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -427,21 +491,26 @@
     }
   });
 
+  // Clear translate result when input changes
+  translateInput.addEventListener('input', () => {
+    translateResult.classList.add('hidden');
+  });
+
+  copyTranslateResult.addEventListener('click', () => doCopy(translateResultText.textContent, copyTranslateResult));
+  copySummarizeResult.addEventListener('click', () => doCopy(summarizeResultText.textContent, copySummarizeResult));
+  copyAskResult.addEventListener('click', () => doCopy(askResultText.textContent, copyAskResult));
+
+  clearHistoryBtn.addEventListener('click', doClearHistory);
+
+  // Settings
+  settingAuthToken.addEventListener('input', updateTokenStatus);
+  testConnBtn.addEventListener('click', checkGatewayStatus);
+  saveSettingsBtn.addEventListener('click', saveSettings);
+
   // === Init ===
   async function init() {
     await loadSettings();
-
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab) {
-        currentUrl = tab.url || '';
-        currentPageTitle = tab.title || '';
-        pageUrlEl.textContent = currentUrl || 'Unknown page';
-        // Get selected text from content script
-        chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
-      }
-    } catch (err) {}
-
+    await updateCurrentTab();
     showTab('translate');
   }
 

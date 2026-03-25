@@ -563,6 +563,57 @@ body {
   font-size: 11px;
 }
 
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-row input {
+  flex: 1;
+}
+
+.token-status {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.token-status.ok { color: var(--success); }
+.token-status.empty { color: var(--text-muted); }
+.token-status.error { color: var(--error); }
+
+.page-url-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+textarea#translateInput {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 90px;
+  transition: border-color var(--transition);
+}
+
+textarea#translateInput:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+textarea#translateInput::placeholder {
+  color: var(--text-muted);
+}
+
 /* === Loading Overlay === */
 .loading-overlay {
   position: absolute;

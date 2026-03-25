@@ -38,9 +38,9 @@
 
       <!-- Translate Panel -->
       <section class="panel" id="panelTranslate">
-        <div class="selection-card" id="selectionCard">
-          <div class="selection-label">Selected text</div>
-          <div class="selection-text" id="selectedText">Select text on any page and click Translate</div>
+        <div class="input-area">
+          <div class="selection-label">Text to translate</div>
+          <textarea id="translateInput" placeholder="Select text on any page, or type here directly..." rows="4"></textarea>
         </div>
 
         <div class="lang-row">
@@ -55,7 +55,7 @@
           </select>
         </div>
 
-        <button class="btn-primary" id="translateBtn" disabled>
+        <button class="btn-primary" id="translateBtn">
           Translate
         </button>
 
@@ -75,7 +75,8 @@
       <!-- Summarize Panel -->
       <section class="panel hidden" id="panelSummarize">
         <div class="page-info" id="pageInfo">
-          <div class="page-url" id="pageUrl">Loading page info...</div>
+          <div class="page-url-label">Current page</div>
+          <div class="page-url" id="pageUrl">—</div>
         </div>
 
         <button class="btn-primary" id="summarizeBtn">
@@ -97,13 +98,13 @@
 
       <!-- Ask Panel -->
       <section class="panel hidden" id="panelAsk">
-        <div class="selection-card" id="askSelectionCard">
-          <div class="selection-label">Context (selected text)</div>
-          <div class="selection-text" id="askSelectedText">No text selected - will use page context only</div>
+        <div class="selection-card">
+          <div class="selection-label">Context</div>
+          <div class="selection-text empty" id="askContextText">No page context — enter a question below</div>
         </div>
 
         <div class="input-area">
-          <textarea id="askQuestion" placeholder="Ask anything about the selected text or page..." rows="3"></textarea>
+          <textarea id="askQuestion" placeholder="Ask anything about the page or selected text..." rows="3"></textarea>
         </div>
 
         <button class="btn-primary" id="askBtn">
@@ -135,7 +136,7 @@
         <div class="empty-state hidden" id="historyEmpty">
           <div class="empty-icon">📭</div>
           <div class="empty-text">No interactions yet</div>
-          <div class="empty-hint">Right-click selected text to get started</div>
+          <div class="empty-hint">Use Translate, Summarize, or Ask to get started</div>
         </div>
       </section>
 
@@ -149,17 +150,26 @@
         </div>
 
         <div class="setting-item">
-          <label>Gateway Auth Token (optional)</label>
-          <input type="password" id="settingAuthToken" placeholder="Leave empty if gateway has no token auth">
+          <label>Gateway Auth Token</label>
+          <div class="token-row">
+            <input type="password" id="settingAuthToken" placeholder="Enter token if gateway requires auth">
+            <span class="token-status" id="tokenStatus">—</span>
+          </div>
         </div>
 
         <div class="setting-note">
-          The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint directly.
-          If your gateway has <code>auth.mode: "token"</code>, enter the token above.
-          Make sure <code>gateway.http.endpoints.chatCompletions.enabled: true</code> is set in your OpenClaw config.
+          Status: <span id="gatewayStatus">Checking...</span>
         </div>
 
-        <button class="btn-primary" id="saveSettingsBtn">Save Settings</button>
+        <button class="btn-primary" id="testConnBtn">Test Connection</button>
+        <div class="status-msg hidden" id="testConnStatus"></div>
+
+        <div class="setting-note" style="margin-top:12px">
+          The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint.
+          Requires <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in your OpenClaw config.
+        </div>
+
+        <button class="btn-primary" id="saveSettingsBtn" style="margin-top:8px">Save Settings</button>
         <div class="status-msg hidden" id="settingsStatus"></div>
       </section>
 
