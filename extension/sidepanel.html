@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClawSide</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="brand-icon">🔗</span>
+        <span class="brand-name">ClawSide</span>
+      </div>
+      <button class="btn-icon" id="settingsBtn" title="Settings">⚙️</button>
+    </header>
+
+    <!-- Action Bar -->
+    <nav class="action-bar">
+      <button class="action-btn active" id="tabTranslate" data-tab="translate">
+        🌐 Translate
+      </button>
+      <button class="action-btn" id="tabSummarize" data-tab="summarize">
+        📄 Summarize
+      </button>
+      <button class="action-btn" id="tabHistory" data-tab="history">
+        📜 History
+      </button>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="content">
+
+      <!-- Translate Panel -->
+      <section class="panel" id="panelTranslate">
+        <div class="selection-card" id="selectionCard">
+          <div class="selection-label">Selected text</div>
+          <div class="selection-text" id="selectedText">Select text on any page and click Translate</div>
+        </div>
+
+        <div class="lang-row">
+          <label for="targetLang">Target language</label>
+          <select id="targetLang">
+            <option value="Chinese">Chinese</option>
+            <option value="English">English</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Korean">Korean</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="translateBtn" disabled>
+          Translate
+        </button>
+
+        <!-- Result -->
+        <div class="result-card hidden" id="translateResult">
+          <div class="result-header">
+            <span class="result-icon">🌐</span>
+            <span class="result-title">Translation</span>
+            <button class="btn-copy" id="copyTranslateResult">📋 Copy</button>
+          </div>
+          <div class="result-body" id="translateResultText"></div>
+        </div>
+
+        <div class="status-msg hidden" id="translateStatus"></div>
+      </section>
+
+      <!-- Summarize Panel -->
+      <section class="panel hidden" id="panelSummarize">
+        <div class="page-info" id="pageInfo">
+          <div class="page-url" id="pageUrl">Loading page info...</div>
+        </div>
+
+        <button class="btn-primary" id="summarizeBtn">
+          Summarize This Page
+        </button>
+
+        <!-- Result -->
+        <div class="result-card hidden" id="summarizeResult">
+          <div class="result-header">
+            <span class="result-icon">📄</span>
+            <span class="result-title">Summary</span>
+            <button class="btn-copy" id="copySummarizeResult">📋 Copy</button>
+          </div>
+          <div class="result-body" id="summarizeResultText"></div>
+        </div>
+
+        <div class="status-msg hidden" id="summarizeStatus"></div>
+      </section>
+
+      <!-- History Panel -->
+      <section class="panel hidden" id="panelHistory">
+        <div class="history-header">
+          <span class="history-count" id="historyCount">0 items</span>
+          <button class="btn-danger hidden" id="clearHistoryBtn">Clear All</button>
+        </div>
+
+        <div class="history-list" id="historyList"></div>
+
+        <div class="empty-state hidden" id="historyEmpty">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">No interactions yet</div>
+          <div class="empty-hint">Translate or summarize something to get started</div>
+        </div>
+      </section>
+
+      <!-- Settings Panel -->
+      <section class="panel hidden" id="panelSettings">
+        <h3>Settings</h3>
+
+        <div class="setting-item">
+          <label>Bridge Server Port</label>
+          <input type="number" id="settingBridgePort" value="18792" placeholder="18792">
+        </div>
+
+        <div class="setting-note">
+          Bridge server runs on your machine and forwards requests to OpenClaw Gateway.
+          Make sure the bridge server is running: <code>cd server && GATEWAY_TOKEN=your_token node bridge.js</code>
+        </div>
+
+        <button class="btn-primary" id="saveSettingsBtn">Save Settings</button>
+        <div class="status-msg hidden" id="settingsStatus"></div>
+      </section>
+
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

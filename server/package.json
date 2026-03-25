@@ -1,0 +1,10 @@
+{
+  "name": "clawside-bridge",
+  "version": "0.1.0",
+  "description": "Bridge server between Chrome extension and OpenClaw Gateway",
+  "type": "module",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  }
+}
