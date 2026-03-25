@@ -583,7 +583,9 @@ body {
 .token-status.empty { color: var(--text-muted); }
 .token-status.error { color: var(--error); }
 
-.page-url-label {
+.token-row .btn-icon {
+  flex-shrink: 0;
+}
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;

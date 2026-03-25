@@ -65,6 +65,7 @@
   // Settings
   const settingBridgePort = $('settingBridgePort');
   const settingAuthToken = $('settingAuthToken');
+  const toggleTokenBtn = $('toggleTokenBtn');
   const tokenStatusEl = $('tokenStatus');
   const gatewayStatusEl = $('gatewayStatus');
   const testConnBtn = $('testConnBtn');
@@ -134,21 +135,45 @@
 
   async function checkGatewayStatus() {
     gatewayStatusEl.textContent = 'Checking...';
+    gatewayStatusEl.style.color = '';
+
+    // Reuse apiCall to test connection (goes through background script → gateway)
     try {
       const port = settingBridgePort.value?.trim() || DEFAULT_PORT;
       const token = settingAuthToken.value?.trim() || '';
-      const res = await fetch(`http://127.0.0.1:${port}/v1/models`, {
-        headers: { 'Authorization': 'Bearer ' + token }
+      // Use a minimal prompt to test
+      const result = await new Promise((resolve, reject) => {
+        const requestId = 'test_' + Date.now();
+        const timeout = setTimeout(() => {
+          chrome.runtime.onMessage.removeListener(handler);
+          reject(new Error('timeout'));
+        }, 15000);
+        const handler = (msg) => {
+          if (msg.requestId === requestId) {
+            clearTimeout(timeout);
+            chrome.runtime.onMessage.removeListener(handler);
+            if (msg.type === 'clawside-api-result') resolve(msg.result);
+            else reject(new Error(msg.error || 'Unknown error'));
+          }
+        };
+        chrome.runtime.onMessage.addListener(handler);
+        chrome.runtime.sendMessage({
+          type: 'clawside-api',
+          prompt: 'Reply with "OK" only.',
+          port, token, requestId
+        });
       });
-      if (res.ok) {
-        gatewayStatusEl.textContent = '✓ Gateway reachable';
-        gatewayStatusEl.style.color = 'var(--success)';
-      } else {
-        gatewayStatusEl.textContent = `✗ HTTP ${res.status}`;
-        gatewayStatusEl.style.color = 'var(--error)';
-      }
+      gatewayStatusEl.textContent = '✓ Gateway reachable';
+      gatewayStatusEl.style.color = 'var(--success)';
     } catch (err) {
-      gatewayStatusEl.textContent = '✗ Cannot reach gateway';
+      const msg = err.message || '';
+      if (msg.includes('401') || msg.includes('Unauthorized') || msg.includes('invalid_token')) {
+        gatewayStatusEl.textContent = '✗ Token rejected by gateway';
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg === 'timeout') {
+        gatewayStatusEl.textContent = '✗ Cannot reach gateway — check port';
+      } else {
+        gatewayStatusEl.textContent = '✗ ' + msg;
+      }
       gatewayStatusEl.style.color = 'var(--error)';
     }
   }
@@ -504,6 +529,11 @@
 
   // Settings
   settingAuthToken.addEventListener('input', updateTokenStatus);
+  toggleTokenBtn.addEventListener('click', () => {
+    const isPassword = settingAuthToken.type === 'password';
+    settingAuthToken.type = isPassword ? 'text' : 'password';
+    toggleTokenBtn.textContent = isPassword ? '🔒' : '👁';
+  });
   testConnBtn.addEventListener('click', checkGatewayStatus);
   saveSettingsBtn.addEventListener('click', saveSettings);
 
