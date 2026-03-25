@@ -1,22 +1,24 @@
 # ClawSide
 
-Chrome side panel extension that connects your browser directly to local OpenClaw Gateway for translation, summarization, and interaction memory.
+Chrome side panel extension that brings OpenClaw directly into your browser. Select text → floating bubble → instant results.
 
 ## Architecture
 
 ```
-Chrome Side Panel
-    ↓ HTTP POST (chrome-extension → 127.0.0.1:18789)
-OpenClaw Gateway (direct /v1/chat/completions call)
-    ↓
-LLM (configured provider: GLM-5 via Minimax)
+Chrome Page
+  ├─ Floating bubble (content script) → small inline popup with result
+  └─ Side panel (extension icon) → full-featured standalone panel
+       ↓ HTTP (chrome-extension → 127.0.0.1:18789)
+       OpenClaw Gateway → LLM
 ```
 
-No bridge server needed — the extension calls OpenClaw Gateway's HTTP endpoint directly.
+Two modes:
+- **Inline popup** (primary): select text → click bubble icon → result in small popup
+- **Full side panel**: click extension icon → full Translate/Summarize/Ask/History interface
 
 ## Prerequisites
 
-### 1. Enable OpenClaw HTTP Endpoint
+### Enable OpenClaw HTTP Endpoint
 
 Add to `~/.openclaw/openclaw.json`:
 
@@ -37,72 +39,42 @@ Restart OpenClaw:
 node ~/Dev/openclaw/dist/index.js gateway restart
 ```
 
-### 2. Load the Chrome Extension
+## Quick Start
 
 1. Open Chrome → `chrome://extensions/`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked** → select the `extension/` folder
-4. Click the extension icon 🧩 in toolbar → **Open side panel**
-
-## Configuration
-
-Click ⚙️ in the ClawSide side panel:
-
-- **OpenClaw Gateway Port**: `18789` (default)
-- **Gateway Auth Token**: Leave empty if your gateway has no token auth; otherwise enter the token from `gateway.auth.token` in your `openclaw.json`
+2. Enable **Developer mode** → **Load unpacked** → select `extension/`
+3. Click extension icon → **Open side panel** (full features)
+4. Or just select text on any page → floating bubble appears ✨
 
 ## Features
 
-### ✨ Floating Bubble (Primary)
+### Inline Popup (Quick)
 Select text on any page → floating bubble appears → click an icon:
-- 🌐 翻译 — translate to your target language
-- 📄 总结 — summarize the page
-- 💬 提问 — ask anything about the text or page
+- 🌐 翻译 — translated text in small popup
+- 📄 总结 — page summary in small popup
+- 💬 提问 — answer in small popup
 
-### Side Panel Tabs
-Alternatively use the side panel tabs directly:
-- 🌐 Translate — translate selected text
-- 📄 Summarize — summarize the current page
-- 💬 Ask — ask custom questions
-- 📜 History — view past interactions
+### Full Side Panel (via extension icon)
+Click the ClawSide extension icon in toolbar:
+- 🌐 **Translate** — translate selected text, choose target language
+- 📄 **Summarize** — summarize current page
+- 💬 **Ask** — ask custom questions, Ctrl+Enter to send
+- 📜 **History** — view all past interactions, expand to see details
 
-## Project Structure
-
-```
-clawside/
-├── SPEC.md              # Design specification
-├── README.md
-└── extension/
-    ├── manifest.json    # Chrome extension (Manifest V3)
-    ├── background.js     # Service worker
-    ├── content.js        # Content script (selection capture)
-    ├── sidepanel.html    # Side panel UI
-    ├── sidepanel.css     # Styles
-    ├── sidepanel.js      # UI logic (direct Gateway HTTP calls)
-    └── icons/            # Extension icons
-```
-
-## How It Works
-
-1. **Content script** (`content.js`) captures text selection on any page via `mouseup` events
-2. **Side panel** (`sidepanel.js`) receives selected text via `chrome.runtime.sendMessage`
-3. **Direct HTTP call** to `http://127.0.0.1:18789/v1/chat/completions`
-4. **Response** displayed in the side panel and saved to `chrome.storage.local`
+### Settings
+Click ⚙️ in side panel:
+- Gateway Port (default: `18789`)
+- Auth Token (if your gateway requires it)
 
 ## Troubleshooting
 
 ### "Failed to fetch" / Network error
-- Is OpenClaw Gateway running? Check: `curl http://127.0.0.1:18789/`
-- Is `chatCompletions.enabled: true` set in config?
+- Is OpenClaw Gateway running? `curl http://127.0.0.1:18789/`
+- Is `chatCompletions.enabled: true` in config?
 - Restart OpenClaw after changing config
 
 ### 401 Unauthorized
-- Your gateway requires auth. Enter the token in ⚙️ settings
-- Token found at: `gateway.auth.token` in `~/.openclaw/openclaw.json`
-
-### Extension can't access localhost
-- Make sure `host_permissions` includes `http://127.0.0.1:18789/*` in manifest.json
-- This is already configured for Manifest V3 Chrome extensions
+- Enter your gateway token in ⚙️ settings
 
 ## Requirements
 

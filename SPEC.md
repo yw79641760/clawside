@@ -58,22 +58,22 @@ LLM (configured provider: GLM-5 via Minimax)
 
 ### MVP (this version)
 
-#### 4.1 Floating Bubble (Primary UX)
-- **Trigger**: User selects text on any page → floating bubble appears after ~300ms
+#### 4.1 Inline Popup (Primary UX)
+- **Trigger**: User selects text on any page → floating bubble appears after ~250ms
 - **Bubble buttons**:
   - 🌐 translate
   - 📄 summarize
   - 💬 ask
-- **Flow**: Click button → side panel opens → action auto-triggers → result displayed
-- **Auto-hide**: Bubble disappears on click outside or when selection cleared
+- **Flow**: Click button → small popup appears inline near selection → result shown directly
+- **Popup**: 320px wide, max 280px tall, scrollable, with Copy button
+- **Auto-hide**: Bubble + popup disappear on click outside or Escape
 - **Position**: Below selection, clamped to viewport. If near bottom, shows above.
 - **Memory**: All interactions stored
 
-#### 4.2 Text Translation
-- **Trigger**: Click "Translate" button OR context menu → 翻译
-- **Flow**: Selected text → `/v1/chat/completions` → translated text → side panel
+#### 4.2 Text Translation (Side Panel)
+- **Trigger**: Click extension icon → open full side panel → Translate tab
+- **Flow**: Side panel → Translate tab → select target language → click Translate
 - **Output**: Translated text in card with "Copy" button
-- **Memory**: `{ type: "translate", original, result, lang, url, timestamp }`
 
 #### 4.3 Page Summarization
 - **Trigger**: Click "Summarize" button OR context menu → 总结

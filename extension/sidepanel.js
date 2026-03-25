@@ -279,46 +279,6 @@
     }, 1500);
   }
 
-  // === Context Menu Action Handler ===
-  function handleContextMenuAction(action, text, url, title) {
-    selectedText = text || '';
-    currentUrl = url || '';
-    currentPageTitle = title || '';
-
-    // Update translate panel
-    if (selectedText) {
-      selectedTextEl.textContent = selectedText;
-      selectedTextEl.classList.remove('empty');
-    } else {
-      selectedTextEl.textContent = 'No text selected';
-      selectedTextEl.classList.add('empty');
-    }
-
-    // Update ask panel
-    if (selectedText) {
-      askSelectedText.textContent = selectedText;
-      askSelectedText.classList.remove('empty');
-    } else {
-      askSelectedText.textContent = 'No text selected - using page context only';
-      askSelectedText.classList.add('empty');
-    }
-
-    // Update summarize panel
-    pageUrlEl.textContent = currentUrl || 'Unknown page';
-
-    // Auto-trigger the action and switch to that tab
-    if (action === 'clawside-translate') {
-      showTab('translate');
-      setTimeout(() => doTranslate(true), 100);
-    } else if (action === 'clawside-summarize') {
-      showTab('summarize');
-      setTimeout(() => doSummarize(), 100);
-    } else if (action === 'clawside-ask') {
-      showTab('ask');
-      setTimeout(() => doAsk(true), 100);
-    }
-  }
-
   // === History Rendering ===
   function formatTime(ts) {
     const d = new Date(ts);
@@ -438,11 +398,6 @@
       currentUrl = msg.url || '';
       currentPageTitle = msg.title || '';
       pageUrlEl.textContent = currentUrl || 'Unknown page';
-    }
-
-    // Handle context menu actions
-    if (msg.type === 'clawside-action') {
-      handleContextMenuAction(msg.action, msg.text, msg.url, msg.title);
     }
   });
 
