@@ -192,7 +192,7 @@
     el.style.left = left + 'px';
   }
 
-  function showPopup(action, text, rect) {
+  function showPopup(action, text, rect, onStreamChunk) {
     currentAction = action;
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
@@ -204,20 +204,76 @@
     popup.querySelector('.cs-popup-icon').textContent = icons[action] || '🌐';
     popup.querySelector('.cs-popup-title').textContent = titles[action] || action;
     popup.querySelector('#cs-popup-loading-text').textContent = loadingTexts[action] || 'Processing...';
-    popup.querySelector('.cs-popup-body').innerHTML = `
-      <div class="cs-popup-loading">
-        <div class="cs-spinner"></div>
-        <span>${loadingTexts[action]}</span>
-      </div>`;
+
+    if (onStreamChunk) {
+      // Streaming mode: show streaming text area
+      popup.querySelector('.cs-popup-body').innerHTML = '<span id="cs-stream-text"></span><span class="cs-cursor">▋</span>';
+      popup.querySelector('.cs-popup-body').style.cssText = 'white-space:pre-wrap;max-height:220px;overflow-y:auto;';
+      startCursorBlink();
+    } else {
+      // Loading mode
+      popup.querySelector('.cs-popup-body').innerHTML = `
+        <div class="cs-popup-loading">
+          <div class="cs-spinner"></div>
+          <span>${loadingTexts[action]}</span>
+        </div>`;
+    }
+
     popup.querySelector('#cs-popup-footer').style.display = 'none';
     popup.style.display = 'flex';
 
-    // Close handlers
     popup.querySelector('#cs-popup-close').onclick = hidePopup;
     popup.querySelector('#cs-popup-copy').onclick = () => {
       const body = popup.querySelector('#cs-popup-body').textContent;
       copyText(body, popup.querySelector('#cs-popup-copy'));
     };
+
+    return onStreamChunk; // return so doAction can wire up streaming
+  }
+
+  function setPopupStreaming() {
+    // Switch popup body from loading spinner to streaming text
+    const body = popup.querySelector('.cs-popup-body');
+    body.innerHTML = '<span id="cs-stream-text"></span><span class="cs-cursor">▋</span>';
+    body.style.whiteSpace = 'pre-wrap';
+    startCursorBlink();
+  }
+
+  function appendStreamChunk(text) {
+    const el = popup.querySelector('#cs-stream-text');
+    const cursor = popup.querySelector('.cs-cursor');
+    if (el) el.textContent += text;
+    // Auto-scroll
+    popup.querySelector('.cs-popup-body').scrollTop = popup.querySelector('.cs-popup-body').scrollHeight;
+  }
+
+  function finalizeStream(text, cite) {
+    stopCursorBlink();
+    const cursor = popup.querySelector('.cs-cursor');
+    if (cursor) cursor.remove();
+    const body = popup.querySelector('.cs-popup-body');
+    body.textContent = text;
+    body.style.whiteSpace = 'pre-wrap';
+    const footer = popup.querySelector('#cs-popup-footer');
+    footer.style.display = 'flex';
+    if (cite) {
+      popup.querySelector('#cs-popup-cite').textContent = cite;
+      popup.querySelector('#cs-popup-cite').style.display = '';
+    } else {
+      popup.querySelector('#cs-popup-cite').style.display = 'none';
+    }
+  }
+
+  let cursorInterval = null;
+  function startCursorBlink() {
+    stopCursorBlink();
+    cursorInterval = setInterval(() => {
+      const cursor = popup?.querySelector('.cs-cursor');
+      if (cursor) cursor.style.opacity = cursor.style.opacity === '0' ? '1' : '0';
+    }, 500);
+  }
+  function stopCursorBlink() {
+    if (cursorInterval) { clearInterval(cursorInterval); cursorInterval = null; }
   }
 
   function setPopupResult(text, cite) {
@@ -254,23 +310,25 @@
     setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
-  // === API Call (via background script) ===
-  // Background script makes the actual fetch to Gateway (avoids CORS / ISO-8859-1 issues)
+  // === API Call (streaming via background script) ===
   function apiCall(prompt, port, token) {
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      pendingRequests.set(requestId, { resolve, reject });
-
-      // Timeout after 60s
+      let fullText = '';
       const timer = setTimeout(() => {
-        const req = pendingRequests.get(requestId);
-        if (req) {
-          pendingRequests.delete(requestId);
-          req.reject(new Error('Request timeout'));
-        }
-      }, 60000);
+        pendingRequests.delete(requestId);
+        reject(new Error('Request timeout'));
+      }, 90000);
 
-      // Store timer for cleanup
+      pendingRequests.set(requestId, {
+        resolve,
+        reject,
+        fullText,
+        onChunk: (chunk) => {
+          fullText += chunk;
+          pendingRequests.get(requestId).fullText = fullText;
+        }
+      });
       pendingTimeouts.set(requestId, timer);
 
       chrome.runtime.sendMessage({
@@ -280,8 +338,6 @@
         token: String(token || '').trim(),
         requestId
       });
-
-      // Response handled by message listener
     });
   }
 
@@ -295,20 +351,27 @@
     const port = String(settings.gatewayPort || '18789');
     const token = String(settings.authToken || '').trim();
 
-    showPopup(action, text, null);
+    // Set up streaming callback before showing popup
+    let fullText = '';
+    const onStreamChunk = (chunk) => {
+      fullText += chunk;
+      appendStreamChunk(chunk);
+    };
+
+    showPopup(action, text, null, onStreamChunk);
 
     try {
-      let result, cite = '';
+      let cite = '';
       if (action === 'translate') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const targetLang = 'Chinese';
         const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
-        result = await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token);
 
       } else if (action === 'summarize') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${url}`;
-        result = await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token);
 
       } else if (action === 'ask') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
@@ -318,10 +381,10 @@
         } else {
           prompt = `You are a helpful assistant. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
         }
-        result = await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token);
       }
 
-      setPopupResult(result, cite);
+      finalizeStream(fullText, cite);
     } catch (err) {
       setPopupError(err.message);
     }
@@ -374,24 +437,37 @@
   });
 
   // Listen for API results from background script
+  // === Message listener (handles streaming from background) ===
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'clawside-api-result') {
+    // Streaming chunk: append to result
+    if (msg.type === 'clawside-stream-chunk') {
       const req = pendingRequests.get(msg.requestId);
-      if (req) {
-        pendingRequests.delete(msg.requestId);
-        clearTimeout(pendingTimeouts.get(msg.requestId));
-        pendingTimeouts.delete(msg.requestId);
-        req.resolve(msg.result);
+      if (req && typeof req.onChunk === 'function') {
+        req.onChunk(msg.content);
       }
+      return true;
     }
-    if (msg.type === 'clawside-api-error') {
+    // Streaming done: resolve with accumulated text
+    if (msg.type === 'clawside-stream-done') {
       const req = pendingRequests.get(msg.requestId);
       if (req) {
         pendingRequests.delete(msg.requestId);
         clearTimeout(pendingTimeouts.get(msg.requestId));
         pendingTimeouts.delete(msg.requestId);
-        req.reject(new Error(msg.error));
+        if (req.resolve) req.resolve(req.fullText || '');
       }
+      return true;
+    }
+    // Streaming error: reject
+    if (msg.type === 'clawside-stream-error') {
+      const req = pendingRequests.get(msg.requestId);
+      if (req) {
+        pendingRequests.delete(msg.requestId);
+        clearTimeout(pendingTimeouts.get(msg.requestId));
+        pendingTimeouts.delete(msg.requestId);
+        if (req.reject) req.reject(new Error(msg.error));
+      }
+      return true;
     }
     if (msg.type === 'get_selection') {
       const text = window.getSelection()?.toString().trim() || '';

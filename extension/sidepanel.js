@@ -203,12 +203,38 @@
     await saveHistory(items);
   }
 
-  // === API via background script ===
-  function apiCall(prompt) {
+  // === API via background script (streaming) ===
+  function apiCall(prompt, { onChunk } = {}) {
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      const pendingKey = requestId;
+      let fullText = '';
+      let settled = false;
 
+      const cleanup = () => {
+        clearTimeout(timeout);
+        chrome.runtime.onMessage.removeListener(handler);
+      };
+
+      const timeout = setTimeout(() => {
+        if (!settled) { settled = true; cleanup(); reject(new Error('Request timeout')); }
+      }, 90000);
+
+      const handler = (msg) => {
+        if (msg.requestId !== requestId) return;
+
+        if (msg.type === 'clawside-stream-chunk' && onChunk) {
+          fullText += msg.content;
+          onChunk(msg.content, fullText);
+        }
+        if (msg.type === 'clawside-stream-done') {
+          if (!settled) { settled = true; cleanup(); resolve(fullText); }
+        }
+        if (msg.type === 'clawside-stream-error') {
+          if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
+        }
+      };
+
+      chrome.runtime.onMessage.addListener(handler);
       chrome.runtime.sendMessage({
         type: 'clawside-api',
         prompt,
@@ -216,29 +242,10 @@
         token: settings.authToken || '',
         requestId
       });
-
-      const timeout = setTimeout(() => {
-        chrome.runtime.onMessage.removeListener(handler);
-        reject(new Error('Request timeout'));
-      }, 60000);
-
-      const handler = (msg) => {
-        if (msg.type === 'clawside-api-result' && msg.requestId === requestId) {
-          clearTimeout(timeout);
-          chrome.runtime.onMessage.removeListener(handler);
-          resolve(msg.result);
-        }
-        if (msg.type === 'clawside-api-error' && msg.requestId === requestId) {
-          clearTimeout(timeout);
-          chrome.runtime.onMessage.removeListener(handler);
-          reject(new Error(msg.error));
-        }
-      };
-      chrome.runtime.onMessage.addListener(handler);
     });
   }
 
-  // === Actions ===
+  // === Actions (streaming) ===
   async function doTranslate() {
     const text = translateInput.value.trim();
     if (!text) {
@@ -246,15 +253,21 @@
       return;
     }
     translateResult.classList.add('hidden');
+    translateResultText.textContent = '';
     translateBtn.disabled = true;
     showLoading('Translating...');
     try {
-      await loadSettings(); // Reload to handle SW restart
+      await loadSettings();
       const targetLang = targetLangSelect.value;
       const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
-      const result = await apiCall(prompt);
-      translateResultText.textContent = result;
-      translateResult.classList.remove('hidden');
+      // Stream chunks into result
+      await apiCall(prompt, {
+        onChunk: (chunk) => {
+          translateResultText.textContent += chunk;
+          translateResult.classList.remove('hidden');
+        }
+      });
+      const result = translateResultText.textContent;
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
         original: text, result, lang: targetLang,
@@ -274,36 +287,33 @@
       return;
     }
     summarizeResult.classList.add('hidden');
+    summarizeResultText.textContent = '';
     summarizeBtn.disabled = true;
     showLoading('Extracting page content...');
 
     let pageContent = '';
     let extractionFailed = false;
-    let debugInfo = '';
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      debugInfo = `tab: ${tab?.url?.slice(0,30)}, id: ${tab?.id}`;
-      if (!tab?.id) {
-        extractionFailed = true;
-      } else {
+      if (tab?.id) {
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: extractPageContent
         });
         pageContent = results?.[0]?.result || '';
-        debugInfo += `, content length: ${pageContent.length}`;
         if (!pageContent || pageContent.trim().length < 100) {
           extractionFailed = true;
         }
+      } else {
+        extractionFailed = true;
       }
     } catch (err) {
-      debugInfo = `error: ${err.message}`;
       extractionFailed = true;
     }
 
     if (extractionFailed) {
       hideLoading();
-      showStatus(summarizeStatus, `Cannot extract page content. ${debugInfo}. Try selecting specific text and using the Ask feature instead.`);
+      showStatus(summarizeStatus, `Cannot extract page content. Try selecting specific text and using the Ask feature instead.`);
       summarizeBtn.disabled = false;
       return;
     }
@@ -317,9 +327,13 @@
       } else {
         prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
       }
-      const summary = await apiCall(prompt);
-      summarizeResultText.textContent = summary;
-      summarizeResult.classList.remove('hidden');
+      await apiCall(prompt, {
+        onChunk: (chunk) => {
+          summarizeResultText.textContent += chunk;
+          summarizeResult.classList.remove('hidden');
+        }
+      });
+      const summary = summarizeResultText.textContent;
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'summarize',
         url: currentUrl, title: currentPageTitle,
@@ -340,6 +354,7 @@
       return;
     }
     askResult.classList.add('hidden');
+    askResultText.textContent = '';
     askBtn.disabled = true;
     showLoading('Extracting page context...');
 
@@ -364,7 +379,6 @@
     }
 
     if (extractionFailed) {
-      // For Ask, we can still work with selectedText + URL even if page content extraction fails
       pageContent = '';
     }
 
@@ -372,7 +386,7 @@
     try {
       await loadSettings();
       let prompt;
-      if (pageContent && !extractionFailed) {
+      if (pageContent) {
         if (selectedText) {
           prompt = `You are a helpful assistant. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
         } else {
@@ -385,9 +399,13 @@
           prompt = `You are a helpful assistant. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
         }
       }
-      const answer = await apiCall(prompt);
-      askResultText.textContent = answer;
-      askResult.classList.remove('hidden');
+      await apiCall(prompt, {
+        onChunk: (chunk) => {
+          askResultText.textContent += chunk;
+          askResult.classList.remove('hidden');
+        }
+      });
+      const answer = askResultText.textContent;
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'ask',
         question, answer,
