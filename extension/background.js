@@ -107,8 +107,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    chrome.sidePanel.open({}).catch((err) => {
-      console.error('[ClawSide] sidePanel.open error:', err);
+    chrome.windows.getCurrent().then((win) => {
+      chrome.sidePanel.open({ windowId: win?.id }).catch((err) => {
+        console.error('[ClawSide] sidePanel.open error:', err);
+      });
+    }).catch(() => {
+      chrome.sidePanel.open({}).catch((err) => {
+        console.error('[ClawSide] sidePanel.open error:', err);
+      });
     });
   }
 
