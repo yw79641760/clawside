@@ -18,6 +18,9 @@
     "http://127.0.0.1:18789/*",
     "<all_urls>"
   ],
+  "web_accessible_resources": [
+    { "resources": ["icons/icon48.png", "i18n.json"], "matches": ["<all_urls>"] }
+  ],
   "background": {
     "service_worker": "background.js"
   },

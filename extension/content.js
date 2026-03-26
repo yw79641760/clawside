@@ -19,26 +19,35 @@
   let browserLang = navigator.language?.startsWith('zh') ? 'zh' : navigator.language?.startsWith('ja') ? 'ja' : 'en';
 
   // === Popup translations ===
-  const POPUP_T = {
-    en: { translate: 'Translation', summarize: 'Summary', ask: 'Answer',
-          translating: 'Translating...', summarizing: 'Summarizing...', thinking: 'Thinking...' },
-    zh: { translate: '翻译', summarize: '总结', ask: '回答',
-          translating: '翻译中...', summarizing: '总结中...', thinking: '思考中...' },
-    ja: { translate: '翻訳', summarize: '要約', ask: '回答',
-          translating: '翻訳中...', summarizing: '要約中...', thinking: '考えて...' },
-  };
+  let popupI18N = null;
 
-  function resolveLang(lang) {
+  async function loadPopupI18n() {
+    if (popupI18N) return popupI18N;
+    try {
+      const res = await fetch(chrome.runtime.getURL('i18n.json'));
+      popupI18N = await res.json();
+    } catch {
+      popupI18N = { en: {}, zh: {}, ja: {} };
+    }
+    return popupI18N;
+  }
+
+  function resolvePopupLang(lang) {
     if (lang === 'auto') return browserLang;
     return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
   }
 
-  function getPopupStrings(action) {
-    const lang = resolveLang(settings.language);
-    const t = POPUP_T[lang] || POPUP_T.en;
+  async function getPopupStrings(action) {
+    const i18n = await loadPopupI18n();
+    const lang = resolvePopupLang(settings.language);
+    const t = i18n[lang] || i18n.en || {};
     const icons = { translate: '🌐', summarize: '📄', ask: '💬' };
-    const loadingMap = { translate: t.translating, summarize: t.summarizing, ask: t.thinking };
-    return { icon: icons[action] || '🌐', title: t[action] || action, loading: loadingMap[action] || 'Processing...' };
+    const loadingKey = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' }[action] || 'loading';
+    return {
+      icon: icons[action] || '🌐',
+      title: t[action] || action,
+      loading: t[loadingKey] || 'Processing...'
+    };
   }
 
   // Load settings from storage
@@ -316,12 +325,12 @@
     el.style.left = left + 'px';
   }
 
-  function showPopup(action, text, rect, onStreamChunk) {
+  async function showPopup(action, text, rect, onStreamChunk) {
     currentAction = action;
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
 
-    const { icon, title, loading } = getPopupStrings(action);
+    const { icon, title, loading } = await getPopupStrings(action);
     popup.querySelector('.cs-popup-icon').textContent = icon;
     popup.querySelector('.cs-popup-title').textContent = title;
     popup.querySelector('#cs-popup-loading-text').textContent = loading;
@@ -479,7 +488,7 @@
       appendStreamChunk(chunk);
     };
 
-    showPopup(action, text, null, onStreamChunk);
+    await showPopup(action, text, null, onStreamChunk);
 
     try {
       let cite = '';
