@@ -181,7 +181,7 @@
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
         width: 30px; height: 30px; border-radius: 50%;
-        background: var(--cs-dock-grad);
+        background-image: var(--cs-dock-grad);
         box-shadow: 0 4px 20px var(--cs-dock-shadow);
         cursor: pointer; display: flex; align-items: center; justify-content: center;
         font-size: 16px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
