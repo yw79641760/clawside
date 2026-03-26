@@ -16,6 +16,30 @@
   let pendingTimeouts = new Map();
   let settings = { gatewayPort: '18789', authToken: '', language: 'auto', appearance: 'system' };
   let csAppearance = 'dark';
+  let browserLang = navigator.language?.startsWith('zh') ? 'zh' : navigator.language?.startsWith('ja') ? 'ja' : 'en';
+
+  // === Popup translations ===
+  const POPUP_T = {
+    en: { translate: 'Translation', summarize: 'Summary', ask: 'Answer',
+          translating: 'Translating...', summarizing: 'Summarizing...', thinking: 'Thinking...' },
+    zh: { translate: '翻译', summarize: '总结', ask: '回答',
+          translating: '翻译中...', summarizing: '总结中...', thinking: '思考中...' },
+    ja: { translate: '翻訳', summarize: '要約', ask: '回答',
+          translating: '翻訳中...', summarizing: '要約中...', thinking: '考えて...' },
+  };
+
+  function resolveLang(lang) {
+    if (lang === 'auto') return browserLang;
+    return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
+  }
+
+  function getPopupStrings(action) {
+    const lang = resolveLang(settings.language);
+    const t = POPUP_T[lang] || POPUP_T.en;
+    const icons = { translate: '🌐', summarize: '📄', ask: '💬' };
+    const loadingMap = { translate: t.translating, summarize: t.summarizing, ask: t.thinking };
+    return { icon: icons[action] || '🌐', title: t[action] || action, loading: loadingMap[action] || 'Processing...' };
+  }
 
   // Load settings from storage
   chrome.storage.local.get(['clawside_settings']).then((result) => {
@@ -297,13 +321,10 @@
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
 
-    const icons = { translate: '🌐', summarize: '📄', ask: '💬' };
-    const titles = { translate: 'Translation', summarize: 'Summary', ask: 'Answer' };
-    const loadingTexts = { translate: 'Translating...', summarize: 'Summarizing...', ask: 'Thinking...' };
-
-    popup.querySelector('.cs-popup-icon').textContent = icons[action] || '🌐';
-    popup.querySelector('.cs-popup-title').textContent = titles[action] || action;
-    popup.querySelector('#cs-popup-loading-text').textContent = loadingTexts[action] || 'Processing...';
+    const { icon, title, loading } = getPopupStrings(action);
+    popup.querySelector('.cs-popup-icon').textContent = icon;
+    popup.querySelector('.cs-popup-title').textContent = title;
+    popup.querySelector('#cs-popup-loading-text').textContent = loading;
 
     if (onStreamChunk) {
       // Streaming mode: show streaming text area

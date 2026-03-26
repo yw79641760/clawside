@@ -14,6 +14,119 @@
   let browserLang = 'English';
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
 
+  // === Translations ===
+  const T = {
+    en: {
+      tabTranslate: '🌐 Translate', tabSummarize: '📄 Summarize', tabAsk: '💬 Ask', tabHistory: '📜 History',
+      resultTranslate: 'Translation', resultSummarize: 'Summary', resultAnswer: 'Answer',
+      copy: '📋 Copy', copied: '✓ Copied',
+      send: 'Send →', askPlaceholder: 'Ask anything about the page or selected text...',
+      translateInputPlaceholder: 'Enter text to translate...',
+      settingsTitle: 'Settings',
+      targetLang: 'Default Target Language',
+      appearance: 'Appearance', systemOpt: '🖥️ System', lightOpt: '☀️ Light', darkOpt: '🌙 Dark',
+      gatewayPort: 'OpenClaw Gateway Port',
+      authToken: 'Gateway Auth Token',
+      testConn: 'Test Connection',
+      saveSettings: 'Save Settings',
+      loading: 'Processing...',
+      emptyHistory: 'No history yet. Select text on any page to get started!',
+      emptyTranslate: 'Select text on any page and click translate.',
+      emptySummarize: 'Click summarize to get a page summary.',
+      emptyAsk: 'Select text or enter a question below.',
+      historyClear: 'Clear All',
+      gatewayNote: 'The extension calls OpenClaw Gateway\'s <code>/v1/chat/completions</code> endpoint.',
+    },
+    zh: {
+      tabTranslate: '🌐 翻译', tabSummarize: '📄 总结', tabAsk: '💬 提问', tabHistory: '📜 历史',
+      resultTranslate: '翻译', resultSummarize: '总结', resultAnswer: '回答',
+      copy: '📋 复制', copied: '✓ 已复制',
+      send: '发送 →', askPlaceholder: '关于页面内容或选中文本提问...',
+      translateInputPlaceholder: '输入要翻译的文本...',
+      settingsTitle: '设置',
+      targetLang: '默认目标语言',
+      appearance: '外观', systemOpt: '🖥️ 跟随系统', lightOpt: '☀️ 浅色', darkOpt: '🌙 深色',
+      gatewayPort: 'OpenClaw Gateway 端口',
+      authToken: 'Gateway 认证令牌',
+      testConn: '测试连接',
+      saveSettings: '保存设置',
+      loading: '处理中...',
+      emptyHistory: '暂无历史记录。在任意页面选中文本开始使用！',
+      emptyTranslate: '在页面上选中文本并点击翻译。',
+      emptySummarize: '点击总结获取页面摘要。',
+      emptyAsk: '选中文本或在下方输入问题。',
+      historyClear: '清空全部',
+      gatewayNote: '扩展调用 OpenClaw Gateway 的 <code>/v1/chat/completions</code> 接口。',
+    },
+    ja: {
+      tabTranslate: '🌐 翻訳', tabSummarize: '📄 要約', tabAsk: '💬 質問', tabHistory: '📜 履歴',
+      resultTranslate: '翻訳', resultSummarize: '要約', resultAnswer: '回答',
+      copy: '📋 コピー', copied: '✓ コピー済み',
+      send: '送信 →', askPlaceholder: 'ページや選択テキストについて質問...',
+      translateInputPlaceholder: '翻訳するテキストを入力...',
+      settingsTitle: '設定',
+      targetLang: 'デフォルト翻訳言語',
+      appearance: '外観', systemOpt: '🖥️ システム', lightOpt: '☀️ ライト', darkOpt: '🌙 ダーク',
+      gatewayPort: 'OpenClaw Gateway ポート',
+      authToken: 'Gateway 認証トークン',
+      testConn: '接続テスト',
+      saveSettings: '設定を保存',
+      loading: '処理中...',
+      emptyHistory: '履歴がありません。任意のページでテキストを選択してください！',
+      emptyTranslate: 'ページでテキストを選択して翻訳をクリック。',
+      emptySummarize: '要約をクリックしてページ要約を取得。',
+      emptyAsk: 'テキストを選択するか、下で質問を入力。',
+      historyClear: 'すべてクリア',
+      gatewayNote: '拡張機能は OpenClaw Gateway の <code>/v1/chat/completions</code> エンドポイントを呼び出します。',
+    },
+    auto: null // resolved at runtime
+  };
+
+  function resolveLang(lang, browserLang) {
+    if (lang === 'auto') return browserLang === 'zh' ? 'zh' : browserLang === 'ja' ? 'ja' : 'en';
+    return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
+  }
+
+  function applyPanelLanguage() {
+    const lang = resolveLang(settings.language, browserLang);
+    const t = T[lang] || T.en;
+    // Tabs
+    tabTranslate.textContent = t.tabTranslate;
+    tabSummarize.textContent = t.tabSummarize;
+    tabAsk.textContent = t.tabAsk;
+    tabHistory.textContent = t.tabHistory;
+    // Result titles
+    $('titleTranslate').textContent = t.resultTranslate;
+    $('titleSummarize').textContent = t.resultSummarize;
+    $('titleAnswer').textContent = t.resultAnswer;
+    // Copy buttons
+    $('copyTranslateResult').textContent = t.copy;
+    $('copySummarizeResult').textContent = t.copy;
+    $('copyAskResult').textContent = t.copy;
+    // Inputs
+    $('askQuestion').placeholder = t.askPlaceholder;
+    $('translateInput').placeholder = t.translateInputPlaceholder;
+    // Settings
+    $('settingsTitle').textContent = t.settingsTitle;
+    $('labelTargetLang').textContent = t.targetLang;
+    $('labelAppearance').textContent = t.appearance;
+    $('optionSystem').textContent = t.systemOpt;
+    $('optionLight').textContent = t.lightOpt;
+    $('optionDark').textContent = t.darkOpt;
+    $('labelPort').textContent = t.gatewayPort;
+    $('labelToken').textContent = t.authToken;
+    $('testConnBtn').textContent = t.testConn;
+    $('saveSettingsBtn').textContent = t.saveSettings;
+    $('gatewayNote').innerHTML = t.gatewayNote;
+    // History
+    $('historyClearBtn').textContent = t.historyClear;
+    // Loading
+    $('loadingText').textContent = t.loading;
+    // History empty state
+    const historyEmptyText = $('historyEmpty').querySelector('.empty-text');
+    if (historyEmptyText) historyEmptyText.textContent = t.emptyHistory;
+  }
+
   // === DOM ===
   const $ = (id) => document.getElementById(id);
 
@@ -124,6 +237,7 @@
     updateTokenStatus();
     applyLanguage();
     applyAppearance();
+    applyPanelLanguage();
   }
 
   function applyLanguage() {
@@ -202,6 +316,7 @@
     updateTokenStatus();
     applyAppearance();
     applyLanguage();
+    applyPanelLanguage();
     showStatus(settingsStatus, 'Settings saved!', 'success');
   }
 

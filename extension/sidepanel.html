@@ -57,7 +57,7 @@
         <div class="result-card hidden" id="translateResult">
           <div class="result-header">
             <span class="result-icon">🌐</span>
-            <span class="result-title">Translation</span>
+            <span class="result-title" id="titleTranslate">Translation</span>
             <button class="btn-copy" id="copyTranslateResult">📋 Copy</button>
           </div>
           <div class="result-body" id="translateResultText"></div>
@@ -81,7 +81,7 @@
         <div class="result-card hidden" id="summarizeResult">
           <div class="result-header">
             <span class="result-icon">📄</span>
-            <span class="result-title">Summary</span>
+            <span class="result-title" id="titleSummarize">Summary</span>
             <button class="btn-copy" id="copySummarizeResult">📋 Copy</button>
           </div>
           <div class="result-body" id="summarizeResultText"></div>
@@ -109,7 +109,7 @@
         <div class="result-card hidden" id="askResult">
           <div class="result-header">
             <span class="result-icon">💬</span>
-            <span class="result-title">Answer</span>
+            <span class="result-title" id="titleAnswer">Answer</span>
             <button class="btn-copy" id="copyAskResult">📋 Copy</button>
           </div>
           <div class="result-body" id="askResultText"></div>
@@ -122,7 +122,7 @@
       <section class="panel hidden" id="panelHistory">
         <div class="history-header">
           <span class="history-count" id="historyCount">0 items</span>
-          <button class="btn-danger hidden" id="clearHistoryBtn">Clear All</button>
+          <button class="btn-danger hidden" id="historyClearBtn">Clear All</button>
         </div>
 
         <div class="history-list" id="historyList"></div>
@@ -136,12 +136,12 @@
 
       <!-- Settings Panel -->
       <section class="panel hidden" id="panelSettings">
-        <h3>Settings</h3>
+        <h3 id="settingsTitle">Settings</h3>
 
         <div class="setting-item">
-          <label>Default Target Language</label>
+          <label id="labelTargetLang">Default Target Language</label>
           <select id="settingLanguage">
-            <option value="auto">🌐 Browser Language</option>
+            <option value="auto" id="optionAuto">🌐 Browser Language</option>
             <option value="Chinese">中文 (Chinese)</option>
             <option value="English">English</option>
             <option value="Japanese">日本語 (Japanese)</option>
@@ -155,21 +155,21 @@
         </div>
 
         <div class="setting-item">
-          <label>Appearance</label>
+          <label id="labelAppearance">Appearance</label>
           <select id="settingAppearance">
-            <option value="system">🖥️ System</option>
-            <option value="light">☀️ Light</option>
-            <option value="dark">🌙 Dark</option>
+            <option value="system" id="optionSystem">🖥️ System</option>
+            <option value="light" id="optionLight">☀️ Light</option>
+            <option value="dark" id="optionDark">🌙 Dark</option>
           </select>
         </div>
 
         <div class="setting-item">
-          <label>OpenClaw Gateway Port</label>
+          <label id="labelPort">OpenClaw Gateway Port</label>
           <input type="number" id="settingBridgePort" value="18789" placeholder="18789">
         </div>
 
         <div class="setting-item">
-          <label>Gateway Auth Token</label>
+          <label id="labelToken">Gateway Auth Token</label>
           <div class="token-row">
             <input type="password" id="settingAuthToken" placeholder="Enter token if gateway requires auth">
             <button class="btn-icon" id="toggleTokenBtn" title="Show token">👁</button>
@@ -184,7 +184,7 @@
         <button class="btn-primary" id="testConnBtn">Test Connection</button>
         <div class="status-msg hidden" id="testConnStatus"></div>
 
-        <div class="setting-note" style="margin-top:12px">
+        <div class="setting-note" id="gatewayNote" style="margin-top:12px">
           The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint.
           Requires <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in your OpenClaw config.
         </div>
