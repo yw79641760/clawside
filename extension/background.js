@@ -106,9 +106,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    // Call synchronously - the user gesture was the click that sent this message
-    chrome.sidePanel.open({}).catch((err) => {
-      console.error('[ClawSide] sidePanel.open error:', err);
+    chrome.windows.getCurrent((win) => {
+      chrome.sidePanel.open({ windowId: win?.id }).catch((err) => {
+        console.error('[ClawSide] sidePanel.open error:', err);
+      });
     });
   }
 
