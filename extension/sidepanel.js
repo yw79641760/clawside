@@ -642,7 +642,7 @@
       historyList.innerHTML = '';
       clearHistoryBtn.classList.toggle('hidden', items.length === 0);
 
-      items.forEach((item) => {
+      items.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'history-item';
         const icon = item.type === 'translate' ? '🌐' : item.type === 'summarize' ? '📄' : '💬';
@@ -661,6 +661,10 @@
           <div class="history-item-header">
             <span class="history-item-icon">${icon}</span>
             <span class="history-item-type">${typeLabel}</span>
+            <span class="history-item-actions">
+              <button class="history-copy-btn" data-index="${idx}" title="Copy">📋</button>
+              <button class="history-delete-btn" data-index="${idx}" title="Delete">🗑</button>
+            </span>
             <span class="history-item-time">${formatTime(item.timestamp)}</span>
           </div>
           <div class="history-item-preview">${preview}</div>
@@ -676,7 +680,10 @@
             `}
             ${item.url ? `<a class="history-item-source" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${truncate(item.url, 50)}</a>` : ''}
           </div>`;
-        el.addEventListener('click', () => el.classList.toggle('expanded'));
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.history-copy-btn') || e.target.closest('.history-delete-btn')) return;
+          el.classList.toggle('expanded');
+        });
         historyList.appendChild(el);
       });
     });
@@ -686,6 +693,32 @@
     await chrome.storage.local.set({ clawside_memory: [] });
     renderHistory();
   }
+
+  // Event delegation for history copy/delete buttons
+  historyList.addEventListener('click', async (e) => {
+    const copyBtn = e.target.closest('.history-copy-btn');
+    const deleteBtn = e.target.closest('.history-delete-btn');
+    if (!copyBtn && !deleteBtn) return;
+
+    const idx = parseInt(copyBtn?.dataset.index || deleteBtn?.dataset.index, 10);
+    const items = await loadHistory();
+    if (isNaN(idx) || idx < 0 || idx >= items.length) return;
+
+    if (deleteBtn) {
+      items.splice(idx, 1);
+      await chrome.storage.local.set({ clawside_memory: items });
+      renderHistory();
+    } else if (copyBtn) {
+      const item = items[idx];
+      const text = item.type === 'translate' ? item.result
+        : item.type === 'summarize' ? item.summary
+        : item.answer || item.question;
+      await navigator.clipboard.writeText(text || '');
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = '✓';
+      setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
+    }
+  });
 
   // === Messages from content script ===
   chrome.runtime.onMessage.addListener((msg) => {

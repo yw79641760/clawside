@@ -423,10 +423,31 @@ body {
 }
 
 .history-item-time {
-  flex: 1;
-  text-align: right;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.history-copy-btn,
+.history-delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: opacity 100ms, background 100ms;
+}
+.history-copy-btn:hover,
+.history-delete-btn:hover {
+  opacity: 1;
+  background: var(--surface-hover);
 }
 
 .history-item-preview {
