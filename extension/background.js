@@ -68,7 +68,32 @@ async function apiStream(prompt, port, token, requestId) {
   chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
 }
 
-// === Non-streaming API Call ===
+// === Non-streaming API Call (for tests) ===
+async function apiNonStream(prompt, port, token, requestId) {
+  port = String(port || '18789');
+  token = String(token || '').trim();
+
+  const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({
+      model: 'openclaw/main',
+      messages: [{ role: 'user', content: prompt }],
+      stream: false
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const result = data.choices?.[0]?.message?.content?.trim() || '';
+  chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
+}
 async function apiCall(prompt, port, token) {
   port = String(port || '18789');
   token = String(token || '').trim();
@@ -96,11 +121,18 @@ async function apiCall(prompt, port, token) {
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
-    const { prompt, port, token, requestId } = msg;
-    // Use streaming
-    apiStream(prompt, port, token, requestId).catch((err) => {
-      chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
-    });
+    const { prompt, port, token, requestId, stream = true } = msg;
+    if (stream) {
+      // Streaming mode
+      apiStream(prompt, port, token, requestId).catch((err) => {
+        chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
+      });
+    } else {
+      // Non-streaming mode (for connection test)
+      apiNonStream(prompt, port, token, requestId).catch((err) => {
+        chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
+      });
+    }
     sendResponse({ ok: true });
     return true;
   }

@@ -236,7 +236,7 @@
         chrome.runtime.sendMessage({
           type: 'clawside-api',
           prompt: 'Reply with "OK" only.',
-          port, token, requestId
+          port, token, requestId, stream: false
         });
       });
       gatewayStatusEl.textContent = '✓ Gateway reachable';
