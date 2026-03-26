@@ -17,6 +17,54 @@
   --transition: 150ms ease-out;
 }
 
+/* Light mode */
+:root[data-appearance="light"] {
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-hover: #eaeef2;
+  --border: #d0d7de;
+  --primary: #0969da;
+  --accent: #cf222e;
+  --text: #1f2328;
+  --text-muted: #656d76;
+  --success: #1a7f37;
+  --error: #cf222e;
+  --warning: #9a6700;
+}
+
+/* System preference */
+@media (prefers-color-scheme: light) {
+  :root[data-appearance="system"] {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface-hover: #eaeef2;
+    --border: #d0d7de;
+    --primary: #0969da;
+    --accent: #cf222e;
+    --text: #1f2328;
+    --text-muted: #656d76;
+    --success: #1a7f37;
+    --error: #cf222e;
+    --warning: #9a6700;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-appearance="system"] {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-hover: #1c2128;
+    --border: #30363d;
+    --primary: #58a6ff;
+    --accent: #f78166;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --success: #3fb950;
+    --error: #f85149;
+    --warning: #d29922;
+  }
+}
+
 /* === Reset === */
 * {
   margin: 0;

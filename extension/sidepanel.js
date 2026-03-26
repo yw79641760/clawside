@@ -12,7 +12,7 @@
   let currentPageTitle = '';
   let history = [];
   let browserLang = 'English';
-  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto' };
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
 
   // === DOM ===
   const $ = (id) => document.getElementById(id);
@@ -116,17 +116,24 @@
   // === Settings ===
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto' };
+    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
     settingLanguage.value = settings.language || 'auto';
+    settingAppearance.value = settings.appearance || 'system';
     updateTokenStatus();
     applyLanguage();
+    applyAppearance();
   }
 
   function applyLanguage() {
     const lang = settings.language === 'auto' ? browserLang : settings.language;
     targetLangSelect.value = lang;
+  }
+
+  function applyAppearance() {
+    const appearance = settings.appearance || 'system';
+    document.documentElement.dataset.appearance = appearance;
   }
 
   function updateTokenStatus() {
@@ -190,8 +197,10 @@
     settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
     settings.authToken = settingAuthToken.value.trim();
     settings.language = settingLanguage.value || 'auto';
+    settings.appearance = settingAppearance.value || 'system';
     await chrome.storage.local.set({ clawside_settings: settings });
     updateTokenStatus();
+    applyAppearance();
     applyLanguage();
     showStatus(settingsStatus, 'Settings saved!', 'success');
   }
