@@ -635,7 +635,8 @@ body {
   margin-top: 4px;
 }
 
-select#settingLanguage {
+select#settingLanguage,
+select#settingAppearance {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -646,7 +647,8 @@ select#settingLanguage {
   cursor: pointer;
 }
 
-select#settingLanguage:focus {
+select#settingLanguage:focus,
+select#settingAppearance:focus {
   outline: none;
   border-color: var(--primary);
 }
