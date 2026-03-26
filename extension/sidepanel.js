@@ -188,8 +188,13 @@
   }
 
   function applyLanguage() {
+    // For auto mode, use browserLang; otherwise use the saved setting
     const lang = settings.language === 'auto' ? browserLang : settings.language;
     targetLangSelect.value = lang;
+    // Keep Settings dropdown in sync with the resolved display
+    if (settings.language !== 'auto') {
+      settingLanguage.value = settings.language;
+    }
   }
 
   function applyAppearance() {
@@ -790,8 +795,18 @@
 
   settingBridgePort.addEventListener('input', autoSave);
   settingAuthToken.addEventListener('input', autoSave);
-  settingLanguage.addEventListener('change', () => { applyLanguage(); autoSave(); applyPanelLanguage(); });
-  settingAppearance.addEventListener('change', () => { applyAppearance(); autoSave(); applyPanelLanguage(); });
+  settingLanguage.addEventListener('change', () => {
+    settings.language = settingLanguage.value;
+    applyLanguage();
+    applyPanelLanguage();
+    autoSave();
+  });
+  settingAppearance.addEventListener('change', () => {
+    settings.appearance = settingAppearance.value;
+    applyAppearance();
+    applyPanelLanguage();
+    autoSave();
+  });
 
   toggleTokenBtn.addEventListener('click', () => {
     const isPassword = settingAuthToken.type === 'password';
