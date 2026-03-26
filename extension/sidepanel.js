@@ -165,7 +165,7 @@
   const historyList = $('historyList');
   const historyCount = $('historyCount');
   const historyEmpty = $('historyEmpty');
-  const clearHistoryBtn = $('clearHistoryBtn');
+  const clearHistoryBtn = $('historyClearBtn');
 
   // Settings
   const settingBridgePort = $('settingBridgePort');
@@ -211,7 +211,6 @@
     panelAsk.classList.toggle('hidden', tab !== 'ask');
     panelHistory.classList.toggle('hidden', tab !== 'history');
     panelSettings.classList.toggle('hidden', tab !== 'settings');
-    console.log('[ClawSide] showTab:', tab, 'panelSettings hidden:', panelSettings.classList.contains('hidden'));
 
     if (tab === 'history') renderHistory();
     if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
@@ -762,10 +761,7 @@
   tabSummarize.addEventListener('click', () => showTab('summarize'));
   tabAsk.addEventListener('click', () => showTab('ask'));
   tabHistory.addEventListener('click', () => showTab('history'));
-  settingsBtn.addEventListener('click', () => {
-    console.log('[ClawSide] settingsBtn clicked');
-    showTab('settings');
-  });
+  settingsBtn.addEventListener('click', () => showTab('settings'));
 
   translateBtn.addEventListener('click', doTranslate);
   summarizeBtn.addEventListener('click', doSummarize);
@@ -805,7 +801,6 @@
     applyLanguage();
   });
   toggleTokenBtn.addEventListener('click', () => {
-    console.log('[ClawSide] toggleToken clicked, type:', settingAuthToken.type);
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
     toggleTokenBtn.textContent = isPassword ? '🔒' : '👁';
