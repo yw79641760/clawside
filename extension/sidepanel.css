@@ -156,7 +156,11 @@ body {
 
 .action-btn {
   flex: 1;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -179,6 +183,7 @@ body {
   border-color: rgba(88, 166, 255, 0.3);
 }
 
+
 /* === Content === */
 .content {
   flex: 1;
@@ -196,6 +201,13 @@ body {
 
 .panel.hidden {
   display: none;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
 }
 
 /* === Cards === */
@@ -234,10 +246,45 @@ body {
   padding: 12px;
 }
 
+.page-info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.page-favicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .page-url {
   font-size: 12px;
   color: var(--text-muted);
   word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.page-content-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  max-height: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .lang-row {
@@ -475,12 +522,14 @@ body {
   padding: 2px 4px;
   border-radius: 3px;
   opacity: 0.6;
-  transition: opacity 100ms, background 100ms;
+  transition: opacity 100ms, background 100ms, color 100ms;
+  color: inherit;
 }
 .history-copy-btn:hover,
 .history-delete-btn:hover {
   opacity: 1;
   background: var(--surface-hover);
+  color: var(--primary);
 }
 
 .history-item-preview {

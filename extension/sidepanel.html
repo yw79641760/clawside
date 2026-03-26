@@ -7,24 +7,23 @@
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
-<div id="test-element" style="background:red;color:white;padding:10px;z-index:999999;position:fixed;top:0;left:0">TEST ELEMENT - if you see this, HTML is loading</div>
 <div class="app">
     <!-- Action Bar -->
     <nav class="action-bar">
       <button class="action-btn active" id="tabTranslate" data-tab="translate">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg> Translate
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="min-width:18px;min-height:18px"><path d="M4 7h5M4 12h5M4 17h5"></path><path d="M13 12h6"></path><path d="M16 8l3 4-3 4"></path></svg>
       </button>
       <button class="action-btn" id="tabSummarize" data-tab="summarize">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> Summarize
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
       </button>
       <button class="action-btn" id="tabAsk" data-tab="ask">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Ask
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       </button>
       <button class="action-btn" id="settingsBtn" data-tab="settings" style="margin-left:auto;padding:0 8px">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </button>
       <button class="action-btn" id="tabHistory" data-tab="history">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> History
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       </button>
     </nav>
 
@@ -33,13 +32,14 @@
 
       <!-- Translate Panel -->
       <section class="panel" id="panelTranslate">
+        <h3 id="titleTranslateHeader" class="panel-title">翻译</h3>
         <div class="input-area">
-          <div class="selection-label">Text to translate</div>
+          <div class="selection-label" id="labelTranslateInput">Text to translate</div>
           <textarea id="translateInput" placeholder="Select text on any page, or type here directly..." rows="4"></textarea>
         </div>
 
         <div class="lang-row">
-          <label for="targetLang">Target language</label>
+          <label for="targetLang" id="labelTargetLangTranslate">Target language</label>
           <select id="targetLang">
             <option value="Chinese">中文</option>
             <option value="English">English</option>
@@ -51,15 +51,16 @@
         </div>
 
         <button class="btn-primary" id="translateBtn">
-          Translate
+          <span id="labelTranslateBtn">Translate</span>
         </button>
 
         <!-- Result -->
         <div class="result-card hidden" id="translateResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg></span>
+            <span class="result-icon">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5M4 12h5M4 17h5"></path><path d="M13 12h6"></path><path d="M16 8l3 4-3 4"></path></svg></span>
             <span class="result-title" id="titleTranslate">Translation</span>
-            <button class="btn-copy" id="copyTranslateResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copyTranslateResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
           </div>
           <div class="result-body" id="translateResultText"></div>
         </div>
@@ -69,21 +70,26 @@
 
       <!-- Summarize Panel -->
       <section class="panel hidden" id="panelSummarize">
+        <h3 id="titleSummarizeHeader" class="panel-title">总结</h3>
         <div class="page-info" id="pageInfo">
-          <div class="page-url-label">Current page</div>
+          <div class="page-info-header">
+            <img class="page-favicon" id="summarizeFavicon" src="" alt="">
+            <span class="page-title" id="summarizeTitle">—</span>
+          </div>
           <div class="page-url" id="pageUrl">—</div>
+          <div class="page-content-preview" id="summarizeContentPreview"></div>
         </div>
 
         <button class="btn-primary" id="summarizeBtn">
-          Summarize This Page
+          <span id="labelSummarizeBtn">Summarize This Page</span>
         </button>
 
         <!-- Result -->
         <div class="result-card hidden" id="summarizeResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></span>
+            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></span>
             <span class="result-title" id="titleSummarize">Summary</span>
-            <button class="btn-copy" id="copySummarizeResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copySummarizeResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
           </div>
           <div class="result-body" id="summarizeResultText"></div>
         </div>
@@ -93,9 +99,14 @@
 
       <!-- Ask Panel -->
       <section class="panel hidden" id="panelAsk">
-        <div class="selection-card">
-          <div class="selection-label">Context</div>
-          <div class="selection-text empty" id="askContextText">No page context — enter a question below</div>
+        <h3 id="titleAskHeader" class="panel-title">提问</h3>
+        <div class="page-info" id="askContextInfo">
+          <div class="page-info-header">
+            <img class="page-favicon" id="askFavicon" src="" alt="">
+            <span class="page-title" id="askTitle">—</span>
+          </div>
+          <div class="page-url" id="askContextUrl">—</div>
+          <div class="page-content-preview" id="askContentPreview"></div>
         </div>
 
         <div class="input-area">
@@ -103,15 +114,15 @@
         </div>
 
         <button class="btn-primary" id="askBtn">
-          Ask
+          <span id="labelAskBtn">Ask</span>
         </button>
 
         <!-- Result -->
         <div class="result-card hidden" id="askResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
             <span class="result-title" id="titleAnswer">Answer</span>
-            <button class="btn-copy" id="copyAskResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copyAskResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
           </div>
           <div class="result-body" id="askResultText"></div>
         </div>
@@ -121,6 +132,7 @@
 
       <!-- History Panel -->
       <section class="panel hidden" id="panelHistory">
+        <h3 id="titleHistoryHeader" class="panel-title">历史</h3>
         <div class="history-header">
           <span class="history-count" id="historyCount">0 items</span>
           <button class="btn-danger hidden" id="historyClearBtn">Clear All</button>
@@ -142,20 +154,19 @@
         <div class="setting-item">
           <label id="labelTargetLang">语言</label>
           <select id="settingLanguage">
-            <option value="auto" id="optionAuto"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg> Browser Language</option>
+            <option value="auto" id="optionAuto">Browser Language</option>
             <option value="Chinese">中文 (Chinese)</option>
             <option value="English">English</option>
-            <option value="Japanese">日本語 (Japanese)</option>
-          </select>
+                      </select>
           <div class="setting-hint" id="browserLangHint">Detecting browser language...</div>
         </div>
 
         <div class="setting-item">
           <label id="labelAppearance">Appearance</label>
           <select id="settingAppearance">
-            <option value="system" id="optionSystem"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> System</option>
-            <option value="light" id="optionLight"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light</option>
-            <option value="dark" id="optionDark"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark</option>
+            <option value="system" id="optionSystem"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> System</option>
+            <option value="light" id="optionLight"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light</option>
+            <option value="dark" id="optionDark"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark</option>
           </select>
         </div>
 
@@ -168,7 +179,7 @@
           <label id="labelToken">Gateway Auth Token</label>
           <div class="token-row">
             <input type="password" id="settingAuthToken" placeholder="Enter token if gateway requires auth">
-            <button class="btn-icon" id="toggleTokenBtn" title="Show token"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#e00" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+            <button class="btn-icon" id="toggleTokenBtn" title="Show token"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
             <span class="token-status" id="tokenStatus">—</span>
           </div>
         </div>

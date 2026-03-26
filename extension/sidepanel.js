@@ -10,6 +10,7 @@
   let selectedText = '';
   let currentUrl = '';
   let currentPageTitle = '';
+  let currentPageContent = '';
   let history = [];
   let browserLang = 'English';
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
@@ -37,11 +38,6 @@
     const i18n = await loadI18n();
     const lang = resolveLang(settings.language, browserLang);
     const t = i18n[lang] || i18n.en || {};
-    // Tabs
-    tabTranslate.textContent = t.tabTranslate;
-    tabSummarize.textContent = t.tabSummarize;
-    tabAsk.textContent = t.tabAsk;
-    tabHistory.textContent = t.tabHistory;
     // Result titles
     $('titleTranslate').textContent = t.resultTranslate;
     $('titleSummarize').textContent = t.resultSummarize;
@@ -56,7 +52,9 @@
     // Settings
     $('settingsTitle').textContent = t.settingsTitle;
     $('labelTargetLang').textContent = t.targetLang;
+    $('labelTargetLangTranslate').textContent = t.labelTargetLangTranslate || t.targetLang;
     $('labelAppearance').textContent = t.appearance;
+    $('optionAuto').textContent = t.optionAuto;
     $('optionSystem').textContent = t.systemOpt;
     $('optionLight').textContent = t.lightOpt;
     $('optionDark').textContent = t.darkOpt;
@@ -65,8 +63,25 @@
     $('testConnBtn').textContent = t.testConn;
 
     $('gatewayNote').innerHTML = t.gatewayNote;
+    // Panel headers
+    $('titleTranslateHeader').textContent = t.titleTranslateHeader;
+    $('titleSummarizeHeader').textContent = t.titleSummarizeHeader;
+    $('titleAskHeader').textContent = t.titleAskHeader;
+    $('titleHistoryHeader').textContent = t.titleHistoryHeader;
+    // Panel labels and buttons
+
+    
+    
+    
+    
+    
     // History
+    $('labelTranslateInput').textContent = t.labelTranslateInput;
     $('historyClearBtn').textContent = t.historyClear;
+    // Panel buttons
+    $('labelTranslateBtn').textContent = t.labelTranslateBtn;
+    $('labelSummarizeBtn').textContent = t.labelSummarizeBtn;
+    $('labelAskBtn').textContent = t.labelAskBtn;
     // Loading
     $('loadingText').textContent = t.loading;
     // History empty state
@@ -102,6 +117,13 @@
 
   // Summarize
   const pageUrlEl = $('pageUrl');
+  const summarizeFavicon = $('summarizeFavicon');
+  const summarizeTitle = $('summarizeTitle');
+  const summarizeContentPreview = $('summarizeContentPreview');
+  const askFavicon = $('askFavicon');
+  const askTitle = $('askTitle');
+  const askContextUrl = $('askContextUrl');
+  const askContentPreview = $('askContentPreview');
   const summarizeBtn = $('summarizeBtn');
   const summarizeResult = $('summarizeResult');
   const summarizeResultText = $('summarizeResultText');
@@ -109,7 +131,7 @@
   const summarizeStatus = $('summarizeStatus');
 
   // Ask
-  const askContextText = $('askContextText');
+  const askContextUrlEl = $('askContextUrl');
   const askQuestion = $('askQuestion');
   const askBtn = $('askBtn');
   const askResult = $('askResult');
@@ -131,6 +153,7 @@
   const gatewayStatusEl = $('gatewayStatus');
   const testConnBtn = $('testConnBtn');
   const testConnStatus = $('testConnStatus');
+  const browserLangHint = $('browserLangHint');
   const saveSettingsBtn = null; // removed - auto-save instead
   const settingsStatus = null;
 
@@ -149,6 +172,7 @@
   }
 
   function showStatus(el, message, type = 'error') {
+    if (!el) return;
     el.textContent = message;
     el.className = `status-msg ${type}`;
     el.classList.remove('hidden');
@@ -167,10 +191,50 @@
     panelAsk.classList.toggle('hidden', tab !== 'ask');
     panelHistory.classList.toggle('hidden', tab !== 'history');
     panelSettings.classList.toggle('hidden', tab !== 'settings');
+    settingsBtn.classList.toggle('active', tab === 'settings');
 
     if (tab === 'history') renderHistory();
-    if (tab === 'settings') { updateTokenStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
+    if (tab === 'settings') {
+      updateTokenStatus();
+      if (browserLangHint) {
+        const resolvedLang = resolveLang(settings.language, browserLang);
+        const t2 = I18N ? (I18N[resolvedLang] || I18N.en || {}) : {};
+        browserLangHint.textContent = `${t2.browserLangHint || 'Browser language'} → ${browserLang}`;
+      }
+    }
     if (tab === 'ask') askQuestion.focus();
+    // Fetch current tab URL for summarize/ask context
+    if (tab === 'summarize' || tab === 'ask') {
+      chrome.tabs.query({ active: true, currentWindow: true }).then(async ([t]) => {
+        if (t) {
+          currentUrl = t.url || '';
+          currentPageTitle = t.title || '';
+          const favicon = t.favIconUrl || '';
+          // Extract page content
+          let content = '';
+          if (t.id) {
+            try {
+              const results = await chrome.scripting.executeScript({
+                target: { tabId: t.id },
+                func: extractPageContent
+              });
+              content = results?.[0]?.result || '';
+            } catch {}
+          }
+          currentPageContent = content;
+          // Update summarize panel
+          if (summarizeFavicon) summarizeFavicon.src = favicon;
+          if (summarizeTitle) summarizeTitle.textContent = currentPageTitle || '—';
+          if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
+          if (summarizeContentPreview) summarizeContentPreview.textContent = content ? content.slice(0, 20) + '...' : '';
+          // Update ask panel
+          if (askFavicon) askFavicon.src = favicon;
+          if (askTitle) askTitle.textContent = currentPageTitle || '—';
+          if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
+          if (askContentPreview) askContentPreview.textContent = content ? content.slice(0, 20) + '...' : '';
+        }
+      }).catch(() => {});
+    }
   }
 
   // === Settings ===
@@ -209,7 +273,7 @@
       tokenStatusEl.textContent = 'No token';
       tokenStatusEl.className = 'token-status empty';
     } else {
-      tokenStatusEl.textContent = tokenStatusEl.textContent = 'Token set '; tokenStatusEl.insertAdjacentHTML('beforeend', '<svg class="result-icon-svg"><use href="#cs-icon-check"/></svg>');
+      tokenStatusEl.textContent = 'Token set '; tokenStatusEl.insertAdjacentHTML('beforeend', svgIcon('check'));
       tokenStatusEl.className = 'token-status ok';
     }
   }
@@ -246,7 +310,7 @@
           port, token, requestId, stream: false
         });
       });
-      gatewayStatusEl.textContent = gatewayStatusEl.innerHTML = '<svg class="result-icon-svg"><use href="#cs-icon-check"/></svg> Gateway reachable';
+      gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable';
       gatewayStatusEl.style.color = 'var(--success)';
     } catch (err) {
       const msg = err.message || '';
@@ -400,11 +464,13 @@
     showLoading('Summarizing...');
     try {
       await loadSettings();
+      const lang = resolveLang(settings.language, browserLang);
+      const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
       let prompt;
       if (pageContent) {
-        prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
+        prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ${langLabel}. Focus on the main points and key information. Only output the summary in ${langLabel}, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
       } else {
-        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences in ${lang}. Focus on the main points and key information. Only output the summary, nothing else.\n\nURL: ${currentUrl}`;
+        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences in ${langLabel}. Focus on the main points and key information. Only output the summary in ${langLabel}, nothing else.\n\nURL: ${currentUrl}`;
       }
       await apiCall(prompt, {
         onChunk: (chunk) => {
@@ -507,9 +573,9 @@
       ta.value = text; document.body.appendChild(ta);
       ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     }
-    btn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-check"/></svg> Copied';
+    btn.innerHTML = svgIcon('check') + ' Copied';
     btn.classList.add('copied');
-    setTimeout(() => { btn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-copy"/></svg> Copy'; btn.classList.remove('copied'); }, 1500);
+    setTimeout(() => { btn.innerHTML = svgIcon('copy') + ' Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
   // === Page Content Extraction (injected into page) ===
@@ -564,19 +630,8 @@
         currentUrl = tab.url || '';
         currentPageTitle = tab.title || '';
 
-        // Update URL display in summarize and ask panels
-        pageUrlEl.textContent = currentUrl || '—';
-
-        if (selectedText) {
-          askContextText.textContent = `"${truncate(selectedText, 100)}" from ${truncateUrl(currentUrl)}`;
-          askContextText.classList.remove('empty');
-        } else if (currentUrl) {
-          askContextText.textContent = truncateUrl(currentUrl);
-          askContextText.classList.remove('empty');
-        } else {
-          askContextText.textContent = 'No page context — enter a question below';
-          askContextText.classList.add('empty');
-        }
+        // Update URL display in summarize panel
+        if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
 
         // If URL changed significantly, clear old selection
         if (prevUrl && prevUrl !== currentUrl) {
@@ -609,7 +664,7 @@
 
   // === Icon Helper (inline SVG, no <use> dependency) ===
   const SVG = {
-    translate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg>',
+    translate: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="min-width:18px;min-height:18px"><path d="M4 7h5M4 12h5M4 17h5"></path><path d="M13 12h6"></path><path d="M16 8l3 4-3 4"></path></svg>',
     summarize: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
     ask: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
@@ -643,18 +698,21 @@
       .replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/\n/g,'<br>');
   }
 
-  function renderHistory() {
-    loadHistory().then((items) => {
-      historyCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
-      historyEmpty.classList.toggle('hidden', items.length > 0);
-      historyList.innerHTML = '';
-      clearHistoryBtn.classList.toggle('hidden', items.length === 0);
+  async function renderHistory() {
+    await loadI18n();
+    const lang = resolveLang(settings.language, browserLang);
+    const t = I18N[lang] || I18N.en || {};
+    const items = await loadHistory();
+    historyCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+    historyEmpty.classList.toggle('hidden', items.length > 0);
+    historyList.innerHTML = '';
+    clearHistoryBtn.classList.toggle('hidden', items.length === 0);
 
-      items.forEach((item, idx) => {
-        const el = document.createElement('div');
-        el.className = 'history-item';
-        const itemIcon = item.type === 'translate' ? svgIcon('translate') : item.type === 'summarize' ? svgIcon('summarize') : svgIcon('ask');
-        const typeLabel = item.type === 'translate' ? 'Translate' : item.type === 'summarize' ? 'Summarize' : 'Ask';
+    items.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = 'history-item';
+      const itemIcon = item.type === 'translate' ? svgIcon('translate') : item.type === 'summarize' ? svgIcon('summarize') : svgIcon('ask');
+      const typeLabel = item.type === 'translate' ? t.tabTranslate : item.type === 'summarize' ? t.tabSummarize : t.tabAsk;
 
         let preview;
         if (item.type === 'translate') {
@@ -670,8 +728,8 @@
             <span class="history-item-icon">${itemIcon}</span>
             <span class="history-item-type">${typeLabel}</span>
             <span class="history-item-actions">
-              <button class="history-copy-btn" data-index="${idx}" title="Copy"><svg class="btn-icon-svg"><use href="#cs-icon-copy"/></svg></button>
-              <button class="history-delete-btn" data-index="${idx}" title="Delete"><svg class="btn-icon-svg"><use href="#cs-icon-delete"/></svg></button>
+              <button class="history-copy-btn" data-index="${idx}" title="Copy">${svgIcon("copy")}</button>
+              <button class="history-delete-btn" data-index="${idx}" title="Delete">${svgIcon("delete")}</button>
             </span>
             <span class="history-item-time">${formatTime(item.timestamp)}</span>
           </div>
@@ -694,7 +752,6 @@
         });
         historyList.appendChild(el);
       });
-    });
   }
 
   async function doClearHistory() {
@@ -723,7 +780,7 @@
         : item.answer || item.question;
       await navigator.clipboard.writeText(text || '');
       const originalText = copyBtn.textContent;
-      copyBtn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-check"/></svg>';
+      copyBtn.innerHTML = svgIcon('check');
       setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
     }
   });
@@ -740,17 +797,19 @@
         translateInput.value = selectedText;
       }
 
-      // Update ask context
-      if (selectedText) {
-        askContextText.textContent = `"${truncate(selectedText, 100)}" from ${truncateUrl(currentUrl)}`;
-        askContextText.classList.remove('empty');
-      } else if (currentUrl) {
-        askContextText.textContent = truncateUrl(currentUrl);
-        askContextText.classList.remove('empty');
+      // Update ask context display
+      if (askTitle) askTitle.textContent = currentPageTitle || '—';
+      if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
+      if (askContentPreview) {
+        if (selectedText) {
+          askContentPreview.textContent = `"${truncate(selectedText, 100)}"`;
+        } else {
+          askContentPreview.textContent = '';
+        }
       }
 
       // Update summarize URL
-      pageUrlEl.textContent = currentUrl || '—';
+      if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
     }
     return true;
   });
@@ -799,8 +858,16 @@
   function autoSave() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
+      const newToken = settingAuthToken.value.trim();
+      // Skip save if token unchanged (avoid overwriting with stale empty value)
+      if (newToken === settings.authToken &&
+          (settingBridgePort.value.trim() || DEFAULT_PORT) === settings.gatewayPort &&
+          (settingLanguage.value || 'auto') === settings.language &&
+          (settingAppearance.value || 'system') === settings.appearance) {
+        return;
+      }
       settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
-      settings.authToken = settingAuthToken.value.trim();
+      settings.authToken = newToken;
       settings.language = settingLanguage.value || 'auto';
       settings.appearance = settingAppearance.value || 'system';
       chrome.storage.local.set({ clawside_settings: settings });
@@ -809,25 +876,27 @@
     }, 300);
   }
 
-  settingBridgePort.addEventListener('input', autoSave);
-  settingAuthToken.addEventListener('input', autoSave);
-  settingLanguage.addEventListener('change', () => {
-    settings.language = settingLanguage.value;
+  settingBridgePort.addEventListener('input', () => { autoSave(); });
+  settingAuthToken.addEventListener('input', () => { autoSave(); });
+  settingLanguage.addEventListener('change', async () => {
+    const newLang = settingLanguage.value || 'auto';
+    settings.language = newLang;
     applyLanguage();
-    applyPanelLanguage();
-    autoSave();
+    await applyPanelLanguage();
+    await chrome.storage.local.set({ clawside_settings: settings });
+    console.log('[DEBUG] Language saved:', newLang, 'browserLang:', browserLang);
   });
-  settingAppearance.addEventListener('change', () => {
-    settings.appearance = settingAppearance.value;
+  settingAppearance.addEventListener('change', async () => {
+    settings.appearance = settingAppearance.value || 'system';
     applyAppearance();
-    applyPanelLanguage();
-    autoSave();
+    await applyPanelLanguage();
+    chrome.storage.local.set({ clawside_settings: settings });
   });
 
   toggleTokenBtn.addEventListener('click', () => {
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
-    toggleTokenBtn.innerHTML = isPassword ? '<svg class="btn-icon-svg"><use href="#cs-icon-eye-off"/></svg>' : '<svg class="btn-icon-svg"><use href="#cs-icon-eye"/></svg>';
+    toggleTokenBtn.innerHTML = isPassword ? svgIcon('eyeoff') : svgIcon('eye');
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
 
@@ -842,9 +911,11 @@
       'en': 'English'
     };
     browserLang = langMap[lang] || langMap[lang.split('-')[0]] || 'English';
-    if (browserLangHint) browserLangHint.textContent = `Browser language: ${lang} → ${browserLang}`;
-
     await loadSettings();
+    const i18nData = await loadI18n();
+    const resolvedLang = resolveLang(settings.language, browserLang);
+    const t = i18nData[resolvedLang] || i18nData.en || {};
+    if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${lang} → ${browserLang}`;
     await updateCurrentTab();
     showTab('translate');
   }
