@@ -106,8 +106,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    chrome.windows.getCurrent((win) => {
-      chrome.sidePanel.open({ windowId: win?.id }).catch((err) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs?.[0]?.id;
+      chrome.sidePanel.open({ tabId }).catch((err) => {
         console.error('[ClawSide] sidePanel.open error:', err);
       });
     });
