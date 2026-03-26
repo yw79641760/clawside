@@ -11,23 +11,24 @@
   let bubble = null;
   let popup = null;
   let hideTimer = null;
-  let currentAction = null;
   let pendingRequests = new Map();
   let pendingTimeouts = new Map();
   let settings = { gatewayPort: '18789', authToken: '', language: 'auto', appearance: 'system' };
   let csAppearance = 'dark';
   let browserLang = navigator.language?.startsWith('zh') ? 'zh' : navigator.language?.startsWith('ja') ? 'ja' : 'en';
+  let popupI18N = null;
 
   // === SVG Icon Helper ===
 
-  function icon(name) {
-    const SVG = {
-      translate: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg>',
-      summarize: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-      ask: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-      copy: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
-      check: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-    };
+  const SVG = {
+    translate: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg>',
+    summarize: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+    ask: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    copy: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
+    check: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+  };
+
+  function svgIcon(name) {
     return SVG[name] || '';
   }
 
@@ -53,7 +54,7 @@
     const t = i18n[lang] || i18n.en || {};
     const loadingKey = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' }[action] || 'loading';
     return {
-      svgIcon: icon(action),
+      svgIcon: svgIcon(action),
       title: t[action] || action,
       loading: t[loadingKey] || 'Processing...'
     };
@@ -91,7 +92,6 @@
       '--cs-btn-hover': '#262c34',
       '--cs-btn-active': '#32393f',
       '--cs-header-bg': 'rgba(255,255,255,0.02)',
-      '--cs-dock-grad': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       '--cs-dock-shadow': 'rgba(102,126,234,0.45)',
       '--cs-dock-hover-shadow': 'rgba(102,126,234,0.6)',
       '--cs-scrollbar': '#30363d',
@@ -106,7 +106,6 @@
       '--cs-btn-hover': '#eaeef2',
       '--cs-btn-active': '#d0d7de',
       '--cs-header-bg': 'rgba(0,0,0,0.02)',
-      '--cs-dock-grad': 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
       '--cs-dock-shadow': 'rgba(142,197,252,0.45)',
       '--cs-dock-hover-shadow': 'rgba(142,197,252,0.7)',
       '--cs-scrollbar': '#d0d7de',
@@ -135,7 +134,6 @@
         font-family: system-ui, -apple-system, sans-serif;
         animation: cs-bubble-in 150ms ease-out;
         color: var(--cs-text);
-      }
       }
       @keyframes cs-bubble-in {
         from { opacity: 0; transform: translateY(5px) scale(0.95); }
@@ -223,11 +221,11 @@
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
         width: 30px; height: 30px; border-radius: 50%;
-        background-image: var(--cs-dock-grad);
+        background-color: var(--cs-primary);
         box-shadow: 0 4px 20px var(--cs-dock-shadow);
-        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
         font-size: 16px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
-        user-select: none; border: none;
+        user-select: none; border: none; overflow: visible;
       }
       .cs-dock:hover {
         transform: scale(1.12);
@@ -252,16 +250,16 @@
         font-family: system-ui, -apple-system, sans-serif;
       }
       .cs-dock:hover .cs-dock-tooltip { opacity: 1; }
+      .cs-dock-img {
+        width: 20px; height: 20px;
+        pointer-events: none; border-radius: 50%;
+      }
 
       .cs-icon {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
+        width: 16px; height: 16px; flex-shrink: 0;
       }
       .cs-icon-sm {
-        width: 14px;
-        height: 14px;
-        flex-shrink: 0;
+        width: 14px; height: 14px; flex-shrink: 0;
       }
     `;
     document.head.appendChild(s);
@@ -273,9 +271,9 @@
     const el = document.createElement('div');
     el.className = 'cs-bubble';
     el.innerHTML = `
-      <button class="cs-btn" id="cs-btn-translate" title="翻译"><svg class="cs-icon"><use href="#cs-icon-translate"/></svg></button>
-      <button class="cs-btn" id="cs-btn-summarize" title="总结"><svg class="cs-icon"><use href="#cs-icon-summarize"/></svg></button>
-      <button class="cs-btn" id="cs-btn-ask" title="提问"><svg class="cs-icon"><use href="#cs-icon-ask"/></svg></button>
+      <button class="cs-btn" id="cs-btn-translate" title="翻译">${svgIcon('translate')}</button>
+      <button class="cs-btn" id="cs-btn-summarize" title="总结">${svgIcon('summarize')}</button>
+      <button class="cs-btn" id="cs-btn-ask" title="提问">${svgIcon('ask')}</button>
     `;
     document.body.appendChild(el);
     return el;
@@ -345,28 +343,21 @@
     el.style.left = left + 'px';
   }
 
-  async function showPopup(action, text, rect, onStreamChunk) {
-    currentAction = action;
+  async function showPopup(action, _text, rect, onStreamChunk) {
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
 
-    const { svgIcon, title, loading } = await getPopupStrings(action);
-    popup.querySelector('.cs-popup-icon').innerHTML = svgIcon;
+    const { svgIcon: icon, title, loading } = await getPopupStrings(action);
+    popup.querySelector('.cs-popup-icon').innerHTML = icon;
     popup.querySelector('.cs-popup-title').textContent = title;
     popup.querySelector('#cs-popup-loading-text').textContent = loading;
 
     if (onStreamChunk) {
-      // Streaming mode: show streaming text area
       popup.querySelector('.cs-popup-body').innerHTML = '<span id="cs-stream-text"></span><span class="cs-cursor">▋</span>';
-      popup.querySelector('.cs-popup-body').style.cssText = 'white-space:pre-wrap;max-height:220px;overflow-y:auto;';
+      popup.querySelector('.cs-popup-body').style.whiteSpace = 'pre-wrap';
+      popup.querySelector('.cs-popup-body').style.maxHeight = '220px';
+      popup.querySelector('.cs-popup-body').style.overflowY = 'auto';
       startCursorBlink();
-    } else {
-      // Loading mode
-      popup.querySelector('.cs-popup-body').innerHTML = `
-        <div class="cs-popup-loading">
-          <div class="cs-spinner"></div>
-          <span>${loadingTexts[action]}</span>
-        </div>`;
     }
 
     popup.querySelector('#cs-popup-footer').style.display = 'none';
@@ -377,41 +368,6 @@
       const body = popup.querySelector('#cs-popup-body').textContent;
       copyText(body, popup.querySelector('#cs-popup-copy'));
     };
-
-    return onStreamChunk; // return so doAction can wire up streaming
-  }
-
-  function setPopupStreaming() {
-    // Switch popup body from loading spinner to streaming text
-    const body = popup.querySelector('.cs-popup-body');
-    body.innerHTML = '<span id="cs-stream-text"></span><span class="cs-cursor">▋</span>';
-    body.style.whiteSpace = 'pre-wrap';
-    startCursorBlink();
-  }
-
-  function appendStreamChunk(text) {
-    const el = popup.querySelector('#cs-stream-text');
-    const cursor = popup.querySelector('.cs-cursor');
-    if (el) el.textContent += text;
-    // Auto-scroll
-    popup.querySelector('.cs-popup-body').scrollTop = popup.querySelector('.cs-popup-body').scrollHeight;
-  }
-
-  function finalizeStream(text, cite) {
-    stopCursorBlink();
-    const cursor = popup.querySelector('.cs-cursor');
-    if (cursor) cursor.remove();
-    const body = popup.querySelector('.cs-popup-body');
-    body.textContent = text;
-    body.style.whiteSpace = 'pre-wrap';
-    const footer = popup.querySelector('#cs-popup-footer');
-    footer.style.display = 'flex';
-    if (cite) {
-      popup.querySelector('#cs-popup-cite').textContent = cite;
-      popup.querySelector('#cs-popup-cite').style.display = '';
-    } else {
-      popup.querySelector('#cs-popup-cite').style.display = 'none';
-    }
   }
 
   let cursorInterval = null;
@@ -426,27 +382,44 @@
     if (cursorInterval) { clearInterval(cursorInterval); cursorInterval = null; }
   }
 
-  function setPopupResult(text, cite) {
-    const body = popup.querySelector('#cs-popup-body');
-    body.textContent = text;
-    const footer = popup.querySelector('#cs-popup-footer');
-    footer.style.display = 'flex';
-    if (cite) {
-      popup.querySelector('#cs-popup-cite').textContent = cite;
-      popup.querySelector('#cs-popup-cite').style.display = '';
-    } else {
-      popup.querySelector('#cs-popup-cite').style.display = 'none';
+  function appendStreamChunk(text) {
+    const el = popup?.querySelector('#cs-stream-text');
+    if (el) el.textContent += text;
+    const body = popup?.querySelector('.cs-popup-body');
+    if (body) body.scrollTop = body.scrollHeight;
+  }
+
+  function finalizeStream(text, cite) {
+    stopCursorBlink();
+    const cursor = popup?.querySelector('.cs-cursor');
+    if (cursor) cursor.remove();
+    const body = popup?.querySelector('.cs-popup-body');
+    if (body) {
+      body.textContent = text;
+      body.style.whiteSpace = 'pre-wrap';
+    }
+    const footer = popup?.querySelector('#cs-popup-footer');
+    if (footer) {
+      footer.style.display = 'flex';
+      const citeEl = popup?.querySelector('#cs-popup-cite');
+      if (cite && citeEl) {
+        citeEl.textContent = cite;
+        citeEl.style.display = '';
+      } else if (citeEl) {
+        citeEl.style.display = 'none';
+      }
     }
   }
 
   function setPopupError(msg) {
-    popup.querySelector('.cs-popup-body').innerHTML = `<div class="cs-popup-error">${msg}</div>`;
-    popup.querySelector('#cs-popup-footer').style.display = 'none';
+    const body = popup?.querySelector('.cs-popup-body');
+    const footer = popup?.querySelector('#cs-popup-footer');
+    if (body) body.innerHTML = `<div class="cs-popup-error">${msg}</div>`;
+    if (footer) footer.style.display = 'none';
   }
 
   function hidePopup() {
     if (popup) popup.style.display = 'none';
-    currentAction = null;
   }
 
   async function copyText(text, btn) {
@@ -460,12 +433,10 @@
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
-    btn.innerHTML = '';
-    btn.insertAdjacentHTML('afterbegin', '<svg class="cs-icon"><use href="#cs-icon-check"/></svg> ');
+    btn.innerHTML = svgIcon('check');
     btn.classList.add('copied');
     setTimeout(() => {
-      btn.innerHTML = '';
-      btn.insertAdjacentHTML('afterbegin', '<svg class="cs-icon"><use href="#cs-icon-copy"/></svg> ');
+      btn.innerHTML = svgIcon('copy');
       btn.classList.remove('copied');
     }, 1500);
   }
@@ -505,13 +476,11 @@
     url = url || window.location.href;
     title = title || document.title;
 
-    // Get settings
     const stored = await chrome.storage.local.get(['clawside_settings']);
-    const settings = stored.clawside_settings || { gatewayPort: '18789', authToken: '' };
-    const port = String(settings.gatewayPort || '18789');
-    const token = String(settings.authToken || '').trim();
+    const s = stored.clawside_settings || { gatewayPort: '18789', authToken: '' };
+    const port = String(s.gatewayPort || '18789');
+    const token = String(s.authToken || '').trim();
 
-    // Set up streaming callback before showing popup
     let fullText = '';
     const onStreamChunk = (chunk) => {
       fullText += chunk;
@@ -524,8 +493,8 @@
       let cite = '';
       if (action === 'translate') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const targetLang = settings.language && settings.language !== 'auto'
-          ? settings.language
+        const targetLang = s.language && s.language !== 'auto'
+          ? s.language
           : (navigator.language?.startsWith('zh') ? 'Chinese'
              : navigator.language?.startsWith('ja') ? 'Japanese'
              : 'English');
@@ -534,8 +503,8 @@
 
       } else if (action === 'summarize') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const lang = settings.language && settings.language !== "auto"
-          ? settings.language
+        const lang = s.language && s.language !== 'auto'
+          ? s.language
           : (navigator.language?.startsWith('zh') ? 'Chinese'
              : navigator.language?.startsWith('ja') ? 'Japanese'
              : 'English');
@@ -544,17 +513,14 @@
 
       } else if (action === 'ask') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const lang = settings.language && settings.language !== "auto"
-          ? settings.language
+        const lang = s.language && s.language !== 'auto'
+          ? s.language
           : (navigator.language?.startsWith('zh') ? 'Chinese'
              : navigator.language?.startsWith('ja') ? 'Japanese'
              : 'English');
-        let prompt;
-        if (text) {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`;
-        } else {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
-        }
+        const prompt = text
+          ? `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`
+          : `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
         await apiCall(prompt, port, token);
       }
 
@@ -578,7 +544,6 @@
     hideTimer = setTimeout(() => showBubble(text, rect), 250);
   }
 
-  // Hide on outside click / escape
   document.addEventListener('mousedown', (e) => {
     if (popup && popup.contains(e.target)) return;
     if (bubble && bubble.contains(e.target)) return;
@@ -605,15 +570,12 @@
     if (!action) return;
     const text = lastSelectedText;
     if (!text) return;
-    // For ask, use a default question
     doAction(action, text, window.location.href, document.title, null);
     hideBubble();
   });
 
-  // Listen for API results from background script
   // === Message listener (handles streaming from background) ===
   chrome.runtime.onMessage.addListener((msg) => {
-    // Streaming chunk: append to result
     if (msg.type === 'clawside-stream-chunk') {
       const req = pendingRequests.get(msg.requestId);
       if (req && typeof req.onChunk === 'function') {
@@ -621,7 +583,6 @@
       }
       return true;
     }
-    // Streaming done: resolve with accumulated text
     if (msg.type === 'clawside-stream-done') {
       const req = pendingRequests.get(msg.requestId);
       if (req) {
@@ -632,7 +593,6 @@
       }
       return true;
     }
-    // Streaming error: reject
     if (msg.type === 'clawside-stream-error') {
       const req = pendingRequests.get(msg.requestId);
       if (req) {
@@ -657,32 +617,22 @@
   let dock = null;
   let isSticking = false;
   let idleTimer = null;
-  let isScrolling = false;
 
   function stickDock() {
     if (!dock) return;
     dock.classList.add('sticking');
     dock.classList.remove('scrolling');
     isSticking = true;
-    isScrolling = false;
-  }
-
-  function unstickingDock() {
-    if (!dock) return;
-    dock.classList.remove('sticking');
-    isSticking = false;
   }
 
   function resetIdleTimer() {
     clearTimeout(idleTimer);
-    if (isSticking) return; // already sticking
-    isScrolling = true;
+    isSticking = false;
     if (dock) dock.classList.add('scrolling');
     idleTimer = setTimeout(() => {
-      isScrolling = false;
       if (dock) dock.classList.remove('scrolling');
       stickDock();
-    }, 1000); // 1s idle before sticking
+    }, 1000);
   }
 
   function createDock() {
@@ -691,8 +641,19 @@
     dock.className = 'cs-dock';
     dock.id = 'cs-dock';
     dock.title = 'ClawSide';
-    dock.innerHTML = '<span class=cs-dock-tooltip>ClawSide</span>';
-    dock.style.background = 'url("data:image/png;base64,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") center/contain no-repeat transparent';
+
+    // Icon image: <img> inside the button — reliable, no CSS layering issues
+    const img = document.createElement('img');
+    img.className = 'cs-dock-img';
+    img.src = chrome.runtime.getURL('icons/icon32.png');
+    img.alt = 'ClawSide';
+    dock.appendChild(img);
+
+    // Tooltip
+    const tooltip = document.createElement('span');
+    tooltip.className = 'cs-dock-tooltip';
+    tooltip.textContent = 'ClawSide';
+    dock.appendChild(tooltip);
 
     // Drag to reposition
     let isDragging = false, startX, startY, startRight, startBottom;
@@ -721,7 +682,6 @@
     document.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
-      // Start idle timer after drag
       resetIdleTimer();
     });
 
@@ -734,25 +694,19 @@
 
     document.body.appendChild(dock);
 
-    // Scroll detection - detach while scrolling, re-stick after 1s idle
+    // Scroll detection
     let scrollTimer = null;
     window.addEventListener('scroll', () => {
       if (!isSticking) {
         resetIdleTimer();
       } else {
-        // Temporarily detach while scrolling
         dock.classList.remove('sticking');
         clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(() => {
-          stickDock();
-        }, 1000);
+        scrollTimer = setTimeout(stickDock, 1000);
       }
     }, { passive: true });
 
-    // Initial stick after 1s
     idleTimer = setTimeout(stickDock, 1000);
   }
-
-  // Init
 
 })();
