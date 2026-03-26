@@ -409,7 +409,7 @@
 
       } else if (action === 'summarize') {
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-        const const lang = settings.language && settings.language !== "auto" ? settings.language : "English";
+        const lang = settings.language && settings.language !== "auto" ? settings.language : "English";
         const prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ${lang}. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ${url}`;
         await apiCall(prompt, port, token);
 
