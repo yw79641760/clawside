@@ -532,9 +532,10 @@
     dock.innerHTML = '🦖<span class=cs-dock-tooltip>ClawSide</span>';
     dock.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Call sidePanel.open directly (must be sync response to user gesture)
-      chrome.sidePanel.open({}).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
+      // sidePanel.open must be called sync to user gesture, so use sendMessage to bg
+      // and bg calls sidePanel.open synchronously (setTimeout 0 keeps it in same task)
+      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch((err) => {
+        console.error('[ClawSide] sendMessage error:', err);
       });
     });
     document.body.appendChild(dock);

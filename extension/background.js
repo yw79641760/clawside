@@ -106,8 +106,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    // open-sidepanel is handled directly in content script via chrome.sidePanel
-    // This handler exists only for logging
+    // Call synchronously - the user gesture was the click that sent this message
+    chrome.sidePanel.open({}).catch((err) => {
+      console.error('[ClawSide] sidePanel.open error:', err);
+    });
   }
 
   // No need to broadcast text_selected/content_ready - content scripts handle selection themselves
