@@ -169,7 +169,7 @@
     panelSettings.classList.toggle('hidden', tab !== 'settings');
 
     if (tab === 'history') renderHistory();
-    if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
+    if (tab === 'settings') { updateTokenStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
     if (tab === 'ask') askQuestion.focus();
   }
 
@@ -210,6 +210,8 @@
   }
 
   async function checkGatewayStatus() {
+    const statusBar = $('gatewayStatusBar');
+    statusBar.classList.remove('hidden');
     gatewayStatusEl.textContent = 'Checking...';
     gatewayStatusEl.style.color = '';
 
