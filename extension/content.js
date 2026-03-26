@@ -14,14 +14,69 @@
   let currentAction = null;
   let pendingRequests = new Map();
   let pendingTimeouts = new Map();
-  let settings = { gatewayPort: '18789', authToken: '', language: 'auto' };
+  let settings = { gatewayPort: '18789', authToken: '', language: 'auto', appearance: 'system' };
+  let csAppearance = 'dark';
 
   // Load settings from storage
   chrome.storage.local.get(['clawside_settings']).then((result) => {
     if (result.clawside_settings) {
       settings = { ...settings, ...result.clawside_settings };
     }
+    // Resolve appearance
+    const a = settings.appearance || 'system';
+    if (a === 'system') {
+      csAppearance = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } else {
+      csAppearance = a;
+    }
+    injectTheme(csAppearance);
+    injectStyles();
+    createDock();
+    chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
   });
+
+  // === Theme injection ===
+  function injectTheme(appearance) {
+    const isDark = appearance === 'dark';
+    const vars = isDark ? {
+      '--cs-bg': '#161b22',
+      '--cs-border': '#30363d',
+      '--cs-text': '#e6edf3',
+      '--cs-muted': '#8b949e',
+      '--cs-primary': '#58a6ff',
+      '--cs-success': '#3fb950',
+      '--cs-error': '#f85149',
+      '--cs-btn-hover': '#262c34',
+      '--cs-btn-active': '#32393f',
+      '--cs-header-bg': 'rgba(255,255,255,0.02)',
+      '--cs-dock-grad': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      '--cs-dock-shadow': 'rgba(102,126,234,0.45)',
+      '--cs-dock-hover-shadow': 'rgba(102,126,234,0.6)',
+      '--cs-scrollbar': '#30363d',
+    } : {
+      '--cs-bg': '#ffffff',
+      '--cs-border': '#d0d7de',
+      '--cs-text': '#1f2328',
+      '--cs-muted': '#656d76',
+      '--cs-primary': '#0969da',
+      '--cs-success': '#1a7f37',
+      '--cs-error': '#cf222e',
+      '--cs-btn-hover': '#eaeef2',
+      '--cs-btn-active': '#d0d7de',
+      '--cs-header-bg': 'rgba(0,0,0,0.02)',
+      '--cs-dock-grad': 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+      '--cs-dock-shadow': 'rgba(142,197,252,0.45)',
+      '--cs-dock-hover-shadow': 'rgba(142,197,252,0.7)',
+      '--cs-scrollbar': '#d0d7de',
+    };
+    const s = document.createElement('style');
+    s.id = 'cs-theme';
+    let css = ':root {';
+    for (const [k, v] of Object.entries(vars)) css += k + ':' + v + ';';
+    css += '}';
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
 
   // === Styles ===
   function injectStyles() {
@@ -32,11 +87,13 @@
       .cs-bubble {
         position: fixed; z-index: 2147483647;
         display: flex; gap: 4px;
-        background: #161b22; border: 1px solid #30363d;
+        background: var(--cs-bg); border: 1px solid var(--cs-border);
         border-radius: 8px; padding: 5px 7px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.45);
         font-family: system-ui, -apple-system, sans-serif;
         animation: cs-bubble-in 150ms ease-out;
+        color: var(--cs-text);
+      }
       }
       @keyframes cs-bubble-in {
         from { opacity: 0; transform: translateY(5px) scale(0.95); }
@@ -49,18 +106,19 @@
         transition: background 100ms ease, transform 80ms ease;
         padding: 0;
       }
-      .cs-btn:hover { background: #262c34; }
-      .cs-btn:active { background: #32393f; transform: scale(0.92); }
+      .cs-btn:hover { background: var(--cs-btn-hover); }
+      .cs-btn:active { background: var(--cs-btn-active); transform: scale(0.92); }
 
       .cs-popup {
         position: fixed; z-index: 2147483647;
         width: 320px; max-height: 280px;
-        background: #161b22; border: 1px solid #30363d;
+        background: var(--cs-bg); border: 1px solid var(--cs-border);
         border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         font-family: system-ui, -apple-system, sans-serif;
         display: flex; flex-direction: column;
         overflow: hidden;
         animation: cs-popup-in 180ms ease-out;
+        color: var(--cs-text);
       }
       @keyframes cs-popup-in {
         from { opacity: 0; transform: scale(0.9) translateY(-6px); }
@@ -68,70 +126,70 @@
       }
       .cs-popup-header {
         display: flex; align-items: center; gap: 8px;
-        padding: 10px 12px; border-bottom: 1px solid #30363d;
-        background: rgba(255,255,255,0.02);
+        padding: 10px 12px; border-bottom: 1px solid var(--cs-border);
+        background: var(--cs-header-bg);
       }
       .cs-popup-icon { font-size: 14px; }
-      .cs-popup-title { flex: 1; font-size: 13px; font-weight: 600; color: #e6edf3; }
+      .cs-popup-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--cs-text); }
       .cs-popup-close {
         width: 26px; height: 26px; border: none; background: transparent;
         border-radius: 4px; cursor: pointer; font-size: 14px;
-        color: #8b949e; display: flex; align-items: center; justify-content: center;
+        color: var(--cs-muted); display: flex; align-items: center; justify-content: center;
         transition: background 100ms;
       }
-      .cs-popup-close:hover { background: #262c34; color: #e6edf3; }
+      .cs-popup-close:hover { background: var(--cs-btn-hover); color: var(--cs-text); }
       .cs-popup-body {
         flex: 1; padding: 12px; overflow-y: auto;
-        font-size: 13px; line-height: 1.6; color: #e6edf3;
+        font-size: 13px; line-height: 1.6; color: var(--cs-text);
         word-break: break-word;
       }
       .cs-popup-body::-webkit-scrollbar { width: 5px; }
-      .cs-popup-body::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+      .cs-popup-body::-webkit-scrollbar-thumb { background: var(--cs-scrollbar); border-radius: 3px; }
       .cs-popup-footer {
         display: flex; align-items: center; gap: 8px;
-        padding: 8px 12px; border-top: 1px solid #30363d;
+        padding: 8px 12px; border-top: 1px solid var(--cs-border);
       }
       .cs-popup-cite {
-        flex: 1; font-size: 11px; color: #58a6ff;
+        flex: 1; font-size: 11px; color: var(--cs-primary);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
       .cs-popup-copy {
-        padding: 4px 10px; border: 1px solid #30363d; background: transparent;
-        border-radius: 5px; cursor: pointer; font-size: 12px; color: #8b949e;
+        padding: 4px 10px; border: 1px solid var(--cs-border); background: transparent;
+        border-radius: 5px; cursor: pointer; font-size: 12px; color: var(--cs-muted);
         transition: all 100ms;
       }
-      .cs-popup-copy:hover { border-color: #58a6ff; color: #58a6ff; }
-      .cs-popup-copy.copied { border-color: #3fb950; color: #3fb950; }
+      .cs-popup-copy:hover { border-color: var(--cs-primary); color: var(--cs-primary); }
+      .cs-popup-copy.copied { border-color: var(--cs-success); color: var(--cs-success); }
 
       .cs-popup-loading {
         display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 10px; padding: 28px 16px; color: #8b949e;
+        justify-content: center; gap: 10px; padding: 28px 16px; color: var(--cs-muted);
         font-size: 13px;
       }
       .cs-spinner {
-        width: 22px; height: 22px; border: 2px solid #30363d;
-        border-top-color: #58a6ff; border-radius: 50%;
+        width: 22px; height: 22px; border: 2px solid var(--cs-border);
+        border-top-color: var(--cs-primary); border-radius: 50%;
         animation: cs-spin 600ms linear infinite;
       }
       @keyframes cs-spin { to { transform: rotate(360deg); } }
 
       .cs-popup-error {
-        padding: 12px; color: #f85149; font-size: 13px;
+        padding: 12px; color: var(--cs-error); font-size: 13px;
       }
 
       /* === Persistent Dock Ball === */
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
         width: 30px; height: 30px; border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.45);
+        background: var(--cs-dock-grad);
+        box-shadow: 0 4px 20px var(--cs-dock-shadow);
         cursor: pointer; display: flex; align-items: center; justify-content: center;
         font-size: 16px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
         user-select: none; border: none;
       }
       .cs-dock:hover {
         transform: scale(1.12);
-        box-shadow: 0 6px 28px rgba(102, 126, 234, 0.6);
+        box-shadow: 0 6px 28px var(--cs-dock-hover-shadow);
       }
       .cs-dock:active {
         transform: scale(0.95);
@@ -145,8 +203,8 @@
       }
       .cs-dock-tooltip {
         position: absolute; right: 38px; bottom: 2px;
-        background: #161b22; border: 1px solid #30363d;
-        color: #c9d1d9; font-size: 12px; white-space: nowrap;
+        background: var(--cs-bg); border: 1px solid var(--cs-border);
+        color: var(--cs-text); font-size: 12px; white-space: nowrap;
         padding: 5px 10px; border-radius: 8px;
         pointer-events: none; opacity: 0; transition: opacity 0.15s;
         font-family: system-ui, -apple-system, sans-serif;
@@ -628,7 +686,5 @@
   }
 
   // Init
-  injectStyles();
-  createDock();
-  chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
+
 })();
