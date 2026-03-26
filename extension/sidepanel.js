@@ -211,6 +211,7 @@
     panelAsk.classList.toggle('hidden', tab !== 'ask');
     panelHistory.classList.toggle('hidden', tab !== 'history');
     panelSettings.classList.toggle('hidden', tab !== 'settings');
+    console.log('[ClawSide] showTab:', tab, 'panelSettings hidden:', panelSettings.classList.contains('hidden'));
 
     if (tab === 'history') renderHistory();
     if (tab === 'settings') { updateTokenStatus(); checkGatewayStatus(); if (browserLangHint) browserLangHint.textContent = `Browser language → ${browserLang}`; }
@@ -761,7 +762,10 @@
   tabSummarize.addEventListener('click', () => showTab('summarize'));
   tabAsk.addEventListener('click', () => showTab('ask'));
   tabHistory.addEventListener('click', () => showTab('history'));
-  settingsBtn.addEventListener('click', () => showTab('settings'));
+  settingsBtn.addEventListener('click', () => {
+    console.log('[ClawSide] settingsBtn clicked');
+    showTab('settings');
+  });
 
   translateBtn.addEventListener('click', doTranslate);
   summarizeBtn.addEventListener('click', doSummarize);
