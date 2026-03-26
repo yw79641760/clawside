@@ -203,38 +203,6 @@
       }
     }
     if (tab === 'ask') askQuestion.focus();
-    // Fetch current tab URL for summarize/ask context
-    if (tab === 'summarize' || tab === 'ask') {
-      chrome.tabs.query({ active: true, currentWindow: true }).then(async ([t]) => {
-        if (t) {
-          currentUrl = t.url || '';
-          currentPageTitle = t.title || '';
-          const favicon = t.favIconUrl || '';
-          // Extract page content
-          let content = '';
-          if (t.id) {
-            try {
-              const results = await chrome.scripting.executeScript({
-                target: { tabId: t.id },
-                func: extractPageContent
-              });
-              content = results?.[0]?.result || '';
-            } catch {}
-          }
-          currentPageContent = content;
-          // Update summarize panel
-          if (summarizeFavicon) summarizeFavicon.src = favicon;
-          if (summarizeTitle) summarizeTitle.textContent = currentPageTitle || '—';
-          if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
-          if (summarizeContentPreview) summarizeContentPreview.textContent = content ? content.slice(0, 20) + '...' : '';
-          // Update ask panel
-          if (askFavicon) askFavicon.src = favicon;
-          if (askTitle) askTitle.textContent = currentPageTitle || '—';
-          if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
-          if (askContentPreview) askContentPreview.textContent = content ? content.slice(0, 20) + '...' : '';
-        }
-      }).catch(() => {});
-    }
   }
 
   // === Settings ===
@@ -622,30 +590,55 @@
 
   // === Tab Switch Detection ===
   // Listen for tab changes so we can update current page URL
-  async function updateCurrentTab() {
+  async function updatePageContext() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab) {
-        const prevUrl = currentUrl;
-        currentUrl = tab.url || '';
-        currentPageTitle = tab.title || '';
+      if (!tab) return;
 
-        // Update URL display in summarize panel
-        if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
+      const prevUrl = currentUrl;
+      currentUrl = tab.url || '';
+      currentPageTitle = tab.title || '';
+      const favicon = tab.favIconUrl || '';
 
-        // If URL changed significantly, clear old selection
-        if (prevUrl && prevUrl !== currentUrl) {
-          selectedText = '';
-          translateInput.value = '';
-        }
-
-        // Try to get selected text from content script
-        chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
+      // Extract page content for context panels
+      let content = '';
+      if (tab.id) {
+        try {
+          const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: extractPageContent
+          });
+          content = results?.[0]?.result || '';
+        } catch {}
       }
+      currentPageContent = content;
+
+      // Update summarize panel
+      if (summarizeFavicon) summarizeFavicon.src = favicon;
+      if (summarizeTitle) summarizeTitle.textContent = currentPageTitle || '—';
+      if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
+      if (summarizeContentPreview) summarizeContentPreview.textContent = content ? truncate(content, 200) : '';
+
+      // Update ask panel
+      if (askFavicon) askFavicon.src = favicon;
+      if (askTitle) askTitle.textContent = currentPageTitle || '—';
+      if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
+      if (askContentPreview) askContentPreview.textContent = content ? truncate(content, 200) : '';
+
+      // If URL changed significantly, clear old selection
+      if (prevUrl && prevUrl !== currentUrl) {
+        selectedText = '';
+        translateInput.value = '';
+        askQuestion.value = '';
+      }
+
+      // Try to get selected text from content script
+      chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
     } catch (err) {
       // Ignore
     }
   }
+
 
   function truncate(str, max) {
     if (!str) return '';
@@ -916,8 +909,13 @@
     const resolvedLang = resolveLang(settings.language, browserLang);
     const t = i18nData[resolvedLang] || i18nData.en || {};
     if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${lang} → ${browserLang}`;
-    await updateCurrentTab();
+    await updatePageContext();
     showTab('translate');
+
+    // Listen for Chrome tab switches to refresh context
+    chrome.tabs.onActivated.addListener(async (_activeInfo) => {
+      await updatePageContext();
+    });
   }
 
   init();
