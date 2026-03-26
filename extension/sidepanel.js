@@ -801,6 +801,7 @@
     applyLanguage();
   });
   toggleTokenBtn.addEventListener('click', () => {
+    console.log('[ClawSide] toggleToken clicked, type:', settingAuthToken.type);
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
     toggleTokenBtn.textContent = isPassword ? '🔒' : '👁';
