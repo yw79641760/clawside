@@ -95,6 +95,7 @@ async function apiCall(prompt, port, token) {
 
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  console.log('[ClawSide BG] message received:', msg.type);
   if (msg.type === 'clawside-api') {
     const { prompt, port, token, requestId } = msg;
     // Use streaming
@@ -106,7 +107,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    chrome.sidePanel.open({}).catch(() => {});
+    chrome.sidePanel.open({}).catch((err) => {
+      console.error('[ClawSide] sidePanel.open error:', err);
+    });
   }
 
   if (msg.type === 'text_selected' || msg.type === 'page_info' || msg.type === 'content_ready') {
