@@ -63,7 +63,7 @@
     $('labelPort').textContent = t.gatewayPort;
     $('labelToken').textContent = t.authToken;
     $('testConnBtn').textContent = t.testConn;
-    $('saveSettingsBtn').textContent = t.saveSettings;
+
     $('gatewayNote').innerHTML = t.gatewayNote;
     // History
     $('historyClearBtn').textContent = t.historyClear;
@@ -131,8 +131,8 @@
   const gatewayStatusEl = $('gatewayStatus');
   const testConnBtn = $('testConnBtn');
   const testConnStatus = $('testConnStatus');
-  const saveSettingsBtn = $('saveSettingsBtn');
-  const settingsStatus = $('settingsStatus');
+  const saveSettingsBtn = null; // removed - auto-save instead
+  const settingsStatus = null;
 
   // Loading
   const loadingOverlay = $('loadingOverlay');
@@ -254,19 +254,6 @@
       }
       gatewayStatusEl.style.color = 'var(--error)';
     }
-  }
-
-  async function saveSettings() {
-    settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
-    settings.authToken = settingAuthToken.value.trim();
-    settings.language = settingLanguage.value || 'auto';
-    settings.appearance = settingAppearance.value || 'system';
-    await chrome.storage.local.set({ clawside_settings: settings });
-    updateTokenStatus();
-    applyAppearance();
-    applyLanguage();
-    await applyPanelLanguage();
-    showStatus(settingsStatus, 'Settings saved!', 'success');
   }
 
   // === Memory ===
@@ -787,17 +774,31 @@
 
   // Settings
   settingAuthToken.addEventListener('input', updateTokenStatus);
-  settingLanguage.addEventListener('change', () => {
-    settings.language = settingLanguage.value;
-    applyLanguage();
-  });
+  let saveTimer = null;
+  function autoSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
+      settings.authToken = settingAuthToken.value.trim();
+      settings.language = settingLanguage.value || 'auto';
+      settings.appearance = settingAppearance.value || 'system';
+      chrome.storage.local.set({ clawside_settings: settings });
+      updateTokenStatus();
+      applyAppearance();
+    }, 300);
+  }
+
+  settingBridgePort.addEventListener('input', autoSave);
+  settingAuthToken.addEventListener('input', autoSave);
+  settingLanguage.addEventListener('change', () => { applyLanguage(); autoSave(); applyPanelLanguage(); });
+  settingAppearance.addEventListener('change', () => { applyAppearance(); autoSave(); applyPanelLanguage(); });
+
   toggleTokenBtn.addEventListener('click', () => {
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
     toggleTokenBtn.textContent = isPassword ? '🔒' : '👁';
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
-  saveSettingsBtn.addEventListener('click', saveSettings);
 
   // === Init ===
   async function init() {
