@@ -608,7 +608,7 @@
   }
 
   // === Icon Helper ===
-  function icon(name) {
+  function svgIcon(name) {
     return '<svg class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#cs-icon-' + name + '"/></svg>';
   }
 
@@ -642,7 +642,7 @@
       items.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'history-item';
-        const icon = item.type === 'translate' ? icon('translate') : item.type === 'summarize' ? icon('summarize') : icon('ask');
+        const itemIcon = item.type === 'translate' ? svgIcon('translate') : item.type === 'summarize' ? svgIcon('summarize') : svgIcon('ask');
         const typeLabel = item.type === 'translate' ? 'Translate' : item.type === 'summarize' ? 'Summarize' : 'Ask';
 
         let preview;
@@ -656,7 +656,7 @@
 
         el.innerHTML = `
           <div class="history-item-header">
-            <span class="history-item-icon">${icon}</span>
+            <span class="history-item-icon">${itemIcon}</span>
             <span class="history-item-type">${typeLabel}</span>
             <span class="history-item-actions">
               <button class="history-copy-btn" data-index="${idx}" title="Copy"><svg class="btn-icon-svg"><use href="#cs-icon-copy"/></svg></button>
