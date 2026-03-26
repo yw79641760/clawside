@@ -626,9 +626,10 @@
     dock.title = 'ClawSide';
     dock.innerHTML = '<span class=cs-dock-tooltip>ClawSide</span>';
     dock.style.backgroundImage = `url("${chrome.runtime.getURL('icons/icon48.png')}")`;
-    dock.style.backgroundSize = 'cover';
+    dock.style.backgroundSize = 'contain';
     dock.style.backgroundPosition = 'center';
     dock.style.backgroundRepeat = 'no-repeat';
+    dock.style.backgroundColor = 'transparent';
 
     // Drag to reposition
     let isDragging = false, startX, startY, startRight, startBottom;
