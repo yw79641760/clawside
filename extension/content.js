@@ -122,11 +122,11 @@
       /* === Persistent Dock Ball === */
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
-        width: 40px; height: 40px; border-radius: 50%;
+        width: 30px; height: 30px; border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         box-shadow: 0 4px 20px rgba(102, 126, 234, 0.45);
         cursor: pointer; display: flex; align-items: center; justify-content: center;
-        font-size: 20px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
+        font-size: 16px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
         user-select: none; border: none;
       }
       .cs-dock:hover {
@@ -144,10 +144,10 @@
         transition: none !important;
       }
       .cs-dock-tooltip {
-        position: absolute; right: 50px; bottom: 4px;
+        position: absolute; right: 38px; bottom: 2px;
         background: #161b22; border: 1px solid #30363d;
-        color: #c9d1d9; font-size: 13px; white-space: nowrap;
-        padding: 6px 12px; border-radius: 8px;
+        color: #c9d1d9; font-size: 12px; white-space: nowrap;
+        padding: 5px 10px; border-radius: 8px;
         pointer-events: none; opacity: 0; transition: opacity 0.15s;
         font-family: system-ui, -apple-system, sans-serif;
       }
@@ -557,7 +557,7 @@
       isScrolling = false;
       if (dock) dock.classList.remove('scrolling');
       stickDock();
-    }, 2000);
+    }, 1000); // 1s idle before sticking
   }
 
   function createDock() {
@@ -608,7 +608,7 @@
 
     document.body.appendChild(dock);
 
-    // Scroll detection - detach while scrolling, re-stick after 2s idle
+    // Scroll detection - detach while scrolling, re-stick after 1s idle
     let scrollTimer = null;
     window.addEventListener('scroll', () => {
       if (!isSticking) {
@@ -619,12 +619,12 @@
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
           stickDock();
-        }, 2000);
+        }, 1000);
       }
     }, { passive: true });
 
-    // Initial stick after 2s
-    idleTimer = setTimeout(stickDock, 2000);
+    // Initial stick after 1s
+    idleTimer = setTimeout(stickDock, 1000);
   }
 
   // Init
