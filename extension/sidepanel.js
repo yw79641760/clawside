@@ -78,9 +78,10 @@
     return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
   }
 
-  function applyPanelLanguage() {
+  async function applyPanelLanguage() {
+    const i18n = await loadI18n();
     const lang = resolveLang(settings.language, browserLang);
-    const t = T[lang] || T.en;
+    const t = i18n[lang] || i18n.en || {};
     // Tabs
     tabTranslate.textContent = t.tabTranslate;
     tabSummarize.textContent = t.tabSummarize;
@@ -228,7 +229,7 @@
     updateTokenStatus();
     applyLanguage();
     applyAppearance();
-    applyPanelLanguage();
+    await applyPanelLanguage();
   }
 
   function applyLanguage() {
@@ -307,7 +308,7 @@
     updateTokenStatus();
     applyAppearance();
     applyLanguage();
-    applyPanelLanguage();
+    await applyPanelLanguage();
     showStatus(settingsStatus, 'Settings saved!', 'success');
   }
 
