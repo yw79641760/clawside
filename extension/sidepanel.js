@@ -209,7 +209,7 @@
       tokenStatusEl.textContent = 'No token';
       tokenStatusEl.className = 'token-status empty';
     } else {
-      tokenStatusEl.textContent = 'Token set ✓';
+      tokenStatusEl.textContent = tokenStatusEl.textContent = 'Token set '; tokenStatusEl.insertAdjacentHTML('beforeend', '<svg class="result-icon-svg"><use href="#cs-icon-check"/></svg>');
       tokenStatusEl.className = 'token-status ok';
     }
   }
@@ -246,7 +246,7 @@
           port, token, requestId, stream: false
         });
       });
-      gatewayStatusEl.textContent = '✓ Gateway reachable';
+      gatewayStatusEl.textContent = gatewayStatusEl.innerHTML = '<svg class="result-icon-svg"><use href="#cs-icon-check"/></svg> Gateway reachable';
       gatewayStatusEl.style.color = 'var(--success)';
     } catch (err) {
       const msg = err.message || '';
@@ -507,9 +507,9 @@
       ta.value = text; document.body.appendChild(ta);
       ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     }
-    btn.textContent = '✓ Copied';
+    btn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-check"/></svg> Copied';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
+    setTimeout(() => { btn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-copy"/></svg> Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
   // === Page Content Extraction (injected into page) ===
@@ -607,6 +607,11 @@
     }
   }
 
+  // === Icon Helper ===
+  function icon(name) {
+    return '<svg class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#cs-icon-' + name + '"/></svg>';
+  }
+
   // === History ===
   function formatTime(ts) {
     const d = new Date(ts);
@@ -637,7 +642,7 @@
       items.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'history-item';
-        const icon = item.type === 'translate' ? '🌐' : item.type === 'summarize' ? '📄' : '💬';
+        const icon = item.type === 'translate' ? icon('translate') : item.type === 'summarize' ? icon('summarize') : icon('ask');
         const typeLabel = item.type === 'translate' ? 'Translate' : item.type === 'summarize' ? 'Summarize' : 'Ask';
 
         let preview;
@@ -654,8 +659,8 @@
             <span class="history-item-icon">${icon}</span>
             <span class="history-item-type">${typeLabel}</span>
             <span class="history-item-actions">
-              <button class="history-copy-btn" data-index="${idx}" title="Copy">📋</button>
-              <button class="history-delete-btn" data-index="${idx}" title="Delete">🗑</button>
+              <button class="history-copy-btn" data-index="${idx}" title="Copy"><svg class="btn-icon-svg"><use href="#cs-icon-copy"/></svg></button>
+              <button class="history-delete-btn" data-index="${idx}" title="Delete"><svg class="btn-icon-svg"><use href="#cs-icon-delete"/></svg></button>
             </span>
             <span class="history-item-time">${formatTime(item.timestamp)}</span>
           </div>
@@ -707,7 +712,7 @@
         : item.answer || item.question;
       await navigator.clipboard.writeText(text || '');
       const originalText = copyBtn.textContent;
-      copyBtn.textContent = '✓';
+      copyBtn.innerHTML = '<svg class="btn-icon-svg"><use href="#cs-icon-check"/></svg>';
       setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
     }
   });
@@ -811,7 +816,7 @@
   toggleTokenBtn.addEventListener('click', () => {
     const isPassword = settingAuthToken.type === 'password';
     settingAuthToken.type = isPassword ? 'text' : 'password';
-    toggleTokenBtn.textContent = isPassword ? '🔒' : '👁';
+    toggleTokenBtn.innerHTML = isPassword ? '<svg class="btn-icon-svg"><use href="#cs-icon-eye-off"/></svg>' : '<svg class="btn-icon-svg"><use href="#cs-icon-eye"/></svg>';
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
 

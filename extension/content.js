@@ -18,8 +18,69 @@
   let csAppearance = 'dark';
   let browserLang = navigator.language?.startsWith('zh') ? 'zh' : navigator.language?.startsWith('ja') ? 'ja' : 'en';
 
-  // === Popup translations ===
-  let popupI18N = null;
+  // === SVG Icon Helper ===
+  function injectSvgSprite() {
+    if (document.getElementById('cs-sprite')) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'cs-sprite';
+    svg.style.display = 'none';
+    svg.innerHTML = `
+      <symbol id="cs-icon-translate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </symbol>
+      <symbol id="cs-icon-summarize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </symbol>
+      <symbol id="cs-icon-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </symbol>
+      <symbol id="cs-icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </symbol>
+      <symbol id="cs-icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </symbol>
+      <symbol id="cs-icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </symbol>
+      <symbol id="cs-icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </symbol>
+      <symbol id="cs-icon-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </symbol>
+      <symbol id="cs-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </symbol>
+      <symbol id="cs-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </symbol>
+      <symbol id="cs-icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+      </symbol>
+      <symbol id="cs-icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </symbol>
+      <symbol id="cs-icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </symbol>
+      <symbol id="cs-icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </symbol>
+    `;
+    document.body.appendChild(svg);
+  }
+
+  function icon(name) {
+    return `<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#cs-icon-${name}"/></svg>`;
+  }
 
   async function loadPopupI18n() {
     if (popupI18N) return popupI18N;
@@ -41,10 +102,9 @@
     const i18n = await loadPopupI18n();
     const lang = resolvePopupLang(settings.language);
     const t = i18n[lang] || i18n.en || {};
-    const icons = { translate: '🌐', summarize: '📄', ask: '💬' };
     const loadingKey = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' }[action] || 'loading';
     return {
-      icon: icons[action] || '🌐',
+      svgIcon: icon(action),
       title: t[action] || action,
       loading: t[loadingKey] || 'Processing...'
     };
@@ -64,6 +124,7 @@
     }
     injectTheme(csAppearance);
     injectStyles();
+    injectSvgSprite();
     createDock();
     chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
   });
@@ -243,6 +304,17 @@
         font-family: system-ui, -apple-system, sans-serif;
       }
       .cs-dock:hover .cs-dock-tooltip { opacity: 1; }
+
+      .cs-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .cs-icon-sm {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
     `;
     document.head.appendChild(s);
   }
@@ -253,9 +325,9 @@
     const el = document.createElement('div');
     el.className = 'cs-bubble';
     el.innerHTML = `
-      <button class="cs-btn" id="cs-btn-translate" title="翻译">🌐</button>
-      <button class="cs-btn" id="cs-btn-summarize" title="总结">📄</button>
-      <button class="cs-btn" id="cs-btn-ask" title="提问">💬</button>
+      <button class="cs-btn" id="cs-btn-translate" title="翻译"><svg class="cs-icon"><use href="#cs-icon-translate"/></svg></button>
+      <button class="cs-btn" id="cs-btn-summarize" title="总结"><svg class="cs-icon"><use href="#cs-icon-summarize"/></svg></button>
+      <button class="cs-btn" id="cs-btn-ask" title="提问"><svg class="cs-icon"><use href="#cs-icon-ask"/></svg></button>
     `;
     document.body.appendChild(el);
     return el;
@@ -293,7 +365,7 @@
     el.className = 'cs-popup';
     el.innerHTML = `
       <div class="cs-popup-header">
-        <span class="cs-popup-icon" id="cs-popup-icon">🌐</span>
+        <span class="cs-popup-icon" id="cs-popup-icon"></span>
         <span class="cs-popup-title" id="cs-popup-title">Translation</span>
         <button class="cs-popup-close" id="cs-popup-close">✕</button>
       </div>
@@ -305,7 +377,7 @@
       </div>
       <div class="cs-popup-footer" id="cs-popup-footer" style="display:none">
         <span class="cs-popup-cite" id="cs-popup-cite"></span>
-        <button class="cs-popup-copy" id="cs-popup-copy">📋 Copy</button>
+        <button class="cs-popup-copy" id="cs-popup-copy"></button>
       </div>
     `;
     document.body.appendChild(el);
@@ -330,8 +402,8 @@
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
 
-    const { icon, title, loading } = await getPopupStrings(action);
-    popup.querySelector('.cs-popup-icon').textContent = icon;
+    const { svgIcon, title, loading } = await getPopupStrings(action);
+    popup.querySelector('.cs-popup-icon').innerHTML = svgIcon;
     popup.querySelector('.cs-popup-title').textContent = title;
     popup.querySelector('#cs-popup-loading-text').textContent = loading;
 
@@ -430,14 +502,24 @@
   }
 
   async function copyText(text, btn) {
-    try { await navigator.clipboard.writeText(text); } catch {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
       const ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
-    btn.textContent = '✓ Copied';
+    btn.innerHTML = '';
+    btn.insertAdjacentHTML('afterbegin', '<svg class="cs-icon"><use href="#cs-icon-check"/></svg> ');
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 1500);
+    setTimeout(() => {
+      btn.innerHTML = '';
+      btn.insertAdjacentHTML('afterbegin', '<svg class="cs-icon"><use href="#cs-icon-copy"/></svg> ');
+      btn.classList.remove('copied');
+    }, 1500);
   }
 
   // === API Call (streaming via background script) ===
