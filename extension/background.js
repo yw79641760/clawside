@@ -106,15 +106,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === 'open-sidepanel') {
-    chrome.windows.getCurrent().then((win) => {
-      chrome.sidePanel.open({ windowId: win?.id }).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
-      });
-    }).catch(() => {
-      chrome.sidePanel.open({}).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
-      });
-    });
+    // open-sidepanel is handled directly in content script via chrome.sidePanel
+    // This handler exists only for logging
   }
 
   // No need to broadcast text_selected/content_ready - content scripts handle selection themselves

@@ -532,7 +532,10 @@
     dock.innerHTML = '🦖<span class=cs-dock-tooltip>ClawSide</span>';
     dock.addEventListener('click', (e) => {
       e.stopPropagation();
-      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch(() => {});
+      // Call sidePanel.open directly (must be sync response to user gesture)
+      chrome.sidePanel.open({}).catch((err) => {
+        console.error('[ClawSide] sidePanel.open error:', err);
+      });
     });
     document.body.appendChild(dock);
   }
