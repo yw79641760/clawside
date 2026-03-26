@@ -122,11 +122,11 @@
       /* === Persistent Dock Ball === */
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
-        width: 48px; height: 48px; border-radius: 50%;
+        width: 40px; height: 40px; border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         box-shadow: 0 4px 20px rgba(102, 126, 234, 0.45);
         cursor: pointer; display: flex; align-items: center; justify-content: center;
-        font-size: 22px; transition: transform 0.2s, box-shadow 0.2s;
+        font-size: 20px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
         user-select: none; border: none;
       }
       .cs-dock:hover {
@@ -136,8 +136,15 @@
       .cs-dock:active {
         transform: scale(0.95);
       }
+      .cs-dock.sticking {
+        right: 8px !important;
+        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s, box-shadow 0.2s;
+      }
+      .cs-dock.scrolling {
+        transition: none !important;
+      }
       .cs-dock-tooltip {
-        position: absolute; right: 58px; bottom: 6px;
+        position: absolute; right: 50px; bottom: 4px;
         background: #161b22; border: 1px solid #30363d;
         color: #c9d1d9; font-size: 13px; white-space: nowrap;
         padding: 6px 12px; border-radius: 8px;
@@ -523,22 +530,101 @@
 
   // === Persistent Dock Ball ===
   let dock = null;
+  let isSticking = false;
+  let idleTimer = null;
+  let isScrolling = false;
+
+  function stickDock() {
+    if (!dock) return;
+    dock.classList.add('sticking');
+    dock.classList.remove('scrolling');
+    isSticking = true;
+    isScrolling = false;
+  }
+
+  function unstickingDock() {
+    if (!dock) return;
+    dock.classList.remove('sticking');
+    isSticking = false;
+  }
+
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    if (isSticking) return; // already sticking
+    isScrolling = true;
+    if (dock) dock.classList.add('scrolling');
+    idleTimer = setTimeout(() => {
+      isScrolling = false;
+      if (dock) dock.classList.remove('scrolling');
+      stickDock();
+    }, 2000);
+  }
+
   function createDock() {
     if (dock) return;
     dock = document.createElement('button');
     dock.className = 'cs-dock';
     dock.id = 'cs-dock';
     dock.title = 'ClawSide';
-    dock.innerHTML = '🦖<span class=cs-dock-tooltip>ClawSide</span>';
-    dock.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // sidePanel.open must be called sync to user gesture, so use sendMessage to bg
-      // and bg calls sidePanel.open synchronously (setTimeout 0 keeps it in same task)
-      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch((err) => {
-        console.error('[ClawSide] sendMessage error:', err);
-      });
+    dock.innerHTML = '🦞<span class=cs-dock-tooltip>ClawSide</span>';
+
+    // Drag to reposition
+    let isDragging = false, startX, startY, startRight, startBottom;
+    dock.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = dock.getBoundingClientRect();
+      startRight = window.innerWidth - rect.right;
+      startBottom = window.innerHeight - rect.bottom;
+      e.preventDefault();
     });
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newRight = Math.max(0, startRight - dx);
+      const newBottom = Math.max(0, startBottom - dy);
+      dock.style.right = newRight + 'px';
+      dock.style.bottom = newBottom + 'px';
+      dock.classList.remove('sticking');
+      isSticking = false;
+      clearTimeout(idleTimer);
+    });
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      // Start idle timer after drag
+      resetIdleTimer();
+    });
+
+    // Click to open side panel
+    dock.addEventListener('click', (e) => {
+      if (isDragging) return;
+      e.stopPropagation();
+      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch(() => {});
+    });
+
     document.body.appendChild(dock);
+
+    // Scroll detection - detach while scrolling, re-stick after 2s idle
+    let scrollTimer = null;
+    window.addEventListener('scroll', () => {
+      if (!isSticking) {
+        resetIdleTimer();
+      } else {
+        // Temporarily detach while scrolling
+        dock.classList.remove('sticking');
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          stickDock();
+        }, 2000);
+      }
+    }, { passive: true });
+
+    // Initial stick after 2s
+    idleTimer = setTimeout(stickDock, 2000);
   }
 
   // Init
