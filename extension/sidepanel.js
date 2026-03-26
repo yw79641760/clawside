@@ -38,51 +38,6 @@
     const lang = resolveLang(settings.language, browserLang);
     const t = i18n[lang] || i18n.en || {};
     // Tabs
-    tabTranslate.textContent = t.tabTranslate || '🌐 Translate';
-    tabSummarize.textContent = t.tabSummarize || '📄 Summarize';
-    tabAsk.textContent = t.tabAsk || '💬 Ask';
-    tabHistory.textContent = t.tabHistory || '📜 History';
-    // Result titles
-    $('titleTranslate').textContent = t.resultTranslate || 'Translation';
-    $('titleSummarize').textContent = t.resultSummarize || 'Summary';
-    $('titleAnswer').textContent = t.resultAnswer || 'Answer';
-    // Copy buttons
-    $('copyTranslateResult').textContent = t.copy || '📋 Copy';
-    $('copySummarizeResult').textContent = t.copy || '📋 Copy';
-    $('copyAskResult').textContent = t.copy || '📋 Copy';
-    // Inputs
-    $('askQuestion').placeholder = t.askPlaceholder || 'Ask anything...';
-    $('translateInput').placeholder = t.translateInputPlaceholder || 'Enter text...';
-    // Settings
-    $('settingsTitle').textContent = t.settingsTitle || 'Settings';
-    $('labelTargetLang').textContent = t.targetLang || 'Target Language';
-    $('labelAppearance').textContent = t.appearance || 'Appearance';
-    $('optionSystem').textContent = t.systemOpt || '🖥️ System';
-    $('optionLight').textContent = t.lightOpt || '☀️ Light';
-    $('optionDark').textContent = t.darkOpt || '🌙 Dark';
-    $('labelPort').textContent = t.gatewayPort || 'Gateway Port';
-    $('labelToken').textContent = t.authToken || 'Auth Token';
-    $('testConnBtn').textContent = t.testConn || 'Test Connection';
-    $('saveSettingsBtn').textContent = t.saveSettings || 'Save Settings';
-    $('gatewayNote').innerHTML = t.gatewayNote || '';
-    // History
-    $('historyClearBtn').textContent = t.historyClear || 'Clear All';
-    // Loading
-    $('loadingText').textContent = t.loading || 'Processing...';
-    // History empty state
-    const historyEmptyText = $('historyEmpty').querySelector('.empty-text');
-    if (historyEmptyText) historyEmptyText.textContent = t.emptyHistory || 'No history';
-  }
-  function resolveLang(lang, browserLang) {
-    if (lang === 'auto') return browserLang === 'zh' ? 'zh' : browserLang === 'ja' ? 'ja' : 'en';
-    return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
-  }
-
-  async function applyPanelLanguage() {
-    const i18n = await loadI18n();
-    const lang = resolveLang(settings.language, browserLang);
-    const t = i18n[lang] || i18n.en || {};
-    // Tabs
     tabTranslate.textContent = t.tabTranslate;
     tabSummarize.textContent = t.tabSummarize;
     tabAsk.textContent = t.tabAsk;
