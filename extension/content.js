@@ -690,7 +690,16 @@
     dock.addEventListener('click', (e) => {
       if (isDragging) return;
       e.stopPropagation();
-      chrome.runtime.sendMessage({ type: 'toggle-sidepanel' }).catch(() => {});
+
+      // Retry sendMessage up to 3 times in case service worker was restarting
+      const sendWithRetry = (attempt = 1) => {
+        chrome.runtime.sendMessage({ type: 'toggle-sidepanel' }).catch((err) => {
+          if (attempt < 3 && err?.message?.includes('Extension context invalidated')) {
+            setTimeout(() => sendWithRetry(attempt + 1), 200);
+          }
+        });
+      };
+      sendWithRetry();
     });
 
     document.body.appendChild(dock);
