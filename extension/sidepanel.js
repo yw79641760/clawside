@@ -402,26 +402,31 @@
     summarizeResult.classList.add('hidden');
     summarizeResultText.textContent = '';
     summarizeBtn.disabled = true;
-    showLoading('Extracting page content...');
 
-    let pageContent = '';
+    // Reuse currentPageContent from shared context; re-extract only if stale/empty
+    let pageContent = currentPageContent;
     let extractionFailed = false;
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        const results = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: extractPageContent
-        });
-        pageContent = results?.[0]?.result || '';
-        if (!pageContent || pageContent.trim().length < 100) {
+
+    if (!pageContent || pageContent.trim().length < 100) {
+      showLoading('Extracting page content...');
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: extractPageContent
+          });
+          pageContent = results?.[0]?.result || '';
+          currentPageContent = pageContent; // update shared context
+          if (!pageContent || pageContent.trim().length < 100) {
+            extractionFailed = true;
+          }
+        } else {
           extractionFailed = true;
         }
-      } else {
+      } catch (err) {
         extractionFailed = true;
       }
-    } catch (err) {
-      extractionFailed = true;
     }
 
     if (extractionFailed) {
@@ -472,30 +477,34 @@
     askResult.classList.add('hidden');
     askResultText.textContent = '';
     askBtn.disabled = true;
-    showLoading('Extracting page context...');
 
-    let pageContent = '';
+    // Reuse currentPageContent from shared context; re-extract only if stale/empty
+    let pageContent = currentPageContent;
     let extractionFailed = false;
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        const results = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: extractPageContent
-        });
-        pageContent = results?.[0]?.result || '';
-        if (!pageContent || pageContent.trim().length < 100) {
+
+    if (!pageContent || pageContent.trim().length < 100) {
+      showLoading('Extracting page context...');
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: extractPageContent
+          });
+          pageContent = results?.[0]?.result || '';
+          currentPageContent = pageContent; // update shared context
+          if (!pageContent || pageContent.trim().length < 100) {
+            extractionFailed = true;
+          }
+        } else {
           extractionFailed = true;
         }
-      } else {
+      } catch (err) {
         extractionFailed = true;
       }
-    } catch (err) {
-      extractionFailed = true;
-    }
-
-    if (extractionFailed) {
-      pageContent = '';
+      if (extractionFailed) {
+        pageContent = '';
+      }
     }
 
     showLoading('Thinking...');
@@ -621,13 +630,13 @@
       if (summarizeFavicon) summarizeFavicon.src = favicon;
       if (summarizeTitle) summarizeTitle.textContent = currentPageTitle || '—';
       if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
-      if (summarizeContentPreview) summarizeContentPreview.textContent = content ? truncate(content, 200) : '';
+      if (summarizeContentPreview) summarizeContentPreview.textContent = content ? truncate(content, 20) : '';
 
       // Update ask panel
       if (askFavicon) askFavicon.src = favicon;
       if (askTitle) askTitle.textContent = currentPageTitle || '—';
       if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
-      if (askContentPreview) askContentPreview.textContent = content ? truncate(content, 200) : '';
+      if (askContentPreview) askContentPreview.textContent = content ? truncate(content, 20) : '';
 
       // If URL changed significantly, clear old selection
       if (prevUrl && prevUrl !== currentUrl) {
