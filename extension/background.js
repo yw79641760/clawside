@@ -148,6 +148,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  // Fallback: toggle side panel via background when chrome.sidePanel unavailable in content script
+  if (msg.type === 'toggle-sidepanel' && sender.tab) {
+    const tabId = sender.tab.id;
+    // Try close first
+    chrome.sidePanel.close({ tabId }).then(() => {
+      // Broadcast state
+      chrome.tabs.sendMessage(tabId, { type: 'panel-state', open: false }).catch(() => {});
+    }).catch(() => {
+      // Close failed → open
+      chrome.sidePanel.open({ tabId }).then(() => {
+        chrome.tabs.sendMessage(tabId, { type: 'panel-state', open: true }).catch(() => {});
+      }).catch((err) => {
+        console.error('[ClawSide] sidePanel.open error:', err);
+      });
+    });
+    sendResponse({ ok: true });
+    return true;
+  }
+
   return true;
 });
 

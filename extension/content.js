@@ -686,40 +686,52 @@
       resetIdleTimer();
     });
 
-    // Click to toggle side panel (must be synchronous to satisfy Chrome's user gesture requirement)
+    // Click to toggle side panel
     let panelOpen = false;
 
     dock.addEventListener('click', (e) => {
       if (isDragging) return;
       e.stopPropagation();
 
-      if (panelOpen) {
-        // Close panel
-        chrome.sidePanel.close().then(() => {
-          panelOpen = false;
-          dock.classList.remove('panel-open');
-        }).catch(() => {});
+      // Use chrome.sidePanel if available (Chrome 116+), otherwise fallback to sendMessage
+      if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+        if (panelOpen) {
+          chrome.sidePanel.close().then(() => {
+            panelOpen = false;
+            dock.classList.remove('panel-open');
+          }).catch(() => {});
+        } else {
+          chrome.sidePanel.open().then(() => {
+            panelOpen = true;
+            dock.classList.add('panel-open');
+          }).catch((err) => {
+            console.error('[ClawSide] sidePanel.open error:', err);
+          });
+        }
       } else {
-        // Open panel
-        chrome.sidePanel.open().then(() => {
-          panelOpen = true;
-          dock.classList.add('panel-open');
-        }).catch((err) => {
-          console.error('[ClawSide] sidePanel.open error:', err);
-        });
+        // Fallback: send to background script
+        chrome.runtime.sendMessage({ type: 'toggle-sidepanel' }).catch(() => {});
       }
     });
 
-    // Sync state when panel is closed by user (ESC, X, click outside)
-    if (chrome.sidePanel.onClosed) {
+    // Listen for panel state changes from background fallback path
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.type === 'panel-state') {
+        panelOpen = msg.open;
+        dock.classList.toggle('panel-open', msg.open);
+      }
+    });
+
+    // Sync state when panel is closed by user (ESC, X, click outside) - Chrome 142+
+    if (typeof chrome !== 'undefined' && chrome.sidePanel?.onClosed) {
       chrome.sidePanel.onClosed.addListener(() => {
         panelOpen = false;
         dock.classList.remove('panel-open');
       });
     }
 
-    // Sync state when panel is opened (e.g. via action icon)
-    if (chrome.sidePanel.onOpened) {
+    // Sync state when panel is opened (e.g. via action icon) - Chrome 142+
+    if (typeof chrome !== 'undefined' && chrome.sidePanel?.onOpened) {
       chrome.sidePanel.onOpened.addListener(() => {
         panelOpen = true;
         dock.classList.add('panel-open');
