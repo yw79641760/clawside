@@ -124,6 +124,9 @@ async function apiCall(prompt, port, token, toolName = 'default') {
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
+// === Panel Toggle State ===
+let panelOpen = false;
+
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
@@ -143,18 +146,48 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  if (msg.type === 'open-sidepanel') {
+  if (msg.type === 'toggle-sidepanel') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs?.[0]?.id;
-      chrome.sidePanel.open({ tabId }).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
-      });
+      if (panelOpen) {
+        // Close panel
+        chrome.sidePanel.setOptions({ enabled: false, tabId }).then(() => {
+          panelOpen = false;
+          broadcastPanelState(false);
+        }).catch((err) => {
+          console.error('[ClawSide] sidePanel.close error:', err);
+        });
+      } else {
+        // Open panel
+        chrome.sidePanel.open({ tabId }).then(() => {
+          panelOpen = true;
+          broadcastPanelState(true);
+        }).catch((err) => {
+          console.error('[ClawSide] sidePanel.open error:', err);
+        });
+      }
     });
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  if (msg.type === 'get-panel-state') {
+    sendResponse({ open: panelOpen });
+    return true;
   }
 
   // No need to broadcast text_selected/content_ready - content scripts handle selection themselves
   return true;
 });
+
+// Broadcast panel state to all content scripts
+function broadcastPanelState(open) {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open }).catch(() => {});
+    });
+  });
+}
 
 // === Tab Switch Events ===
 chrome.tabs.onActivated.addListener(async (activeInfo) => {

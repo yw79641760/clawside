@@ -237,6 +237,10 @@
       .cs-dock.scrolling {
         transition: none !important;
       }
+      .cs-dock.panel-open {
+        background: rgba(102, 126, 234, 0.15);
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
+      }
       .cs-dock-tooltip {
         position: absolute; right: 38px; bottom: 50%;
         transform: translateY(50%);
@@ -682,14 +686,28 @@
       resetIdleTimer();
     });
 
-    // Click to open side panel
+    // Click to toggle side panel
     dock.addEventListener('click', (e) => {
       if (isDragging) return;
       e.stopPropagation();
-      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'toggle-sidepanel' }).catch(() => {});
     });
 
     document.body.appendChild(dock);
+
+    // Listen for panel state changes from background
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.type === 'panel-state') {
+        dock.classList.toggle('panel-open', msg.open);
+      }
+    });
+
+    // Request initial panel state on load
+    chrome.runtime.sendMessage({ type: 'get-panel-state' })
+      .then((res) => {
+        if (res) dock.classList.toggle('panel-open', res.open);
+      })
+      .catch(() => {});
 
     // Scroll detection
     let scrollTimer = null;
