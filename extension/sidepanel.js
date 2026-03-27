@@ -421,7 +421,8 @@
             target: { tabId: tab.id },
             func: extractPageContent
           });
-          pageContent = results?.[0]?.result || '';
+          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
+          pageContent = extracted.content + (extracted.jsonLd || '');
           currentPageContent = pageContent; // update shared context
           if (!pageContent || pageContent.trim().length < 100) {
             extractionFailed = true;
@@ -496,7 +497,8 @@
             target: { tabId: tab.id },
             func: extractPageContent
           });
-          pageContent = results?.[0]?.result || '';
+          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
+          pageContent = extracted.content + (extracted.jsonLd || '');
           currentPageContent = pageContent; // update shared context
           if (!pageContent || pageContent.trim().length < 100) {
             extractionFailed = true;
@@ -600,9 +602,45 @@
       text = lines.join('\n');
 
       // Truncate to avoid token limits
-      return text.slice(0, 10000).trim();
+      text = text.slice(0, 10000).trim();
+
+      // Extract JSON-LD structured data (for AI context enrichment)
+      let jsonLdText = '';
+      try {
+        const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
+        const parts = [];
+        ldScripts.forEach((script) => {
+          try {
+            const data = JSON.parse(script.textContent);
+            // Handle @graph arrays (multiple entities in one script)
+            const items = Array.isArray(data) ? data : (data['@graph'] ? data['@graph'] : [data]);
+            items.forEach((item) => {
+              if (!item) return;
+              // Extract useful fields
+              const fields = ['headline', 'name', 'articleBody', 'text', 'contentText',
+                              'description', 'summary', 'author', 'creator', 'publisher',
+                              'datePublished', 'dateCreated', 'dateModified'];
+              const extracted = [];
+              fields.forEach((f) => {
+                if (item[f]) {
+                  const val = typeof item[f] === 'object' ? item[f].name || item[f] : item[f];
+                  extracted.push(`${f}: ${val}`);
+                }
+              });
+              if (extracted.length > 0) {
+                parts.push(extracted.join(', '));
+              }
+            });
+          } catch {}
+        });
+        if (parts.length > 0) {
+          jsonLdText = '\n[Structured Data]\n' + parts.join('\n');
+        }
+      } catch {}
+
+      return { content: text, jsonLd: jsonLdText };
     } catch (err) {
-      return '';
+      return { content: '', jsonLd: '' };
     }
   }
 
@@ -626,7 +664,8 @@
             target: { tabId: tab.id },
             func: extractPageContent
           });
-          content = results?.[0]?.result || '';
+          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
+          content = extracted.content + (extracted.jsonLd || '');
         } catch {}
       }
       currentPageContent = content;
