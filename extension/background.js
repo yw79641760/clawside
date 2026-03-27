@@ -2,9 +2,10 @@
 // Handles API calls (streaming + non-streaming) + message routing
 
 // === Streaming API Call ===
-async function apiStream(prompt, port, token, requestId) {
+async function apiStream(prompt, port, token, requestId, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
+  const user = 'clawside:' + toolName;  // Gateway derives session from user field
 
   const response = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
     method: 'POST',
@@ -14,6 +15,7 @@ async function apiStream(prompt, port, token, requestId) {
     },
     body: JSON.stringify({
       model: 'openclaw/main',
+      user,  // Session复用 key — same toolName → same session
       messages: [{ role: 'user', content: prompt }],
       stream: true
     })
@@ -69,9 +71,10 @@ async function apiStream(prompt, port, token, requestId) {
 }
 
 // === Non-streaming API Call (for tests) ===
-async function apiNonStream(prompt, port, token, requestId) {
+async function apiNonStream(prompt, port, token, requestId, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
+  const user = 'clawside:' + toolName;
 
   const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
     method: 'POST',
@@ -81,6 +84,7 @@ async function apiNonStream(prompt, port, token, requestId) {
     },
     body: JSON.stringify({
       model: 'openclaw/main',
+      user,
       messages: [{ role: 'user', content: prompt }],
       stream: false
     })
@@ -94,9 +98,10 @@ async function apiNonStream(prompt, port, token, requestId) {
   const result = data.choices?.[0]?.message?.content?.trim() || '';
   chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
 }
-async function apiCall(prompt, port, token) {
+async function apiCall(prompt, port, token, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
+  const user = 'clawside:' + toolName;
 
   const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
     method: 'POST',
@@ -106,6 +111,7 @@ async function apiCall(prompt, port, token) {
     },
     body: JSON.stringify({
       model: 'openclaw/main',
+      user,
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -121,15 +127,15 @@ async function apiCall(prompt, port, token) {
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
-    const { prompt, port, token, requestId, stream = true } = msg;
+    const { prompt, port, token, requestId, stream = true, toolName = 'default' } = msg;
     if (stream) {
       // Streaming mode
-      apiStream(prompt, port, token, requestId).catch((err) => {
+      apiStream(prompt, port, token, requestId, toolName).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
       });
     } else {
       // Non-streaming mode (for connection test)
-      apiNonStream(prompt, port, token, requestId).catch((err) => {
+      apiNonStream(prompt, port, token, requestId, toolName).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
       });
     }

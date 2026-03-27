@@ -21,7 +21,7 @@
   // === SVG Icon Helper ===
 
   const SVG = {
-    translate: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h5M3 12h7M3 16h5"></path><path d="M12 12h6"></path><path d="M15 8l3 4-3 4"></path><path d="M21 12h-3"></path></svg>',
+    translate: '<svg class="cs-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>',
     summarize: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
     ask: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
     copy: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
@@ -92,8 +92,6 @@
       '--cs-btn-hover': '#262c34',
       '--cs-btn-active': '#32393f',
       '--cs-header-bg': 'rgba(255,255,255,0.02)',
-      '--cs-dock-shadow': 'rgba(102,126,234,0.45)',
-      '--cs-dock-hover-shadow': 'rgba(102,126,234,0.6)',
       '--cs-scrollbar': '#30363d',
     } : {
       '--cs-bg': '#ffffff',
@@ -106,8 +104,6 @@
       '--cs-btn-hover': '#eaeef2',
       '--cs-btn-active': '#d0d7de',
       '--cs-header-bg': 'rgba(0,0,0,0.02)',
-      '--cs-dock-shadow': 'rgba(142,197,252,0.45)',
-      '--cs-dock-hover-shadow': 'rgba(142,197,252,0.7)',
       '--cs-scrollbar': '#d0d7de',
     };
     const s = document.createElement('style');
@@ -220,29 +216,30 @@
       /* === Persistent Dock Ball === */
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
-        width: 30px; height: 30px; border-radius: 50%;
-        background-color: var(--cs-primary);
-        box-shadow: 0 4px 20px var(--cs-dock-shadow);
+        width: 32px; height: 32px; border-radius: 50%;
+        background: transparent;
         cursor: pointer;
-        font-size: 16px; transition: transform 0.2s, box-shadow 0.2s, right 0.4s ease, bottom 0.4s ease;
-        user-select: none; border: none; overflow: visible;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.2s, right 0.4s ease, bottom 0.4s ease;
+        user-select: none; border: none; overflow: visible; padding: 0;
+        box-shadow: 0 0 16px rgba(102, 126, 234, 0.5);
       }
       .cs-dock:hover {
         transform: scale(1.12);
-        box-shadow: 0 6px 28px var(--cs-dock-hover-shadow);
       }
       .cs-dock:active {
         transform: scale(0.95);
       }
       .cs-dock.sticking {
         right: 8px !important;
-        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s, box-shadow 0.2s;
+        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s;
       }
       .cs-dock.scrolling {
         transition: none !important;
       }
       .cs-dock-tooltip {
-        position: absolute; right: 38px; bottom: 2px;
+        position: absolute; right: 38px; bottom: 50%;
+        transform: translateY(50%);
         background: var(--cs-bg); border: 1px solid var(--cs-border);
         color: var(--cs-text); font-size: 12px; white-space: nowrap;
         padding: 5px 10px; border-radius: 8px;
@@ -251,7 +248,7 @@
       }
       .cs-dock:hover .cs-dock-tooltip { opacity: 1; }
       .cs-dock-img {
-        width: 20px; height: 20px;
+        width: 32px; height: 32px;
         pointer-events: none; border-radius: 50%;
       }
 
