@@ -148,62 +148,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // Floating ball click → toggle side panel
-  // Strategy: try close first, if "no active panel" (already closed) → open instead
-  if (msg.type === 'toggle-sidepanel') {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tabId = tabs?.[0]?.id;
-
-      // Step 1: try to close
-      chrome.sidePanel.close({ tabId }).then(() => {
-        // Success: panel was open and is now closed
-        broadcastPanelState(false);
-      }).catch((err) => {
-        // Close failed → panel was already closed (or API unavailable)
-        // → open it
-        if (err.message?.includes('No active side panel')) {
-          chrome.sidePanel.open({ tabId }).then(() => {
-            broadcastPanelState(true);
-          }).catch((err2) => {
-            console.error('[ClawSide] sidePanel.open error:', err2);
-          });
-        } else {
-          // Unexpected error - try opening
-          chrome.sidePanel.open({ tabId }).then(() => {
-            broadcastPanelState(true);
-          }).catch((err2) => {
-            console.error('[ClawSide] sidePanel.open error:', err2);
-          });
-        }
-      });
-    });
-    sendResponse({ ok: true });
-    return true;
-  }
-
-  // Get current panel state (always return true since we can't reliably know)
-  if (msg.type === 'get-panel-state') {
-    sendResponse({ open: true });  // Assume open if being queried
-    return true;
-  }
-
-  // Side panel closed by user (ESC, click outside, X button)
-  if (msg.type === 'sidepanel-closed') {
-    broadcastPanelState(false);
-    return true;
-  }
-
   return true;
 });
-
-// Broadcast panel state to all content scripts
-function broadcastPanelState(open) {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open }).catch(() => {});
-    });
-  });
-}
 
 // === Tab Switch Events ===
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
