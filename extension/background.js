@@ -124,35 +124,10 @@ async function apiCall(prompt, port, token, toolName = 'default') {
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
-// === Panel Toggle State ===
-let panelOpen = false;
-
 // === Initialize Side Panel behavior: action icon toggles panel ===
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
   console.error('[ClawSide] setPanelBehavior error:', err);
 });
-
-// === Listen for panel open/close events (Chrome 142+) ===
-if (chrome.sidePanel.onOpened) {
-  chrome.sidePanel.onOpened.addListener((info) => {
-    panelOpen = true;
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: true }).catch(() => {});
-      });
-    });
-  });
-}
-if (chrome.sidePanel.onClosed) {
-  chrome.sidePanel.onClosed.addListener((info) => {
-    panelOpen = false;
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: false }).catch(() => {});
-      });
-    });
-  });
-}
 
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -174,48 +149,46 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   // Floating ball click → toggle side panel
+  // Strategy: try close first, if "no active panel" (already closed) → open instead
   if (msg.type === 'toggle-sidepanel') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs?.[0]?.id;
-      if (panelOpen) {
-        // Close panel (Chrome 141+)
-        chrome.sidePanel.close({ tabId }).then(() => {
-          panelOpen = false;
-          broadcastPanelState(false);
-        }).catch((err) => {
-          // Fallback: disable future opens (old Chrome)
-          chrome.sidePanel.setOptions({ enabled: false, tabId }).then(() => {
-            panelOpen = false;
-            broadcastPanelState(false);
-            // Re-enable for next open
-            setTimeout(() => {
-              chrome.sidePanel.setOptions({ enabled: true, tabId }).catch(() => {});
-            }, 100);
-          }).catch((err2) => console.error('[ClawSide] sidePanel.close error:', err2));
-        });
-      } else {
-        // Open panel
-        chrome.sidePanel.open({ tabId }).then(() => {
-          panelOpen = true;
-          broadcastPanelState(true);
-        }).catch((err) => {
-          console.error('[ClawSide] sidePanel.open error:', err);
-        });
-      }
+
+      // Step 1: try to close
+      chrome.sidePanel.close({ tabId }).then(() => {
+        // Success: panel was open and is now closed
+        broadcastPanelState(false);
+      }).catch((err) => {
+        // Close failed → panel was already closed (or API unavailable)
+        // → open it
+        if (err.message?.includes('No active side panel')) {
+          chrome.sidePanel.open({ tabId }).then(() => {
+            broadcastPanelState(true);
+          }).catch((err2) => {
+            console.error('[ClawSide] sidePanel.open error:', err2);
+          });
+        } else {
+          // Unexpected error - try opening
+          chrome.sidePanel.open({ tabId }).then(() => {
+            broadcastPanelState(true);
+          }).catch((err2) => {
+            console.error('[ClawSide] sidePanel.open error:', err2);
+          });
+        }
+      });
     });
     sendResponse({ ok: true });
     return true;
   }
 
-  // Get current panel state
+  // Get current panel state (always return true since we can't reliably know)
   if (msg.type === 'get-panel-state') {
-    sendResponse({ open: panelOpen });
+    sendResponse({ open: true });  // Assume open if being queried
     return true;
   }
 
   // Side panel closed by user (ESC, click outside, X button)
   if (msg.type === 'sidepanel-closed') {
-    panelOpen = false;
     broadcastPanelState(false);
     return true;
   }
