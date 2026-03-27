@@ -686,7 +686,14 @@
       resetIdleTimer();
     });
 
-    // Click to toggle side panel
+    // Running inside the side panel itself → hide floating ball, register toggle
+    if (location.href.includes('sidepanel')) {
+      dock.style.display = 'none';
+      window.sidePanelInstance = { toggle: () => window.close() };
+      return;
+    }
+
+    // Regular page: floating ball toggles panel
     let panelOpen = false;
 
     dock.addEventListener('click', (e) => {
@@ -697,11 +704,13 @@
         // Close: inject window.close into side panel
         chrome.runtime.sendMessage({ type: 'close-from-outside' }).catch(() => {});
       } else {
-        // Open: chrome.sidePanel.open() must be called from a user gesture handler.
-        // Content script can't call it directly (API unavailable).
-        // Use action icon as primary open mechanism instead.
-        // For now: open via chrome.sidePanel.open in background (may fail without gesture).
-        chrome.runtime.sendMessage({ type: 'open-sidepanel-bg' }).catch(() => {});
+        // Open: no direct API from content script. Rely on action icon in toolbar.
+        // (Chrome requires user gesture in the right context to open side panel)
+        // As a workaround: open via direct chrome.sidePanel API call
+        chrome.sidePanel.open?.().then(() => {
+          panelOpen = true;
+          dock.classList.add('panel-open');
+        }).catch(() => {});
       }
     });
 
