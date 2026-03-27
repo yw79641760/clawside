@@ -686,28 +686,21 @@
       resetIdleTimer();
     });
 
-    // Click to toggle side panel
+    // Click to open side panel
     dock.addEventListener('click', (e) => {
       if (isDragging) return;
       e.stopPropagation();
-      chrome.runtime.sendMessage({ type: 'toggle-sidepanel' }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'open-sidepanel' }).catch(() => {});
     });
 
     document.body.appendChild(dock);
 
-    // Listen for panel state changes from background
+    // Listen for panel closed by user (ESC, click outside, X) → remove active glow
     chrome.runtime.onMessage.addListener((msg) => {
-      if (msg.type === 'panel-state') {
-        dock.classList.toggle('panel-open', msg.open);
+      if (msg.type === 'panel-state' && !msg.open) {
+        dock.classList.remove('panel-open');
       }
     });
-
-    // Request initial panel state on load
-    chrome.runtime.sendMessage({ type: 'get-panel-state' })
-      .then((res) => {
-        if (res) dock.classList.toggle('panel-open', res.open);
-      })
-      .catch(() => {});
 
     // Scroll detection
     let scrollTimer = null;

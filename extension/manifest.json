@@ -48,5 +48,11 @@
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_icon": {
+      "48": "icons/icon48.png"
+    },
+    "default_title": "ClawSide"
   }
 }
