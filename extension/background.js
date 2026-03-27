@@ -124,6 +124,36 @@ async function apiCall(prompt, port, token, toolName = 'default') {
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
+// === Panel Toggle State ===
+let panelOpen = false;
+
+// === Initialize Side Panel behavior: action icon toggles panel ===
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
+  console.error('[ClawSide] setPanelBehavior error:', err);
+});
+
+// === Listen for panel open/close events (Chrome 142+) ===
+if (chrome.sidePanel.onOpened) {
+  chrome.sidePanel.onOpened.addListener((info) => {
+    panelOpen = true;
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: true }).catch(() => {});
+      });
+    });
+  });
+}
+if (chrome.sidePanel.onClosed) {
+  chrome.sidePanel.onClosed.addListener((info) => {
+    panelOpen = false;
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: false }).catch(() => {});
+      });
+    });
+  });
+}
+
 // === Message Routing ===
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
@@ -143,36 +173,64 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // Floating ball click → open side panel
-  if (msg.type === 'open-sidepanel') {
+  // Floating ball click → toggle side panel
+  if (msg.type === 'toggle-sidepanel') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs?.[0]?.id;
-      chrome.sidePanel.open({ tabId }).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
-      });
+      if (panelOpen) {
+        // Close panel (Chrome 141+)
+        chrome.sidePanel.close({ tabId }).then(() => {
+          panelOpen = false;
+          broadcastPanelState(false);
+        }).catch((err) => {
+          // Fallback: disable future opens (old Chrome)
+          chrome.sidePanel.setOptions({ enabled: false, tabId }).then(() => {
+            panelOpen = false;
+            broadcastPanelState(false);
+            // Re-enable for next open
+            setTimeout(() => {
+              chrome.sidePanel.setOptions({ enabled: true, tabId }).catch(() => {});
+            }, 100);
+          }).catch((err2) => console.error('[ClawSide] sidePanel.close error:', err2));
+        });
+      } else {
+        // Open panel
+        chrome.sidePanel.open({ tabId }).then(() => {
+          panelOpen = true;
+          broadcastPanelState(true);
+        }).catch((err) => {
+          console.error('[ClawSide] sidePanel.open error:', err);
+        });
+      }
     });
     sendResponse({ ok: true });
     return true;
   }
 
+  // Get current panel state
+  if (msg.type === 'get-panel-state') {
+    sendResponse({ open: panelOpen });
+    return true;
+  }
+
   // Side panel closed by user (ESC, click outside, X button)
   if (msg.type === 'sidepanel-closed') {
-    // Broadcast to all content scripts so floating ball can update its state
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: false }).catch(() => {});
-      });
-    });
+    panelOpen = false;
+    broadcastPanelState(false);
     return true;
   }
 
   return true;
 });
 
-// === Initialize Side Panel behavior: action icon toggles panel ===
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
-  console.error('[ClawSide] setPanelBehavior error:', err);
-});
+// Broadcast panel state to all content scripts
+function broadcastPanelState(open) {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open }).catch(() => {});
+    });
+  });
+}
 
 // === Tab Switch Events ===
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
