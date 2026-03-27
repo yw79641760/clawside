@@ -148,22 +148,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // Fallback: toggle side panel via background when chrome.sidePanel unavailable in content script
-  if (msg.type === 'toggle-sidepanel' && sender.tab) {
-    const tabId = sender.tab.id;
-    // Try close first
-    chrome.sidePanel.close({ tabId }).then(() => {
-      // Broadcast state
-      chrome.tabs.sendMessage(tabId, { type: 'panel-state', open: false }).catch(() => {});
-    }).catch(() => {
-      // Close failed → open
-      chrome.sidePanel.open({ tabId }).then(() => {
-        chrome.tabs.sendMessage(tabId, { type: 'panel-state', open: true }).catch(() => {});
-      }).catch((err) => {
-        console.error('[ClawSide] sidePanel.open error:', err);
-      });
+  // Close side panel from floating ball: find side panel tab and close it
+  if (msg.type === 'close-from-outside') {
+    if (!sender.tab) { return true; }
+    chrome.tabs.query({ windowId: sender.tab.windowId }, (tabs) => {
+      const sidePanelTab = tabs.find((t) => t.url?.includes('sidepanel'));
+      if (sidePanelTab?.id) {
+        // Inject script into side panel to call window.close()
+        chrome.scripting.executeScript({
+          target: { tabId: sidePanelTab.id },
+          func: () => { window.close(); }
+        }).then(() => {
+          if (sender.tab?.id) {
+            chrome.tabs.sendMessage(sender.tab.id, { type: 'panel-state', open: false }).catch(() => {});
+          }
+        }).catch((err) => {
+          console.error('[ClawSide] close side panel error:', err);
+          // Fallback: try closing via tab API
+          chrome.tabs.close(sidePanelTab.id).catch(() => {});
+        });
+      }
     });
-    sendResponse({ ok: true });
     return true;
   }
 
