@@ -686,25 +686,22 @@
       resetIdleTimer();
     });
 
-    // Click to toggle side panel (directly, in user gesture context)
+    // Click to toggle side panel
     let panelOpen = false;
 
     dock.addEventListener('click', (e) => {
       if (isDragging) return;
       e.stopPropagation();
 
-      // chrome.sidePanel.open() must be called synchronously in a user gesture handler
       if (panelOpen) {
-        // Close: try window.close from within side panel via injected script
+        // Close: inject window.close into side panel
         chrome.runtime.sendMessage({ type: 'close-from-outside' }).catch(() => {});
       } else {
-        // Open directly
-        chrome.sidePanel.open().then(() => {
-          panelOpen = true;
-          dock.classList.add('panel-open');
-        }).catch((err) => {
-          console.error('[ClawSide] sidePanel.open error:', err);
-        });
+        // Open: chrome.sidePanel.open() must be called from a user gesture handler.
+        // Content script can't call it directly (API unavailable).
+        // Use action icon as primary open mechanism instead.
+        // For now: open via chrome.sidePanel.open in background (may fail without gesture).
+        chrome.runtime.sendMessage({ type: 'open-sidepanel-bg' }).catch(() => {});
       }
     });
 

@@ -5,7 +5,7 @@
 async function apiStream(prompt, port, token, requestId, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
-  const user = 'clawside:' + toolName;  // Gateway derives session from user field
+  const user = 'clawside:' + toolName;
 
   const response = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
     method: 'POST',
@@ -15,18 +15,16 @@ async function apiStream(prompt, port, token, requestId, toolName = 'default') {
     },
     body: JSON.stringify({
       model: 'openclaw/main',
-      user,  // Session复用 key — same toolName → same session
+      user,
       messages: [{ role: 'user', content: prompt }],
       stream: true
     })
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error?.message || `HTTP ${response.status}`);
+    throw new Error(`HTTP ${response.status}`);
   }
 
-  // Read SSE stream
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -34,11 +32,9 @@ async function apiStream(prompt, port, token, requestId, toolName = 'default') {
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
     buffer = lines.pop() || '';
-
     for (const line of lines) {
       if (!line.startsWith('data: ')) continue;
       const data = line.slice(6).trim();
@@ -55,22 +51,10 @@ async function apiStream(prompt, port, token, requestId, toolName = 'default') {
       } catch {}
     }
   }
-
-  // Handle any remaining buffer
-  if (buffer.startsWith('data: ') && buffer.slice(6).trim() !== '[DONE]') {
-    try {
-      const json = JSON.parse(buffer.slice(6).trim());
-      const content = json.choices?.[0]?.delta?.content || '';
-      if (content) {
-        chrome.runtime.sendMessage({ type: 'clawside-stream-chunk', requestId, content }).catch(() => {});
-      }
-    } catch {}
-  }
-
   chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
 }
 
-// === Non-streaming API Call (for tests) ===
+// === Non-streaming API Call ===
 async function apiNonStream(prompt, port, token, requestId, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
@@ -90,14 +74,13 @@ async function apiNonStream(prompt, port, token, requestId, toolName = 'default'
     })
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error?.message || `HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const result = data.choices?.[0]?.message?.content?.trim() || '';
   chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
 }
+
+// === Non-streaming single-fetch API Call ===
 async function apiCall(prompt, port, token, toolName = 'default') {
   port = String(port || '18789');
   token = String(token || '').trim();
@@ -124,9 +107,14 @@ async function apiCall(prompt, port, token, toolName = 'default') {
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
-// === Initialize Side Panel behavior: action icon toggles panel ===
+// === Initialize Side Panel behavior ===
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
   console.error('[ClawSide] setPanelBehavior error:', err);
+});
+
+// === Open side panel on extension action icon click ===
+chrome.action?.onClicked?.addListener((tab) => {
+  chrome.sidePanel.open({ windowId: tab.windowId });
 });
 
 // === Message Routing ===
@@ -134,12 +122,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
     const { prompt, port, token, requestId, stream = true, toolName = 'default' } = msg;
     if (stream) {
-      // Streaming mode
       apiStream(prompt, port, token, requestId, toolName).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
       });
     } else {
-      // Non-streaming mode (for connection test)
       apiNonStream(prompt, port, token, requestId, toolName).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
       });
@@ -148,13 +134,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // Close side panel from floating ball: find side panel tab and close it
+  // Floating ball → close side panel via window.close injection
   if (msg.type === 'close-from-outside') {
     if (!sender.tab) { return true; }
     chrome.tabs.query({ windowId: sender.tab.windowId }, (tabs) => {
       const sidePanelTab = tabs.find((t) => t.url?.includes('sidepanel'));
       if (sidePanelTab?.id) {
-        // Inject script into side panel to call window.close()
         chrome.scripting.executeScript({
           target: { tabId: sidePanelTab.id },
           func: () => { window.close(); }
@@ -164,7 +149,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           }
         }).catch((err) => {
           console.error('[ClawSide] close side panel error:', err);
-          // Fallback: try closing via tab API
           chrome.tabs.close(sidePanelTab.id).catch(() => {});
         });
       }
@@ -192,9 +176,4 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       title: changeInfo.title || tab.title || ''
     }).catch(() => {});
   }
-});
-
-// Open side panel on extension icon click
-chrome.action?.onClicked?.addListener((tab) => {
-  chrome.sidePanel.open({ windowId: tab.windowId });
 });
