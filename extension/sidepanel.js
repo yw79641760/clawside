@@ -3,6 +3,11 @@
 (function () {
   'use strict';
 
+  // === Notify background when panel is closed (ESC, click outside, etc.) ===
+  window.addEventListener('unload', () => {
+    chrome.runtime.sendMessage({ type: 'sidepanel-closed' }).catch(() => {});
+  });
+
   const DEFAULT_PORT = '18789';
 
   // === State ===

@@ -176,6 +176,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'sidepanel-closed') {
+    // Panel was closed by user (ESC, click outside, etc.) — reset state
+    panelOpen = false;
+    broadcastPanelState(false);
+    return true;
+  }
+
   // No need to broadcast text_selected/content_ready - content scripts handle selection themselves
   return true;
 });
