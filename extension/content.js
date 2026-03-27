@@ -703,15 +703,9 @@
       if (panelOpen) {
         // Close: inject window.close into side panel
         chrome.runtime.sendMessage({ type: 'close-from-outside' }).catch(() => {});
-      } else {
-        // Open: no direct API from content script. Rely on action icon in toolbar.
-        // (Chrome requires user gesture in the right context to open side panel)
-        // As a workaround: open via direct chrome.sidePanel API call
-        chrome.sidePanel.open?.().then(() => {
-          panelOpen = true;
-          dock.classList.add('panel-open');
-        }).catch(() => {});
       }
+      // Note: opening side panel from floating ball is not possible due to
+      // Chrome's user gesture requirement. Use action icon (browser toolbar) to open.
     });
 
     // Listen for panel state changes from background
