@@ -810,7 +810,7 @@
         if (selectedText) {
           askContentPreview.textContent = `"${truncate(selectedText, 100)}"`;
         } else {
-          askContentPreview.textContent = '';
+          askContentPreview.textContent = currentPageContent ? truncate(currentPageContent, 20) : '';
         }
       }
 
