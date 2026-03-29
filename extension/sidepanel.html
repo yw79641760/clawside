@@ -68,18 +68,26 @@
         <div class="status-msg hidden" id="translateStatus"></div>
       </section>
 
+      <!-- Page Context (shared for summarize + ask) -->
+      <div id="pageContext">
+        <div class="page-info">
+          <h3 class="page-info-heading" id="ctxHeadingSummarize">当前页面</h3>
+          <h3 class="page-info-heading hidden" id="ctxHeadingAsk">当前页面</h3>
+          <div class="page-info-header">
+            <img class="page-favicon" id="ctxFavicon" src="" alt="">
+            <span class="page-title" id="ctxTitle">Loading...</span>
+          </div>
+          <div class="page-url" id="ctxUrl"></div>
+          <div class="page-content-preview" id="ctxContentPreview"></div>
+          <button class="page-info-refresh" id="ctxRefreshBtn" title="Refresh context">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Summarize Panel -->
       <section class="panel hidden" id="panelSummarize">
-        <h3 id="titleSummarizeHeader" class="panel-title">总结</h3>
-        <div class="page-info" id="pageInfo">
-          <div class="page-info-header">
-            <img class="page-favicon" id="summarizeFavicon" src="" alt="">
-            <span class="page-title" id="summarizeTitle">—</span>
-          </div>
-          <div class="page-url" id="pageUrl">—</div>
-          <div class="page-content-preview" id="summarizeContentPreview"></div>
-        </div>
-
+        <h3 id="titleSummarizeHeader" class="panel-title panel-heading">总结</h3>
         <button class="btn-primary" id="summarizeBtn">
           <span id="labelSummarizeBtn">Summarize This Page</span>
         </button>
@@ -99,16 +107,7 @@
 
       <!-- Ask Panel -->
       <section class="panel hidden" id="panelAsk">
-        <h3 id="titleAskHeader" class="panel-title">提问</h3>
-        <div class="page-info" id="askContextInfo">
-          <div class="page-info-header">
-            <img class="page-favicon" id="askFavicon" src="" alt="">
-            <span class="page-title" id="askTitle">—</span>
-          </div>
-          <div class="page-url" id="askContextUrl">—</div>
-          <div class="page-content-preview" id="askContentPreview"></div>
-        </div>
-
+        <h3 id="titleAskHeader" class="panel-title panel-heading">提问</h3>
         <div class="input-area">
           <textarea id="askQuestion" placeholder="Ask anything about the page or selected text..." rows="3"></textarea>
         </div>
@@ -120,7 +119,7 @@
         <!-- Result -->
         <div class="result-card hidden" id="askResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewView="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
             <span class="result-title" id="titleAnswer">Answer</span>
             <button class="btn-copy" id="copyAskResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
           </div>
@@ -151,52 +150,111 @@
       <section class="panel hidden" id="panelSettings">
         <h3 id="settingsTitle">Settings</h3>
 
-        <div class="setting-item">
-          <label id="labelTargetLang">语言</label>
-          <select id="settingLanguage">
-            <option value="auto" id="optionAuto">Browser Language</option>
-            <option value="Chinese">中文 (Chinese)</option>
-            <option value="English">English</option>
-                      </select>
-          <div class="setting-hint" id="browserLangHint">Detecting browser language...</div>
+        <!-- Settings Sub-tabs -->
+        <div class="settings-sub-tabs">
+          <button class="settings-sub-tab active" id="settingsTabBasic" data-subtab="basic">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span id="labelSettingsBasic">基本</span>
+          </button>
+          <button class="settings-sub-tab" id="settingsTabTools" data-subtab="tools">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span id="labelSettingsTools">工具</span>
+          </button>
         </div>
 
-        <div class="setting-item">
-          <label id="labelAppearance">Appearance</label>
-          <select id="settingAppearance">
-            <option value="system" id="optionSystem"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> System</option>
-            <option value="light" id="optionLight"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light</option>
-            <option value="dark" id="optionDark"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark</option>
-          </select>
-        </div>
+        <!-- Basic Settings -->
+        <div class="settings-sub-panel" id="settingsBasic">
+          <div class="setting-item">
+            <label id="labelTargetLang">语言</label>
+            <select id="settingLanguage">
+              <option value="auto" id="optionAuto">Browser Language</option>
+              <option value="Chinese">中文 (Chinese)</option>
+              <option value="English">English</option>
+            </select>
+            <div class="setting-hint" id="browserLangHint">Detecting browser language...</div>
+          </div>
 
-        <div class="setting-item">
-          <label id="labelPort">OpenClaw Gateway Port</label>
-          <input type="number" id="settingBridgePort" value="18789" placeholder="18789">
-        </div>
+          <div class="setting-item">
+            <label id="labelAppearance">Appearance</label>
+            <select id="settingAppearance">
+              <option value="system" id="optionSystem"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> System</option>
+              <option value="light" id="optionLight"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light</option>
+              <option value="dark" id="optionDark"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark</option>
+            </select>
+          </div>
 
-        <div class="setting-item">
-          <label id="labelToken">Gateway Auth Token</label>
-          <div class="token-row">
-            <input type="password" id="settingAuthToken" placeholder="Enter token if gateway requires auth">
-            <button class="btn-icon" id="toggleTokenBtn" title="Show token"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-            <span class="token-status" id="tokenStatus">—</span>
+          <div class="setting-item">
+            <label id="labelPort">OpenClaw Gateway Port</label>
+            <input type="number" id="settingBridgePort" value="18789" placeholder="18789">
+          </div>
+
+          <div class="setting-item">
+            <label id="labelToken">Gateway Auth Token</label>
+            <div class="token-row">
+              <input type="password" id="settingAuthToken" placeholder="Enter token if gateway requires auth">
+              <button class="btn-icon" id="toggleTokenBtn" title="Show token"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+              <span class="token-status" id="tokenStatus">—</span>
+            </div>
+          </div>
+
+          <div class="setting-note hidden" id="gatewayStatusBar">
+            Status: <span id="gatewayStatus">—</span>
+          </div>
+
+          <button class="btn-primary" id="testConnBtn">Test Connection</button>
+          <div class="status-msg hidden" id="testConnStatus"></div>
+
+          <div class="setting-note" id="gatewayNote" style="margin-top:12px">
+            The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint.
+            Requires <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in your OpenClaw config.
           </div>
         </div>
 
-        <div class="setting-note hidden" id="gatewayStatusBar">
-          Status: <span id="gatewayStatus">—</span>
+        <!-- Tools Settings -->
+        <div class="settings-sub-panel hidden" id="settingsTools">
+          <div class="tool-prompt-section" id="toolPromptTranslate">
+            <div class="tool-prompt-header">
+              <div class="tool-prompt-title">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>
+                <span id="labelToolTranslate">翻译</span>
+              </div>
+              <button class="btn-icon" id="resetPromptTranslate" title="Reset to default">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              </button>
+            </div>
+            <textarea class="tool-prompt-textarea" id="promptTranslate" rows="3" placeholder="Translation prompt..."></textarea>
+          </div>
+
+          <div class="tool-prompt-section" id="toolPromptSummarize">
+            <div class="tool-prompt-header">
+              <div class="tool-prompt-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span id="labelToolSummarize">总结</span>
+              </div>
+              <button class="btn-icon" id="resetPromptSummarize" title="Reset to default">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              </button>
+            </div>
+            <textarea class="tool-prompt-textarea" id="promptSummarize" rows="3" placeholder="Summarize prompt..."></textarea>
+          </div>
+
+          <div class="tool-prompt-section" id="toolPromptAsk">
+            <div class="tool-prompt-header">
+              <div class="tool-prompt-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span id="labelToolAsk">提问</span>
+              </div>
+              <button class="btn-icon" id="resetPromptAsk" title="Reset to default">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              </button>
+            </div>
+            <textarea class="tool-prompt-textarea" id="promptAsk" rows="4" placeholder="Ask prompt..."></textarea>
+          </div>
+
+          <div class="tool-prompt-hint">
+            可用变量：<code>{text}</code> 用户选中文本，<code>{content}</code> 页面内容，<code>{title}</code> 页面标题，<code>{url}</code> 页面地址，<code>{lang}</code> 目标语言
+          </div>
         </div>
-
-        <button class="btn-primary" id="testConnBtn">Test Connection</button>
-        <div class="status-msg hidden" id="testConnStatus"></div>
-
-        <div class="setting-note" id="gatewayNote" style="margin-top:12px">
-          The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint.
-          Requires <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in your OpenClaw config.
-        </div>
-
-
       </section>
 
     </main>

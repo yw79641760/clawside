@@ -10,6 +10,27 @@
 
   const DEFAULT_PORT = '18789';
 
+  // === Default Tool Prompts ===
+  const DEFAULT_PROMPTS = {
+    translate: `You are a professional translator. Translate the following text to {lang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: {text}`,
+    summarize: `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in {lang}. Focus on the main points and key information. Only output the summary in {lang}, nothing else.\n\nPage title: {title}\nPage URL: {url}\n\nContent:\n{content}`,
+    ask: `You are a helpful assistant. Answer in {lang}.\n\n{hasSelection}User selected this text from a webpage:\n\n"{selectedText}"\n\n{/hasSelection}Page title: {title}\nPage URL: {url}\n\n{hasContent}Page content (excerpt):\n{content}\n\n{/hasContent}User question: {question}`
+  };
+
+  function applyPrompt(template, vars) {
+    if (!template) return '';
+    return template
+      .replace(/\{text\}/g, vars.text || '')
+      .replace(/\{lang\}/g, vars.lang || 'English')
+      .replace(/\{title\}/g, vars.title || '')
+      .replace(/\{url\}/g, vars.url || '')
+      .replace(/\{content\}/g, vars.content || '')
+      .replace(/\{question\}/g, vars.question || '')
+      .replace(/\{selectedText\}/g, vars.selectedText || '')
+      .replace(/\{hasSelection\}[\s\S]*?\{\/hasSelection\}/g, vars.selectedText ? template.match(/\{hasSelection\}[\s\S]*?\{\/hasSelection\}/)?.[0].replace(/\{hasSelection\}|\{\/hasSelection\}/g, '') || '' : '')
+      .replace(/\{hasContent\}[\s\S]*?\{\/hasContent\}/g, vars.content ? template.match(/\{hasContent\}[\s\S]*?\{\/hasContent\}/)?.[0].replace(/\{hasContent\}|\{\/hasContent\}/g, '') || '' : '');
+  }
+
   // === State ===
   let currentTab = 'translate';
   let selectedText = '';
@@ -18,7 +39,7 @@
   let currentPageContent = '';
   let history = [];
   let browserLang = 'English';
-  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
 
   // === Translations ===
   let I18N = null;
@@ -120,15 +141,13 @@
   const copyTranslateResult = $('copyTranslateResult');
   const translateStatus = $('translateStatus');
 
-  // Summarize
-  const pageUrlEl = $('pageUrl');
-  const summarizeFavicon = $('summarizeFavicon');
-  const summarizeTitle = $('summarizeTitle');
-  const summarizeContentPreview = $('summarizeContentPreview');
-  const askFavicon = $('askFavicon');
-  const askTitle = $('askTitle');
-  const askContextUrl = $('askContextUrl');
-  const askContentPreview = $('askContentPreview');
+  // Summarize / Ask shared context
+  const pageContext = $('pageContext');
+  const ctxFavicon = $('ctxFavicon');
+  const ctxTitle = $('ctxTitle');
+  const ctxUrl = $('ctxUrl');
+  const ctxContentPreview = $('ctxContentPreview');
+  const pageUrlEl = $('pageUrl'); // kept for backward compat if any
   const summarizeBtn = $('summarizeBtn');
   const summarizeResult = $('summarizeResult');
   const summarizeResultText = $('summarizeResultText');
@@ -136,7 +155,6 @@
   const summarizeStatus = $('summarizeStatus');
 
   // Ask
-  const askContextUrlEl = $('askContextUrl');
   const askQuestion = $('askQuestion');
   const askBtn = $('askBtn');
   const askResult = $('askResult');
@@ -197,10 +215,15 @@
     panelHistory.classList.toggle('hidden', tab !== 'history');
     panelSettings.classList.toggle('hidden', tab !== 'settings');
     settingsBtn.classList.toggle('active', tab === 'settings');
+    if (pageContext) pageContext.classList.toggle('hidden', !['summarize', 'ask'].includes(tab));
+    // Show the right heading inside pageContext
+    $('ctxHeadingSummarize')?.classList.toggle('hidden', tab !== 'summarize');
+    $('ctxHeadingAsk')?.classList.toggle('hidden', tab !== 'ask');
 
     if (tab === 'history') renderHistory();
     if (tab === 'settings') {
       updateTokenStatus();
+      showSettingsSubTab('basic');
       if (browserLangHint) {
         const resolvedLang = resolveLang(settings.language, browserLang);
         const t2 = I18N ? (I18N[resolvedLang] || I18N.en || {}) : {};
@@ -210,10 +233,17 @@
     if (tab === 'ask') askQuestion.focus();
   }
 
+  function showSettingsSubTab(subtab) {
+    $('settingsBasic')?.classList.toggle('hidden', subtab !== 'basic');
+    $('settingsTools')?.classList.toggle('hidden', subtab !== 'tools');
+    $('settingsTabBasic')?.classList.toggle('active', subtab === 'basic');
+    $('settingsTabTools')?.classList.toggle('active', subtab === 'tools');
+  }
+
   // === Settings ===
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system' };
+    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
     settingLanguage.value = settings.language || 'auto';
@@ -222,6 +252,15 @@
     applyLanguage();
     applyAppearance();
     await applyPanelLanguage();
+    // Load tool prompts into textareas
+    loadToolPrompts();
+  }
+
+  function loadToolPrompts() {
+    const prompts = settings.toolPrompts || {};
+    $('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate;
+    $('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize;
+    $('promptAsk').value = prompts.ask || DEFAULT_PROMPTS.ask;
   }
 
   function applyLanguage() {
@@ -376,7 +415,8 @@
       if (targetLang === 'auto') {
         targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
       }
-      const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
+      const template = settings.toolPrompts?.translate || DEFAULT_PROMPTS.translate;
+      const prompt = applyPrompt(template, { text, lang: targetLang });
       // Stream chunks into result
       await apiCall(prompt, {
         toolName: 'translate',
@@ -445,14 +485,15 @@
     showLoading('Summarizing...');
     try {
       await loadSettings();
+      const template = settings.toolPrompts?.summarize || DEFAULT_PROMPTS.summarize;
       const lang = resolveLang(settings.language, browserLang);
       const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
-      let prompt;
-      if (pageContent) {
-        prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ${langLabel}. Focus on the main points and key information. Only output the summary in ${langLabel}, nothing else.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nContent:\n${pageContent.slice(0, 8000)}`;
-      } else {
-        prompt = `You are a page summarizer. Summarize the content at the following URL in 3-5 clear sentences in ${langLabel}. Focus on the main points and key information. Only output the summary in ${langLabel}, nothing else.\n\nURL: ${currentUrl}`;
-      }
+      const prompt = applyPrompt(template, {
+        lang: langLabel,
+        title: currentPageTitle,
+        url: currentUrl,
+        content: pageContent ? pageContent.slice(0, 8000) : ''
+      });
       await apiCall(prompt, {
         toolName: 'summarize',
         onChunk: (chunk) => {
@@ -517,22 +558,16 @@
     showLoading('Thinking...');
     try {
       await loadSettings();
-      let targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
-      let lang = targetLang;
-      let prompt;
-      if (pageContent) {
-        if (selectedText) {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${selectedText}"\n\nThe full page content is provided below for additional context.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
-        } else {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this webpage. The page content is provided below.\n\nPage title: ${currentPageTitle}\nPage URL: ${currentUrl}\n\nPage content (excerpt):\n${pageContent.slice(0, 6000)}\n\nUser question: ${question}`;
-        }
-      } else {
-        if (selectedText) {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${selectedText}"\n\nPage: ${currentUrl}\n\nUser question: ${question}`;
-        } else {
-          prompt = `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${currentUrl}\n\nUser question: ${question}`;
-        }
-      }
+      const template = settings.toolPrompts?.ask || DEFAULT_PROMPTS.ask;
+      const targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
+      const prompt = applyPrompt(template, {
+        lang: targetLang,
+        title: currentPageTitle,
+        url: currentUrl,
+        content: pageContent ? pageContent.slice(0, 6000) : '',
+        question,
+        selectedText: selectedText || ''
+      });
       await apiCall(prompt, {
         toolName: 'ask',
         onChunk: (chunk) => {
@@ -656,31 +691,34 @@
       currentPageTitle = tab.title || '';
       const favicon = tab.favIconUrl || '';
 
-      // Extract page content for context panels
+      // Extract page content from the active web page tab (not the side panel itself)
       let content = '';
-      if (tab.id) {
+      const activeTabId = tab.id;
+      const isExtensionPage = !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://');
+      if (activeTabId && !isExtensionPage) {
         try {
           const results = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
+            target: { tabId: activeTabId },
             func: extractPageContent
           });
           const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
           content = extracted.content + (extracted.jsonLd || '');
-        } catch {}
+          console.log('[ClawSide] extractPageContent result length:', content.length);
+        } catch (err) {
+          console.warn('[ClawSide] extractPageContent failed:', err.message || err);
+        }
+      } else if (isExtensionPage) {
+        console.warn('[ClawSide] updatePageContext: active tab is extension page, skipping extract:', tab.url);
+      } else {
+        console.warn('[ClawSide] updatePageContext: no active tab id');
       }
       currentPageContent = content;
 
-      // Update summarize panel
-      if (summarizeFavicon) summarizeFavicon.src = favicon;
-      if (summarizeTitle) summarizeTitle.textContent = currentPageTitle || '—';
-      if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
-      if (summarizeContentPreview) summarizeContentPreview.textContent = content ? truncate(content, 20) : '';
-
-      // Update ask panel
-      if (askFavicon) askFavicon.src = favicon;
-      if (askTitle) askTitle.textContent = currentPageTitle || '—';
-      if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
-      if (askContentPreview) askContentPreview.textContent = content ? truncate(content, 20) : '';
+      // Update shared context box
+      if (ctxFavicon) ctxFavicon.src = favicon;
+      if (ctxTitle) ctxTitle.textContent = currentPageTitle || '—';
+      if (ctxUrl) ctxUrl.textContent = currentUrl || '—';
+      if (ctxContentPreview) ctxContentPreview.textContent = content ? truncate(content, 20) : '';
 
       // If URL changed significantly, clear old selection
       if (prevUrl && prevUrl !== currentUrl) {
@@ -692,7 +730,7 @@
       // Try to get selected text from content script
       chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
     } catch (err) {
-      // Ignore
+      console.warn('[ClawSide] updatePageContext error:', err.message || err);
     }
   }
 
@@ -835,7 +873,7 @@
     }
   });
 
-  // === Messages from content script ===
+  // === Messages from content script / background ===
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'text_selected') {
       selectedText = msg.text || '';
@@ -847,20 +885,32 @@
         translateInput.value = selectedText;
       }
 
-      // Update ask context display
-      if (askTitle) askTitle.textContent = currentPageTitle || '—';
-      if (askContextUrlEl) askContextUrlEl.textContent = currentUrl || '—';
-      if (askContentPreview) {
+      // Update context box
+      if (ctxTitle) ctxTitle.textContent = currentPageTitle || '—';
+      if (ctxUrl) ctxUrl.textContent = currentUrl || '—';
+      if (ctxContentPreview) {
         if (selectedText) {
-          askContentPreview.textContent = `"${truncate(selectedText, 100)}"`;
+          ctxContentPreview.textContent = `"${truncate(selectedText, 100)}"`;
         } else {
-          askContentPreview.textContent = currentPageContent ? truncate(currentPageContent, 20) : '';
+          ctxContentPreview.textContent = currentPageContent ? truncate(currentPageContent, 20) : '';
         }
       }
 
       // Update summarize URL
       if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
     }
+
+    // Floating ball: jump to a specific tool tab
+    if (msg.type === 'OPEN_TAB_IN_PANEL' && msg.tab) {
+      console.log('[ClawSide sidepanel] OPEN_TAB_IN_PANEL received:', msg.tab, msg.url);
+      const tab = msg.tab; // 'translate' | 'summarize' | 'ask'
+      currentUrl = msg.url || currentUrl;
+      currentPageTitle = msg.title || currentPageTitle;
+      selectedText = msg.text || selectedText;
+      if (tab === 'ask' && selectedText && askQuestion) askQuestion.value = selectedText;
+      showTab(tab);
+    }
+
     return true;
   });
 
@@ -871,9 +921,35 @@
   tabHistory.addEventListener('click', () => showTab('history'));
   settingsBtn.addEventListener('click', () => showTab('settings'));
 
+  // Settings sub-tabs
+  $('settingsTabBasic')?.addEventListener('click', () => showSettingsSubTab('basic'));
+  $('settingsTabTools')?.addEventListener('click', () => showSettingsSubTab('tools'));
+
+  // Tool prompt reset buttons
+  $('resetPromptTranslate')?.addEventListener('click', () => {
+    $('promptTranslate').value = DEFAULT_PROMPTS.translate;
+    saveToolPrompts();
+  });
+  $('resetPromptSummarize')?.addEventListener('click', () => {
+    $('promptSummarize').value = DEFAULT_PROMPTS.summarize;
+    saveToolPrompts();
+  });
+  $('resetPromptAsk')?.addEventListener('click', () => {
+    $('promptAsk').value = DEFAULT_PROMPTS.ask;
+    saveToolPrompts();
+  });
+
+  // Auto-save tool prompts on input
+  $('promptTranslate')?.addEventListener('input', saveToolPrompts);
+  $('promptSummarize')?.addEventListener('input', saveToolPrompts);
+  $('promptAsk')?.addEventListener('input', saveToolPrompts);
+
   translateBtn.addEventListener('click', doTranslate);
   summarizeBtn.addEventListener('click', doSummarize);
   askBtn.addEventListener('click', doAsk);
+
+  // Refresh: calls the full updatePageContext to also refresh favicon / url / title / content
+  $('ctxRefreshBtn')?.addEventListener('click', () => { updatePageContext(); });
 
   // Ctrl+Enter in translate input
   translateInput.addEventListener('keydown', (e) => {
@@ -926,6 +1002,19 @@
     }, 300);
   }
 
+  let toolPromptTimer = null;
+  function saveToolPrompts() {
+    clearTimeout(toolPromptTimer);
+    toolPromptTimer = setTimeout(() => {
+      settings.toolPrompts = {
+        translate: $('promptTranslate').value,
+        summarize: $('promptSummarize').value,
+        ask: $('promptAsk').value
+      };
+      chrome.storage.local.set({ clawside_settings: settings });
+    }, 500);
+  }
+
   settingBridgePort.addEventListener('input', () => { autoSave(); });
   settingAuthToken.addEventListener('input', () => { autoSave(); });
   settingLanguage.addEventListener('change', async () => {
@@ -967,11 +1056,63 @@
     const t = i18nData[resolvedLang] || i18nData.en || {};
     if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${lang} → ${browserLang}`;
     await updatePageContext();
-    showTab('translate');
+
+    // Listen for radial-menu tab-switch intents stored by the background script.
+    // chrome.storage is shared across all extension contexts, so this works reliably
+    // without needing to find the side panel tab ID.
+    chrome.storage.onChanged.addListener((changes) => {
+      if (changes._pendingTab) {
+        const tab = changes._pendingTab.newValue;
+        if (!tab) return;
+        chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (stored) => {
+          currentUrl = stored._pendingUrl || currentUrl;
+          currentPageTitle = stored._pendingTitle || currentPageTitle;
+          selectedText = stored._pendingText || selectedText;
+          showTab(tab);
+          // Clear so the same tab can be requested again
+          chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+        });
+      }
+    });
+
+    // Check for any pending tab that was set before this side panel opened
+    chrome.storage.local.get(['_pendingTab'], (stored) => {
+      if (stored._pendingTab) {
+        chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (rest) => {
+          currentUrl = rest._pendingUrl || currentUrl;
+          currentPageTitle = rest._pendingTitle || currentPageTitle;
+          selectedText = rest._pendingText || selectedText;
+          showTab(stored._pendingTab);
+          chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+        });
+      } else {
+        showTab('translate');
+      }
+    });
 
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {
       await updatePageContext();
+    });
+
+    // Listen for same-tab URL changes (including SPA client-side navigation)
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+      if (!changeInfo.url && !changeInfo.title) return;
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id === tabId) {
+        await updatePageContext();
+      }
+    });
+
+    // SPA router: history.pushState/replaceState doesn't change the URL in a way tabs.onUpdated catches,
+    // but webNavigation.onHistoryStateUpdated fires for these. Requires "webNavigation" permission.
+    // Safe to call even if permission is not granted — it just won't fire.
+    chrome.webNavigation?.onHistoryStateUpdated.addListener(async (navInfo) => {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id === navInfo.tabId) {
+        // Give the page a moment to render the new content after pushState
+        setTimeout(async () => { await updatePageContext(); }, 600);
+      }
     });
   }
 

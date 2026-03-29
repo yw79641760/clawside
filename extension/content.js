@@ -213,47 +213,103 @@
         padding: 12px; color: var(--cs-error); font-size: 13px;
       }
 
+      /* === Radial Menu === */
+      .cs-radial-btn {
+        position: fixed;
+        width: 32px; height: 32px; border-radius: 50%;
+        background: var(--cs-bg);
+        border: 1px solid var(--cs-border);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        pointer-events: all;
+        opacity: 0;
+        transform: scale(0);
+        transition:
+          opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+          transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: visible;
+        padding: 0;
+        /* left/top set by JS — position fixed = viewport coords directly */
+      }
+      .cs-radial-btn.expanded {
+        opacity: 1;
+        transform: scale(1); /* explicit — overrides base scale(0) */
+      }
+      .cs-radial-btn.expanded:hover {
+        background: var(--cs-btn-hover);
+      }
+      .cs-radial-btn.expanded:active {
+        transform: scale(0.95);
+      }
+      .cs-radial-backdrop {
+        position: fixed; inset: 0; z-index: 2147483644;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 200ms;
+      }
+      .cs-radial-backdrop.visible {
+        opacity: 1;
+      }
+      .cs-radial-label {
+        position: absolute; white-space: nowrap;
+        font-size: 11px; font-family: system-ui, sans-serif;
+        color: var(--cs-text);
+        background: var(--cs-bg);
+        border: 1px solid var(--cs-border);
+        padding: 2px 7px; border-radius: 10px;
+        pointer-events: none;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: opacity 150ms 80ms, transform 150ms 80ms;
+        bottom: 50%;
+        right: calc(100% + 6px);
+      }
+      .cs-radial-btn:hover .cs-radial-label {
+        opacity: 1;
+        transform: scale(1);
+      }
+
       /* === Persistent Dock Ball === */
       .cs-dock {
         position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
         width: 32px; height: 32px; border-radius: 50%;
-        background: transparent;
+        background-color: transparent;
+        background-size: cover; background-position: center; background-repeat: no-repeat;
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        transition: transform 0.2s, right 0.4s ease, bottom 0.4s ease;
+        transition: transform 0.2s, right 0.4s ease, bottom 0.4s ease, box-shadow 0.2s;
         user-select: none; border: none; overflow: visible; padding: 0;
-        box-shadow: 0 0 16px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
       }
-      .cs-dock:hover {
-        transform: scale(1.12);
-      }
-      .cs-dock:active {
-        transform: scale(0.95);
-      }
+      .cs-dock:hover { transform: scale(1.12); }
+      .cs-dock:active { transform: scale(0.95); }
+      .cs-dock.menu-open { background-image: none; }
+      .cs-dock.menu-open:hover { transform: scale(1.08) rotate(90deg); }
+      .cs-dock.menu-open:active { transform: scale(0.95) rotate(90deg); }
       .cs-dock.sticking {
         right: 8px !important;
-        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s;
+        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s, box-shadow 0.2s;
       }
-      .cs-dock.scrolling {
-        transition: none !important;
-      }
+      .cs-dock.scrolling { transition: none !important; }
       .cs-dock.panel-open {
-        background: rgba(102, 126, 234, 0.15);
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
+        box-shadow: 0 0 20px rgba(102, 119, 255, 0.7);
       }
-      .cs-dock-tooltip {
-        position: absolute; right: 38px; bottom: 50%;
-        transform: translateY(50%);
-        background: var(--cs-bg); border: 1px solid var(--cs-border);
-        color: var(--cs-text); font-size: 12px; white-space: nowrap;
-        padding: 5px 10px; border-radius: 8px;
-        pointer-events: none; opacity: 0; transition: opacity 0.15s;
-        font-family: system-ui, -apple-system, sans-serif;
+      /* Close overlay: hidden by default, shown when menu open */
+      .cs-dock-icon {
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none;
+        background: rgba(0,0,0,0);
+        color: #fff;
+        transition: background 200ms, opacity 200ms;
+        font-size: 16px; line-height: 1; font-weight: 400;
+        opacity: 0;
       }
-      .cs-dock:hover .cs-dock-tooltip { opacity: 1; }
-      .cs-dock-img {
-        width: 32px; height: 32px;
-        pointer-events: none; border-radius: 50%;
+      .cs-dock.menu-open .cs-dock-icon {
+        background: rgba(60,60,60,0.78);
+        opacity: 1;
       }
 
       .cs-icon {
@@ -614,10 +670,176 @@
     return true;
   });
 
-  // === Persistent Dock Ball ===
+  // === Persistent Dock + Radial Menu ===
   let dock = null;
   let isSticking = false;
   let idleTimer = null;
+  let isDragging = false;
+  let menuOpen = false;
+  let backdrop = null;
+  let radialContainer = null;
+  let startX, startY, startRight, startBottom;
+
+  const TOOLS = [
+    {
+      id: 'translate',
+      label: '翻译',
+      color: '#58a6ff',
+      icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>`,
+    },
+    {
+      id: 'summarize',
+      label: '总结',
+      color: '#3fb950',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+    },
+    {
+      id: 'ask',
+      label: '提问',
+      color: '#f0883e',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`,
+    },
+  ];
+
+  // Radial menu layout
+  const BUTTON_RADIUS = 16; // 32x32 px
+  const EXPAND_RADIUS = 48; // distance from dock center to button center (px)
+  const PER_ANGLE     = 45;  // degrees each button occupies (controls density)
+
+  /**
+   * Calculate petal button positions.
+   * @param {number} radius
+   * @param {number} perAngle - degrees each button occupies
+   * @param {number} count
+   * @param {number} [startAngle=-90] - starting angle in degrees (-90 = 12 o'clock, 0 = 3 o'clock)
+   * @param {boolean} [clockwise=true] - true = angles increase counter-clockwise on clock face (left/up)
+   * @returns {Array<{x: number, y: number}>}
+   */
+  function calculatePetalPositions(radius, perAngle, count, startAngle = -90, clockwise = true) {
+    const degToRad = (deg) => (deg * Math.PI) / 180;
+    return Array.from({ length: count }, (_, i) => {
+      const direction = clockwise ? -1 : 1;
+      const totalDeg = startAngle + i * perAngle * direction;
+      const rad = degToRad(totalDeg);
+      // x positive = right, y positive = down (CSS viewport coords).
+      // CSS angles: 0°=right, 90°=down, -90°=up, 180°/(-180°)=left.
+      // clockwise=true → angles increase counter-clockwise on a clock face (left/up).
+      // clockwise=false → angles increase clockwise on a clock face (right/down).
+      return {
+        x: radius * Math.sin(rad),
+        y: radius * Math.cos(rad),
+      };
+    });
+  }
+
+  function getDockCenter() {
+    const rect = dock.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  function positionRadialMenu() {
+    if (!dock) return;
+    const c = getDockCenter();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const positions = calculatePetalPositions(EXPAND_RADIUS, PER_ANGLE, TOOLS.length);
+    document.querySelectorAll('.cs-radial-btn').forEach((btn, i) => {
+      if (i >= positions.length) return;
+      const pos = positions[i];
+      // Clamp so buttons stay within viewport
+      const left = Math.max(0, Math.min(vw - 32, c.x + pos.x - BUTTON_RADIUS));
+      const top  = Math.max(0, Math.min(vh - 32, c.y + pos.y - BUTTON_RADIUS));
+      btn.style.left = left + 'px';
+      btn.style.top  = top  + 'px';
+    });
+  }
+
+  function buildRadialMenu() {
+    backdrop = document.createElement('div');
+    backdrop.className = 'cs-radial-backdrop';
+    document.body.appendChild(backdrop);
+
+    radialContainer = document.createElement('div');
+    // Buttons are appended to radialContainer but it's just a query handle.
+    // radialContainer itself is NOT in the DOM (never appended).
+    // Buttons use position:fixed so they are viewport-anchored regardless.
+
+    let leaveTimer = null;
+    dock.addEventListener('mouseleave', () => {
+      if (!menuOpen) return;
+      leaveTimer = setTimeout(() => {
+        if (menuOpen) closeMenu();
+        leaveTimer = null;
+      }, 2000);
+    });
+
+    TOOLS.forEach((tool) => {
+      const btn = document.createElement('button');
+      btn.className = 'cs-radial-btn';
+      btn.dataset.tool = tool.id;
+      btn.style.cssText += `;background:${tool.color}1a;border-color:${tool.color}55;`;
+      btn.innerHTML = `
+        <span style="width:16px;height:16px;color:${tool.color}">${tool.icon}</span>
+        <span class="cs-radial-label">${tool.label}</span>
+      `;
+      // Start collapsed at dock center
+      const c = getDockCenter();
+      btn.style.left = (c.x - BUTTON_RADIUS) + 'px';
+      btn.style.top  = (c.y - BUTTON_RADIUS) + 'px';
+
+      // Cancel close timer on button hover
+      btn.addEventListener('mouseenter', () => {
+        if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
+      });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenu(false);
+        openPanelWithTab(tool.id);
+      });
+
+      radialContainer.appendChild(btn);
+      document.body.appendChild(btn);
+    });
+  }
+
+  function openMenu() {
+    if (menuOpen) return;
+    menuOpen = true;
+    if (!radialContainer) buildRadialMenu();
+    positionRadialMenu();
+    backdrop.classList.add('visible');
+    document.querySelectorAll('.cs-radial-btn').forEach((btn, i) => {
+      setTimeout(() => btn.classList.add('expanded'), i * 60);
+    });
+    dock.classList.add('menu-open');
+  }
+
+  function closeMenu(animate = true) {
+    if (!menuOpen) return;
+    menuOpen = false;
+    backdrop.classList.remove('visible');
+    const btns = document.querySelectorAll('.cs-radial-btn');
+    if (animate) {
+      [...btns].reverse().forEach((btn, i) => {
+        setTimeout(() => btn.classList.remove('expanded'), i * 30);
+      });
+    } else {
+      btns.forEach(btn => btn.classList.remove('expanded'));
+    }
+    dock.classList.remove('menu-open');
+  }
+
+  function openPanelWithTab(tab) {
+    // Delegate to background script — chrome.sidePanel is not available in content scripts
+    chrome.runtime.sendMessage({
+      type: 'panel-open-with-tab',
+      tab,
+      url: window.location.href,
+      title: document.title,
+      text: '',
+    });
+  }
 
   function stickDock() {
     if (!dock) return;
@@ -641,26 +863,23 @@
     dock = document.createElement('button');
     dock.className = 'cs-dock';
     dock.id = 'cs-dock';
-    dock.title = 'ClawSide';
 
-    // Icon image: <img> inside the button — reliable, no CSS layering issues
-    const img = document.createElement('img');
-    img.className = 'cs-dock-img';
-    img.src = chrome.runtime.getURL('icons/icon32.png');
-    img.alt = 'ClawSide';
-    dock.appendChild(img);
+    // × overlay (hidden when menu closed, shown when menu open)
+    const icon = document.createElement('span');
+    icon.className = 'cs-dock-icon';
+    icon.textContent = '×';
+    icon.style.fontSize = '16px';
+    dock.appendChild(icon);
 
-    // Tooltip
-    const tooltip = document.createElement('span');
-    tooltip.className = 'cs-dock-tooltip';
-    tooltip.textContent = 'ClawSide';
-    dock.appendChild(tooltip);
+    // Set icon via JS — chrome.runtime.getURL() is the reliable path in content scripts
+    dock.style.backgroundImage = "url('" + chrome.runtime.getURL('icons/icon32.png') + "')";
 
-    // Drag to reposition
-    let isDragging = false, startX, startY, startRight, startBottom;
+    // Drag
+    let aboutToDrag = false; // true after mousemove threshold met, before mousedown sets isDragging
     dock.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
       isDragging = true;
+      aboutToDrag = false;
       startX = e.clientX;
       startY = e.clientY;
       const rect = dock.getBoundingClientRect();
@@ -672,53 +891,55 @@
       if (!isDragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      const newRight = Math.max(0, startRight - dx);
-      const newBottom = Math.max(0, startBottom - dy);
-      dock.style.right = newRight + 'px';
-      dock.style.bottom = newBottom + 'px';
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return; // threshold for drag vs click
+      aboutToDrag = true;
       dock.classList.remove('sticking');
       isSticking = false;
       clearTimeout(idleTimer);
+      dock.style.right = Math.max(0, startRight - dx) + 'px';
+      dock.style.bottom = Math.max(0, startBottom - dy) + 'px';
     });
     document.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
+      aboutToDrag = false;
       resetIdleTimer();
     });
 
-    // Running inside the side panel itself → hide floating ball, register toggle
-    if (location.href.includes('sidepanel')) {
-      dock.style.display = 'none';
-      window.sidePanelInstance = { toggle: () => window.close() };
-      return;
-    }
-
-    // Regular page: floating ball toggles panel
-    let panelOpen = false;
-
-    dock.addEventListener('click', (e) => {
-      if (isDragging) return;
-      e.stopPropagation();
-
-      if (panelOpen) {
-        // Close: inject window.close into side panel
-        chrome.runtime.sendMessage({ type: 'close-from-outside' }).catch(() => {});
-      }
-      // Note: opening side panel from floating ball is not possible due to
-      // Chrome's user gesture requirement. Use action icon (browser toolbar) to open.
+    // Dock hover: open menu (but not during a drag)
+    dock.addEventListener('mouseenter', () => {
+      if (aboutToDrag) return; // drag gesture in progress, don't open
+      openMenu();
     });
 
-    // Listen for panel state changes from background
+    // Dock click: toggle menu (click when menu already open → close)
+    dock.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (menuOpen) closeMenu(); else openMenu();
+    });
+
+    // Backdrop click: close menu
+    document.addEventListener('click', (e) => {
+      if (!menuOpen) return;
+      if (!dock.contains(e.target) && (!radialContainer || !radialContainer.contains(e.target))) {
+        closeMenu();
+      }
+    });
+
+    // ESC: close menu
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuOpen) closeMenu();
+    });
+
+    // Panel state
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg.type === 'panel-state') {
-        panelOpen = msg.open;
         dock.classList.toggle('panel-open', msg.open);
       }
     });
 
     document.body.appendChild(dock);
 
-    // Scroll detection
     let scrollTimer = null;
     window.addEventListener('scroll', () => {
       if (!isSticking) {

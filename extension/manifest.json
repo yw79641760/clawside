@@ -13,12 +13,22 @@
     "sidePanel",
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "webNavigation"
   ],
   "host_permissions": [
     "http://127.0.0.1:18789/*",
     "<all_urls>"
   ],
+  "commands": {
+    "_execute_sidePanel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Open or close ClawSide panel"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": [
