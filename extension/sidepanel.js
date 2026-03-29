@@ -2,7 +2,7 @@
 // Shared modules loaded via <script> in sidepanel.html:
 //   tools/icons.js        → window.SVG, window.svgIcon()
 //   tools/i18n.js         → window.loadI18n(), window.resolveLang(), window.getBrowserLang()
-//   components/streaming-result.js → window.StreamingResult
+//   comp/streaming-result.js  → window.StreamingResult
 
 (function () {
   'use strict';
