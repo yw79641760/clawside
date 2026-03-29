@@ -35,7 +35,7 @@
         "icons/icon32.png",
         "icons/icon48.png",
         "icons.svg",
-        "i18n.json"
+        "res/i18n.json"
       ],
       "matches": [
         "<all_urls>"

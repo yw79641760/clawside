@@ -6,7 +6,7 @@ let _i18nCache = null;
 export async function loadI18n() {
   if (_i18nCache) return _i18nCache;
   try {
-    const res = await fetch(chrome.runtime.getURL('i18n.json'));
+    const res = await fetch(chrome.runtime.getURL('res/i18n.json'));
     _i18nCache = await res.json();
   } catch {
     _i18nCache = { en: {}, zh: {}, ja: {} };
