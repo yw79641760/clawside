@@ -6,19 +6,52 @@
   <title>ClawSide</title>
   <link rel="stylesheet" href="sidepanel.css">
   <script src="marked.min.js"></script>
+  <!-- Inline SVG sprite: all icons defined as <symbol> referenced via <use href="#cs-icon-..."> -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="cs-icon-translate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <ellipse cx="12" cy="12" rx="4" ry="9"/>
+    </symbol>
+    <symbol id="cs-icon-summarize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </symbol>
+    <symbol id="cs-icon-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </symbol>
+    <symbol id="cs-icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </symbol>
+    <symbol id="cs-icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    </symbol>
+    <symbol id="cs-icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </symbol>
+    <symbol id="cs-icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+  </svg>
 </head>
 <body>
 <div class="app">
     <!-- Action Bar -->
     <nav class="action-bar">
       <button class="action-btn active" id="tabTranslate" data-tab="translate">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>
       </button>
       <button class="action-btn" id="tabSummarize" data-tab="summarize">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>
       </button>
       <button class="action-btn" id="tabAsk" data-tab="ask">
-        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>
       </button>
       <button class="action-btn" id="settingsBtn" data-tab="settings" style="margin-left:auto;padding:0 8px">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -58,10 +91,9 @@
         <!-- Result -->
         <div class="result-card hidden" id="translateResult">
           <div class="result-header">
-            <span class="result-icon">
-<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg></span>
+            <span class="result-icon"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg></span>
             <span class="result-title" id="titleTranslate">Translation</span>
-            <button class="btn-copy" id="copyTranslateResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copyTranslateResult"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg> Copy</button>
           </div>
           <div class="result-body" id="translateResultText"></div>
         </div>
@@ -96,9 +128,9 @@
         <!-- Result -->
         <div class="result-card hidden" id="summarizeResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></span>
+            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg></span>
             <span class="result-title" id="titleSummarize">Summary</span>
-            <button class="btn-copy" id="copySummarizeResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copySummarizeResult"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg> Copy</button>
           </div>
           <div class="result-body" id="summarizeResultText"></div>
         </div>
@@ -120,9 +152,9 @@
         <!-- Result -->
         <div class="result-card hidden" id="askResult">
           <div class="result-header">
-            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewView="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+            <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg></span>
             <span class="result-title" id="titleAnswer">Answer</span>
-            <button class="btn-copy" id="copyAskResult"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy</button>
+            <button class="btn-copy" id="copyAskResult"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg> Copy</button>
           </div>
           <div class="result-body" id="askResultText"></div>
         </div>

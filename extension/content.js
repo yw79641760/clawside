@@ -19,17 +19,38 @@
   let popupI18N = null;
 
   // === SVG Icon Helper ===
+  // All icons reference icons.svg sprite via <use>.
+  // The SVG sprite is loaded into the page via background injection or
+  // directly via chrome-extension:// URL from web_accessible_resources.
 
   const SVG = {
-    translate: '<svg class="cs-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>',
-    summarize: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-    ask: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-    copy: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
-    check: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+    translate: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
+    summarize: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
+    ask: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>',
+    copy: '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>',
+    check: '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-check"></use></svg>',
   };
 
   function svgIcon(name) {
     return SVG[name] || '';
+  }
+
+  /** Returns the SVG sprite URL for injection into the page. */
+  function spriteUrl() {
+    return chrome.runtime.getURL('icons.svg');
+  }
+
+  /** Injects the SVG sprite into the page DOM so <use href="#cs-icon-..."> resolves. */
+  async function injectSprite() {
+    if (document.getElementById('cs-sprite')) return;
+    try {
+      const res = await fetch(spriteUrl());
+      const text = await res.text();
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'display:none';
+      wrapper.innerHTML = text;
+      document.body.appendChild(wrapper);
+    } catch { /* sprite unavailable, icons fall back to empty string */ }
   }
 
   async function loadPopupI18n() {
@@ -61,7 +82,7 @@
   }
 
   // Load settings from storage
-  chrome.storage.local.get(['clawside_settings']).then((result) => {
+  chrome.storage.local.get(['clawside_settings']).then(async (result) => {
     if (result.clawside_settings) {
       settings = { ...settings, ...result.clawside_settings };
     }
@@ -74,6 +95,7 @@
     }
     injectTheme(csAppearance);
     injectStyles();
+    await injectSprite();
     createDock();
     chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
   });
@@ -685,19 +707,19 @@
       id: 'translate',
       label: '翻译',
       color: '#58a6ff',
-      icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="8" height="8" rx="1.5"></rect><circle cx="13" cy="6" r="1"></circle><path d="M4 18 L7.5 11 L11 18"></path><line x1="5" y1="16" x2="10" y2="16"></line><path d="M9.5 8 L9.5 5 Q11 3 12 4"></path><path d="M7.5 14 Q9 15.5 9.5 14"></path></svg>`,
+      icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>`,
     },
     {
       id: 'summarize',
       label: '总结',
       color: '#3fb950',
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+      icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
     },
     {
       id: 'ask',
       label: '提问',
       color: '#f0883e',
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`,
+      icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`,
     },
   ];
 
@@ -780,7 +802,7 @@
       btn.dataset.tool = tool.id;
       btn.style.cssText += `;background:${tool.color}1a;border-color:${tool.color}55;`;
       btn.innerHTML = `
-        <span style="width:16px;height:16px;color:${tool.color}">${tool.icon}</span>
+        <span style="color:${tool.color}">${tool.icon}</span>
         <span class="cs-radial-label">${tool.label}</span>
       `;
       // Start collapsed at dock center
