@@ -10,10 +10,71 @@
 
   const DEFAULT_PORT = '18789';
 
+  // === Streaming Markdown Result Component ===
+  // Encapsulates raw-text buffer + RAF-throttled innerHTML rendering for a result area.
+  // Usage:
+  //   const result = new StreamingResult({ element: $('resultTextEl') });
+  //   result.reset();                    // clear buffer + DOM before streaming
+  //   result.appendChunk(chunk);         // streaming chunks (RAF-throttled)
+  //   result.flush();                    // final sync render after stream ends
+  //   const raw = result.getRawText();   // plain markdown for history/copy
+  class StreamingResult {
+    constructor({ element }) {
+      this.element = element;   // the .result-body div
+      this._raw = '';           // accumulated raw markdown
+      this._pending = false;    // RAF already scheduled flag
+    }
+
+    /** Clear buffer and DOM before a new run. */
+    reset() {
+      this._raw = '';
+      this._pending = false;
+      this.element.textContent = '';
+    }
+
+    /** Append a streaming chunk. RAF-throttled: renders ~once per frame. */
+    appendChunk(text) {
+      this._raw += text;
+      this._schedule();
+    }
+
+    /** Show the result card. Call after first chunk. */
+    showCard() {
+      this.element.closest('.result-card')?.classList.remove('hidden');
+    }
+
+    /** Force a synchronous final render. Call when stream ends. */
+    flush() {
+      if (this._pending) {
+        this._pending = false;
+        this.element.innerHTML = marked.parse(this._raw);
+      }
+    }
+
+    /** Plain markdown text for history storage and copy. */
+    getRawText() {
+      return this._raw;
+    }
+
+    _schedule() {
+      if (this._pending) return;
+      this._pending = true;
+      requestAnimationFrame(() => {
+        this._pending = false;
+        this.element.innerHTML = marked.parse(this._raw);
+      });
+    }
+  }
+
   // === Default Tool Prompts ===
   const DEFAULT_PROMPTS = {
     translate: `You are a professional translator. Translate the following text to {lang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: {text}`,
-    summarize: `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in {lang}. Focus on the main points and key information. Only output the summary in {lang}, nothing else.\n\nPage title: {title}\nPage URL: {url}\n\nContent:\n{content}`,
+    summarize: `Summarize the following page in {lang}. Use this structure:
+- **Overview**: 1-2 sentences, what this page is about
+- **Key Points**: bullet points, the most important information (let content decide the count, typically 2-6)
+- **Highlights**: standout facts, data, or quotes worth noting
+
+Output Markdown only. Be concise and let the content determine the depth of each section.\n\nPage title: {title}\nPage URL: {url}\n\nContent:\n{content}`,
     ask: `You are a helpful assistant. Answer in {lang}.\n\n{hasSelection}User selected this text from a webpage:\n\n"{selectedText}"\n\n{/hasSelection}Page title: {title}\nPage URL: {url}\n\n{hasContent}Page content (excerpt):\n{content}\n\n{/hasContent}User question: {question}`
   };
 
@@ -183,6 +244,11 @@
   // Loading
   const loadingOverlay = $('loadingOverlay');
   const loadingText = $('loadingText');
+
+  // === Streaming Result Components ===
+  const translateStreaming = new StreamingResult({ element: translateResultText });
+  const summarizeStreaming = new StreamingResult({ element: summarizeResultText });
+  const askStreaming = new StreamingResult({ element: askResultText });
 
   // === Utilities ===
   function showLoading(text) {
@@ -360,6 +426,7 @@
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
       let settled = false;
+      let chunkShown = false; // true after first chunk received → hide loading
 
       const cleanup = () => {
         clearTimeout(timeout);
@@ -376,6 +443,8 @@
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
           fullText += msg.content;
           onChunk(msg.content, fullText);
+          // First chunk → hide loading overlay immediately
+          if (!chunkShown) { chunkShown = true; hideLoading(); }
         }
         if (msg.type === 'clawside-stream-done') {
           if (!settled) { settled = true; cleanup(); resolve(fullText); }
@@ -404,28 +473,27 @@
       showStatus(translateStatus, 'Please enter or select text to translate');
       return;
     }
+    translateStreaming.reset();
     translateResult.classList.add('hidden');
-    translateResultText.textContent = '';
     translateBtn.disabled = true;
     showLoading('Translating...');
     try {
       await loadSettings();
-      // Read from DOM first (user's current selection), fallback to settings for 'auto'
       let targetLang = targetLangSelect.value;
       if (targetLang === 'auto') {
         targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
       }
       const template = settings.toolPrompts?.translate || DEFAULT_PROMPTS.translate;
       const prompt = applyPrompt(template, { text, lang: targetLang });
-      // Stream chunks into result
       await apiCall(prompt, {
         toolName: 'translate',
         onChunk: (chunk) => {
-          translateResultText.textContent += chunk;
+          translateStreaming.appendChunk(chunk);
           translateResult.classList.remove('hidden');
         }
       });
-      const result = translateResultText.textContent;
+      translateStreaming.flush();
+      const result = translateStreaming.getRawText();
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
         original: text, result, lang: targetLang,
@@ -444,8 +512,8 @@
       showStatus(summarizeStatus, 'No current page detected. Navigate to a page first.');
       return;
     }
+    summarizeStreaming.reset();
     summarizeResult.classList.add('hidden');
-    summarizeResultText.textContent = '';
     summarizeBtn.disabled = true;
 
     // Reuse currentPageContent from shared context; re-extract only if stale/empty
@@ -497,11 +565,12 @@
       await apiCall(prompt, {
         toolName: 'summarize',
         onChunk: (chunk) => {
-          summarizeResultText.textContent += chunk;
+          summarizeStreaming.appendChunk(chunk);
           summarizeResult.classList.remove('hidden');
         }
       });
-      const summary = summarizeResultText.textContent;
+      summarizeStreaming.flush();
+      const summary = summarizeStreaming.getRawText();
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'summarize',
         url: currentUrl, title: currentPageTitle,
@@ -521,8 +590,8 @@
       showStatus(askStatus, 'Please enter a question');
       return;
     }
+    askStreaming.reset();
     askResult.classList.add('hidden');
-    askResultText.textContent = '';
     askBtn.disabled = true;
 
     // Reuse currentPageContent from shared context; re-extract only if stale/empty
@@ -571,11 +640,12 @@
       await apiCall(prompt, {
         toolName: 'ask',
         onChunk: (chunk) => {
-          askResultText.textContent += chunk;
+          askStreaming.appendChunk(chunk);
           askResult.classList.remove('hidden');
         }
       });
-      const answer = askResultText.textContent;
+      askStreaming.flush();
+      const answer = askStreaming.getRawText();
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'ask',
         question, answer,
@@ -972,9 +1042,9 @@
     translateResult.classList.add('hidden');
   });
 
-  copyTranslateResult.addEventListener('click', () => doCopy(translateResultText.textContent, copyTranslateResult));
-  copySummarizeResult.addEventListener('click', () => doCopy(summarizeResultText.textContent, copySummarizeResult));
-  copyAskResult.addEventListener('click', () => doCopy(askResultText.textContent, copyAskResult));
+  copyTranslateResult.addEventListener('click', () => doCopy(translateStreaming.getRawText(), copyTranslateResult));
+  copySummarizeResult.addEventListener('click', () => doCopy(summarizeStreaming.getRawText(), copySummarizeResult));
+  copyAskResult.addEventListener('click', () => doCopy(askStreaming.getRawText(), copyAskResult));
 
   clearHistoryBtn.addEventListener('click', doClearHistory);
 

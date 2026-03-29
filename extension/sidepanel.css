@@ -425,9 +425,128 @@ body {
   padding: 12px;
   line-height: 1.6;
   color: var(--text);
-  max-height: 300px;
-  overflow-y: auto;
   word-break: break-word;
+}
+
+/* === Markdown Rendering in Result Body === */
+.result-body h1,
+.result-body h2,
+.result-body h3,
+.result-body h4 {
+  color: var(--text);
+  margin: 0 0 8px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.result-body h1 { font-size: 16px; }
+.result-body h2 { font-size: 14px; }
+.result-body h3,
+.result-body h4 { font-size: 13px; }
+
+.result-body p {
+  margin: 0 0 8px;
+}
+
+.result-body p:last-child {
+  margin-bottom: 0;
+}
+
+.result-body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.result-body em {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.result-body code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--primary);
+}
+
+.result-body pre {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 0 0 8px;
+}
+
+.result-body pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.result-body blockquote {
+  border-left: 3px solid var(--primary);
+  margin: 0 0 8px;
+  padding: 4px 12px;
+  color: var(--text-muted);
+  background: rgba(88, 166, 255, 0.05);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.result-body blockquote p {
+  margin: 0;
+}
+
+.result-body ul,
+.result-body ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.result-body li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.result-body li:last-child {
+  margin-bottom: 0;
+}
+
+.result-body a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.result-body a:hover {
+  text-decoration: underline;
+}
+
+.result-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+.result-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.result-body th,
+.result-body td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.result-body th {
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
 }
 
 /* === Buttons === */
