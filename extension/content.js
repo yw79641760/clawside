@@ -1,5 +1,9 @@
 // ClawSide - Content Script
 // Floating bubble on selection + inline result popup
+// Shared modules loaded via manifest.json content_scripts array:
+//   tools/icons.js   → SVG, svgIcon(), injectSprite()
+//   tools/i18n.js   → loadI18n(), resolveLang(), getBrowserLang()
+//   tools/styles.js  → THEMES, resolveAppearance(), injectTheme(), injectStyles(), CONTENT_STYLES
 
 (function () {
   'use strict';
@@ -14,334 +18,34 @@
   let pendingRequests = new Map();
   let pendingTimeouts = new Map();
   let settings = { gatewayPort: '18789', authToken: '', language: 'auto', appearance: 'system' };
-  let csAppearance = 'dark';
-  let browserLang = navigator.language?.startsWith('zh') ? 'zh' : navigator.language?.startsWith('ja') ? 'ja' : 'en';
-  let popupI18N = null;
-
-  // === SVG Icon Helper ===
-  // All icons reference icons.svg sprite via <use>.
-  // The SVG sprite is loaded into the page via background injection or
-  // directly via chrome-extension:// URL from web_accessible_resources.
-
-  const SVG = {
-    translate: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
-    summarize: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
-    ask: '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>',
-    copy: '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>',
-    check: '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-check"></use></svg>',
-  };
-
-  function svgIcon(name) {
-    return SVG[name] || '';
-  }
-
-  /** Returns the SVG sprite URL for injection into the page. */
-  function spriteUrl() {
-    return chrome.runtime.getURL('icons.svg');
-  }
-
-  /** Injects the SVG sprite into the page DOM so <use href="#cs-icon-..."> resolves. */
-  async function injectSprite() {
-    if (document.getElementById('cs-sprite')) return;
-    try {
-      const res = await fetch(spriteUrl());
-      const text = await res.text();
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'display:none';
-      wrapper.innerHTML = text;
-      document.body.appendChild(wrapper);
-    } catch { /* sprite unavailable, icons fall back to empty string */ }
-  }
-
-  async function loadPopupI18n() {
-    if (popupI18N) return popupI18N;
-    try {
-      const res = await fetch(chrome.runtime.getURL('i18n.json'));
-      popupI18N = await res.json();
-    } catch {
-      popupI18N = { en: {}, zh: {}, ja: {} };
-    }
-    return popupI18N;
-  }
-
-  function resolvePopupLang(lang) {
-    if (lang === 'auto') return browserLang;
-    return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
-  }
-
-  async function getPopupStrings(action) {
-    const i18n = await loadPopupI18n();
-    const lang = resolvePopupLang(settings.language);
-    const t = i18n[lang] || i18n.en || {};
-    const loadingKey = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' }[action] || 'loading';
-    return {
-      svgIcon: svgIcon(action),
-      title: t[action] || action,
-      loading: t[loadingKey] || 'Processing...'
-    };
-  }
+  let browserLang = window.getBrowserLang ? window.getBrowserLang() : 'en';
 
   // Load settings from storage
   chrome.storage.local.get(['clawside_settings']).then(async (result) => {
     if (result.clawside_settings) {
       settings = { ...settings, ...result.clawside_settings };
     }
-    // Resolve appearance
-    const a = settings.appearance || 'system';
-    if (a === 'system') {
-      csAppearance = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    } else {
-      csAppearance = a;
-    }
-    injectTheme(csAppearance);
-    injectStyles();
-    await injectSprite();
+    // Resolve appearance via shared module
+    const appearance = window.resolveAppearance ? window.resolveAppearance(settings.appearance) : 'dark';
+    window.injectTheme(THEMES[appearance] || THEMES.dark);
+    window.injectStyles();
+    await window.injectSprite(chrome.runtime.getURL('icons.svg'));
     createDock();
     chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
   });
 
-  // === Theme injection ===
-  function injectTheme(appearance) {
-    const isDark = appearance === 'dark';
-    const vars = isDark ? {
-      '--cs-bg': '#161b22',
-      '--cs-border': '#30363d',
-      '--cs-text': '#e6edf3',
-      '--cs-muted': '#8b949e',
-      '--cs-primary': '#58a6ff',
-      '--cs-success': '#3fb950',
-      '--cs-error': '#f85149',
-      '--cs-btn-hover': '#262c34',
-      '--cs-btn-active': '#32393f',
-      '--cs-header-bg': 'rgba(255,255,255,0.02)',
-      '--cs-scrollbar': '#30363d',
-    } : {
-      '--cs-bg': '#ffffff',
-      '--cs-border': '#d0d7de',
-      '--cs-text': '#1f2328',
-      '--cs-muted': '#656d76',
-      '--cs-primary': '#0969da',
-      '--cs-success': '#1a7f37',
-      '--cs-error': '#cf222e',
-      '--cs-btn-hover': '#eaeef2',
-      '--cs-btn-active': '#d0d7de',
-      '--cs-header-bg': 'rgba(0,0,0,0.02)',
-      '--cs-scrollbar': '#d0d7de',
+  // === Popup i18n helpers (content-script only) ===
+  async function getPopupStrings(action) {
+    const i18n = await window.loadI18n();
+    const lang = settings.language === 'auto' ? browserLang
+      : (settings.language === 'Chinese' ? 'zh' : settings.language === 'Japanese' ? 'ja' : 'en');
+    const t = i18n[lang] || i18n.en || {};
+    const loadingKey = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' }[action] || 'loading';
+    return {
+      icon: window.svgIcon(action) || '',
+      title: t[action] || action,
+      loading: t[loadingKey] || 'Processing...'
     };
-    const s = document.createElement('style');
-    s.id = 'cs-theme';
-    let css = ':root {';
-    for (const [k, v] of Object.entries(vars)) css += k + ':' + v + ';';
-    css += '}';
-    s.textContent = css;
-    document.head.appendChild(s);
-  }
-
-  // === Styles ===
-  function injectStyles() {
-    if (document.getElementById('clawside-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'clawside-styles';
-    s.textContent = `
-      .cs-bubble {
-        position: fixed; z-index: 2147483647;
-        display: flex; gap: 4px;
-        background: var(--cs-bg); border: 1px solid var(--cs-border);
-        border-radius: 8px; padding: 5px 7px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.45);
-        font-family: system-ui, -apple-system, sans-serif;
-        animation: cs-bubble-in 150ms ease-out;
-        color: var(--cs-text);
-      }
-      @keyframes cs-bubble-in {
-        from { opacity: 0; transform: translateY(5px) scale(0.95); }
-        to   { opacity: 1; transform: translateY(0) scale(1); }
-      }
-      .cs-btn {
-        width: 34px; height: 34px; border: none; background: transparent;
-        border-radius: 6px; cursor: pointer; font-size: 17px;
-        display: flex; align-items: center; justify-content: center;
-        transition: background 100ms ease, transform 80ms ease;
-        padding: 0;
-      }
-      .cs-btn:hover { background: var(--cs-btn-hover); }
-      .cs-btn:active { background: var(--cs-btn-active); transform: scale(0.92); }
-
-      .cs-popup {
-        position: fixed; z-index: 2147483647;
-        width: 320px; max-height: 280px;
-        background: var(--cs-bg); border: 1px solid var(--cs-border);
-        border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        font-family: system-ui, -apple-system, sans-serif;
-        display: flex; flex-direction: column;
-        overflow: hidden;
-        animation: cs-popup-in 180ms ease-out;
-        color: var(--cs-text);
-      }
-      @keyframes cs-popup-in {
-        from { opacity: 0; transform: scale(0.9) translateY(-6px); }
-        to   { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      .cs-popup-header {
-        display: flex; align-items: center; gap: 8px;
-        padding: 10px 12px; border-bottom: 1px solid var(--cs-border);
-        background: var(--cs-header-bg);
-      }
-      .cs-popup-icon { font-size: 14px; }
-      .cs-popup-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--cs-text); }
-      .cs-popup-close {
-        width: 26px; height: 26px; border: none; background: transparent;
-        border-radius: 4px; cursor: pointer; font-size: 14px;
-        color: var(--cs-muted); display: flex; align-items: center; justify-content: center;
-        transition: background 100ms;
-      }
-      .cs-popup-close:hover { background: var(--cs-btn-hover); color: var(--cs-text); }
-      .cs-popup-body {
-        flex: 1; padding: 12px; overflow-y: auto;
-        font-size: 13px; line-height: 1.6; color: var(--cs-text);
-        word-break: break-word;
-      }
-      .cs-popup-body::-webkit-scrollbar { width: 5px; }
-      .cs-popup-body::-webkit-scrollbar-thumb { background: var(--cs-scrollbar); border-radius: 3px; }
-      .cs-popup-footer {
-        display: flex; align-items: center; gap: 8px;
-        padding: 8px 12px; border-top: 1px solid var(--cs-border);
-      }
-      .cs-popup-cite {
-        flex: 1; font-size: 11px; color: var(--cs-primary);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .cs-popup-copy {
-        padding: 4px 10px; border: 1px solid var(--cs-border); background: transparent;
-        border-radius: 5px; cursor: pointer; font-size: 12px; color: var(--cs-muted);
-        transition: all 100ms;
-      }
-      .cs-popup-copy:hover { border-color: var(--cs-primary); color: var(--cs-primary); }
-      .cs-popup-copy.copied { border-color: var(--cs-success); color: var(--cs-success); }
-
-      .cs-popup-loading {
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 10px; padding: 28px 16px; color: var(--cs-muted);
-        font-size: 13px;
-      }
-      .cs-spinner {
-        width: 22px; height: 22px; border: 2px solid var(--cs-border);
-        border-top-color: var(--cs-primary); border-radius: 50%;
-        animation: cs-spin 600ms linear infinite;
-      }
-      @keyframes cs-spin { to { transform: rotate(360deg); } }
-
-      .cs-popup-error {
-        padding: 12px; color: var(--cs-error); font-size: 13px;
-      }
-
-      /* === Radial Menu === */
-      .cs-radial-btn {
-        position: fixed;
-        width: 32px; height: 32px; border-radius: 50%;
-        background: var(--cs-bg);
-        border: 1px solid var(--cs-border);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        pointer-events: all;
-        opacity: 0;
-        transform: scale(0);
-        transition:
-          opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
-          transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: visible;
-        padding: 0;
-        /* left/top set by JS — position fixed = viewport coords directly */
-      }
-      .cs-radial-btn.expanded {
-        opacity: 1;
-        transform: scale(1); /* explicit — overrides base scale(0) */
-      }
-      .cs-radial-btn.expanded:hover {
-        background: var(--cs-btn-hover);
-      }
-      .cs-radial-btn.expanded:active {
-        transform: scale(0.95);
-      }
-      .cs-radial-backdrop {
-        position: fixed; inset: 0; z-index: 2147483644;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 200ms;
-      }
-      .cs-radial-backdrop.visible {
-        opacity: 1;
-      }
-      .cs-radial-label {
-        position: absolute; white-space: nowrap;
-        font-size: 11px; font-family: system-ui, sans-serif;
-        color: var(--cs-text);
-        background: var(--cs-bg);
-        border: 1px solid var(--cs-border);
-        padding: 2px 7px; border-radius: 10px;
-        pointer-events: none;
-        opacity: 0;
-        transform: scale(0.8);
-        transition: opacity 150ms 80ms, transform 150ms 80ms;
-        bottom: 50%;
-        right: calc(100% + 6px);
-      }
-      .cs-radial-btn:hover .cs-radial-label {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      /* === Persistent Dock Ball === */
-      .cs-dock {
-        position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
-        width: 32px; height: 32px; border-radius: 50%;
-        background-color: transparent;
-        background-size: cover; background-position: center; background-repeat: no-repeat;
-        cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        transition: transform 0.2s, right 0.4s ease, bottom 0.4s ease, box-shadow 0.2s;
-        user-select: none; border: none; overflow: visible; padding: 0;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-      }
-      .cs-dock:hover { transform: scale(1.12); }
-      .cs-dock:active { transform: scale(0.95); }
-      .cs-dock.menu-open { background-image: none; }
-      .cs-dock.menu-open:hover { transform: scale(1.08) rotate(90deg); }
-      .cs-dock.menu-open:active { transform: scale(0.95) rotate(90deg); }
-      .cs-dock.sticking {
-        right: 8px !important;
-        transition: right 0.4s ease, bottom 0.4s ease, transform 0.2s, box-shadow 0.2s;
-      }
-      .cs-dock.scrolling { transition: none !important; }
-      .cs-dock.panel-open {
-        box-shadow: 0 0 20px rgba(102, 119, 255, 0.7);
-      }
-      /* Close overlay: hidden by default, shown when menu open */
-      .cs-dock-icon {
-        position: absolute; inset: 0;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        pointer-events: none;
-        background: rgba(0,0,0,0);
-        color: #fff;
-        transition: background 200ms, opacity 200ms;
-        font-size: 16px; line-height: 1; font-weight: 400;
-        opacity: 0;
-      }
-      .cs-dock.menu-open .cs-dock-icon {
-        background: rgba(60,60,60,0.78);
-        opacity: 1;
-      }
-
-      .cs-icon {
-        width: 16px; height: 16px; flex-shrink: 0;
-      }
-      .cs-icon-sm {
-        width: 14px; height: 14px; flex-shrink: 0;
-      }
-    `;
-    document.head.appendChild(s);
   }
 
   // === Bubble ===
@@ -350,9 +54,9 @@
     const el = document.createElement('div');
     el.className = 'cs-bubble';
     el.innerHTML = `
-      <button class="cs-btn" id="cs-btn-translate" title="翻译">${svgIcon('translate')}</button>
-      <button class="cs-btn" id="cs-btn-summarize" title="总结">${svgIcon('summarize')}</button>
-      <button class="cs-btn" id="cs-btn-ask" title="提问">${svgIcon('ask')}</button>
+      <button class="cs-btn" id="cs-btn-translate" title="翻译">${window.svgIcon('translate') || ''}</button>
+      <button class="cs-btn" id="cs-btn-summarize" title="总结">${window.svgIcon('summarize') || ''}</button>
+      <button class="cs-btn" id="cs-btn-ask" title="提问">${window.svgIcon('ask') || ''}</button>
     `;
     document.body.appendChild(el);
     return el;
@@ -426,7 +130,7 @@
     if (!popup) popup = createPopup();
     positionPopup(popup, rect || bubble.getBoundingClientRect());
 
-    const { svgIcon: icon, title, loading } = await getPopupStrings(action);
+    const { icon, title, loading } = await getPopupStrings(action);
     popup.querySelector('.cs-popup-icon').innerHTML = icon;
     popup.querySelector('.cs-popup-title').textContent = title;
     popup.querySelector('#cs-popup-loading-text').textContent = loading;
@@ -512,10 +216,10 @@
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
-    btn.innerHTML = svgIcon('check');
+    btn.innerHTML = (window.svgIcon('check') || '') + ' Copied';
     btn.classList.add('copied');
     setTimeout(() => {
-      btn.innerHTML = svgIcon('copy');
+      btn.innerHTML = (window.svgIcon('copy') || '') + ' Copy';
       btn.classList.remove('copied');
     }, 1500);
   }

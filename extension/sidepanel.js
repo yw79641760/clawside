@@ -1,4 +1,8 @@
 // ClawSide - Full Side Panel Logic
+// Shared modules loaded via <script> in sidepanel.html:
+//   tools/icons.js        → window.SVG, window.svgIcon()
+//   tools/i18n.js         → window.loadI18n(), window.resolveLang(), window.getBrowserLang()
+//   components/streaming-result.js → window.StreamingResult
 
 (function () {
   'use strict';
@@ -9,62 +13,6 @@
   });
 
   const DEFAULT_PORT = '18789';
-
-  // === Streaming Markdown Result Component ===
-  // Encapsulates raw-text buffer + RAF-throttled innerHTML rendering for a result area.
-  // Usage:
-  //   const result = new StreamingResult({ element: $('resultTextEl') });
-  //   result.reset();                    // clear buffer + DOM before streaming
-  //   result.appendChunk(chunk);         // streaming chunks (RAF-throttled)
-  //   result.flush();                    // final sync render after stream ends
-  //   const raw = result.getRawText();   // plain markdown for history/copy
-  class StreamingResult {
-    constructor({ element }) {
-      this.element = element;   // the .result-body div
-      this._raw = '';           // accumulated raw markdown
-      this._pending = false;    // RAF already scheduled flag
-    }
-
-    /** Clear buffer and DOM before a new run. */
-    reset() {
-      this._raw = '';
-      this._pending = false;
-      this.element.textContent = '';
-    }
-
-    /** Append a streaming chunk. RAF-throttled: renders ~once per frame. */
-    appendChunk(text) {
-      this._raw += text;
-      this._schedule();
-    }
-
-    /** Show the result card. Call after first chunk. */
-    showCard() {
-      this.element.closest('.result-card')?.classList.remove('hidden');
-    }
-
-    /** Force a synchronous final render. Call when stream ends. */
-    flush() {
-      if (this._pending) {
-        this._pending = false;
-        this.element.innerHTML = marked.parse(this._raw);
-      }
-    }
-
-    /** Plain markdown text for history storage and copy. */
-    getRawText() {
-      return this._raw;
-    }
-
-    _schedule() {
-      if (this._pending) return;
-      this._pending = true;
-      requestAnimationFrame(() => {
-        this._pending = false;
-        this.element.innerHTML = marked.parse(this._raw);
-      });
-    }
-  }
 
   // === Default Tool Prompts ===
   const DEFAULT_PROMPTS = {
@@ -103,27 +51,11 @@ Output Markdown only. Be concise and let the content determine the depth of each
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
 
   // === Translations ===
-  let I18N = null;
-
-  async function loadI18n() {
-    if (I18N) return I18N;
-    try {
-      const res = await fetch(chrome.runtime.getURL('i18n.json'));
-      I18N = await res.json();
-    } catch {
-      I18N = { en: {}, zh: {}, ja: {} };
-    }
-    return I18N;
-  }
-
-  function resolveLang(lang, browserLang) {
-    if (lang === 'auto') return browserLang === 'zh' ? 'zh' : browserLang === 'ja' ? 'ja' : 'en';
-    return lang === 'Chinese' ? 'zh' : lang === 'Japanese' ? 'ja' : 'en';
-  }
+  // loadI18n, resolveLang, getBrowserLang are provided by tools/i18n.js
 
   async function applyPanelLanguage() {
-    const i18n = await loadI18n();
-    const lang = resolveLang(settings.language, browserLang);
+    const i18n = await window.loadI18n();
+    const lang = window.resolveLang(settings.language, browserLang);
     const t = i18n[lang] || i18n.en || {};
     // Result titles
     $('titleTranslate').textContent = t.resultTranslate;
@@ -268,7 +200,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
     setTimeout(() => el.classList.add('hidden'), 5000);
   }
 
-  function showTab(tab) {
+  async function showTab(tab) {
     currentTab = tab;
     tabTranslate.classList.toggle('active', tab === 'translate');
     tabSummarize.classList.toggle('active', tab === 'summarize');
@@ -291,8 +223,9 @@ Output Markdown only. Be concise and let the content determine the depth of each
       updateTokenStatus();
       showSettingsSubTab('basic');
       if (browserLangHint) {
-        const resolvedLang = resolveLang(settings.language, browserLang);
-        const t2 = I18N ? (I18N[resolvedLang] || I18N.en || {}) : {};
+        const resolvedLang = window.resolveLang(settings.language, browserLang);
+        const i18n2 = await window.loadI18n();
+        const t2 = i18n2[resolvedLang] || i18n2.en || {};
         browserLangHint.textContent = `${t2.browserLangHint || 'Browser language'} → ${browserLang}`;
       }
     }
@@ -554,7 +487,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
     try {
       await loadSettings();
       const template = settings.toolPrompts?.summarize || DEFAULT_PROMPTS.summarize;
-      const lang = resolveLang(settings.language, browserLang);
+      const lang = window.resolveLang(settings.language, browserLang);
       const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
       const prompt = applyPrompt(template, {
         lang: langLabel,
@@ -858,9 +791,9 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   async function renderHistory() {
-    await loadI18n();
-    const lang = resolveLang(settings.language, browserLang);
-    const t = I18N[lang] || I18N.en || {};
+    const i18n = await window.loadI18n();
+    const lang = window.resolveLang(settings.language, browserLang);
+    const t = i18n[lang] || i18n.en || {};
     const items = await loadHistory();
     historyCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
     historyEmpty.classList.toggle('hidden', items.length > 0);
@@ -1122,8 +1055,8 @@ Output Markdown only. Be concise and let the content determine the depth of each
     };
     browserLang = langMap[lang] || langMap[lang.split('-')[0]] || 'English';
     await loadSettings();
-    const i18nData = await loadI18n();
-    const resolvedLang = resolveLang(settings.language, browserLang);
+    const i18nData = await window.loadI18n();
+    const resolvedLang = window.resolveLang(settings.language, browserLang);
     const t = i18nData[resolvedLang] || i18nData.en || {};
     if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${lang} → ${browserLang}`;
     await updatePageContext();
