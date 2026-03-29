@@ -60,7 +60,7 @@
     }
   ],
   "side_panel": {
-    "default_path": "sidepanel.html"
+    "default_path": "comp/sidepanel/sidepanel.html"
   },
   "action": {
     "default_icon": {
