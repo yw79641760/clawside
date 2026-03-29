@@ -2,6 +2,7 @@
 // Shared modules loaded via <script> in sidepanel.html:
 //   tools/icons.js        → window.SVG, window.svgIcon()
 //   tools/i18n.js         → window.loadI18n(), window.resolveLang(), window.getBrowserLang()
+//   tools/browser.js      → window.getBrowserLocale(), window.copyToClipboard()
 //   comp/streaming-result.js  → window.StreamingResult
 
 (function () {
@@ -594,11 +595,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   async function doCopy(text, btn) {
-    try { await navigator.clipboard.writeText(text); } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    }
+    if (window.copyToClipboard) await window.copyToClipboard(text);
     btn.innerHTML = svgIcon('check') + ' Copied';
     btn.classList.add('copied');
     setTimeout(() => { btn.innerHTML = svgIcon('copy') + ' Copy'; btn.classList.remove('copied'); }, 1500);
@@ -870,7 +867,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
       const text = item.type === 'translate' ? item.result
         : item.type === 'summarize' ? item.summary
         : item.answer || item.question;
-      await navigator.clipboard.writeText(text || '');
+      if (window.copyToClipboard) await window.copyToClipboard(text || '');
       const originalText = copyBtn.textContent;
       copyBtn.innerHTML = svgIcon('check');
       setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
@@ -1046,19 +1043,13 @@ Output Markdown only. Be concise and let the content determine the depth of each
   // === Init ===
   async function init() {
     // Detect browser language
-    const lang = navigator.language || navigator.userLanguage || 'en';
-    const langMap = {
-      'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'Chinese', 'zh-HK': 'Chinese',
-      'ja': 'Japanese', 'ko': 'Korean',
-      'fr': 'French', 'de': 'German', 'es': 'Spanish', 'ru': 'Russian',
-      'en': 'English'
-    };
-    browserLang = langMap[lang] || langMap[lang.split('-')[0]] || 'English';
+    browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
+    const rawLang = navigator.language || navigator.userLanguage || 'en';
     await loadSettings();
     const i18nData = await window.loadI18n();
     const resolvedLang = window.resolveLang(settings.language, browserLang);
     const t = i18nData[resolvedLang] || i18nData.en || {};
-    if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${lang} → ${browserLang}`;
+    if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${rawLang} → ${browserLang}`;
     await updatePageContext();
 
     // Listen for radial-menu tab-switch intents stored by the background script.

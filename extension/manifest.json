@@ -54,6 +54,7 @@
         "tools/icons.js",
         "tools/i18n.js",
         "tools/styles.js",
+        "tools/browser.js",
         "content.js"
       ],
       "run_at": "document_end"

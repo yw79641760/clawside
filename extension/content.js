@@ -4,6 +4,7 @@
 //   tools/icons.js   → SVG, svgIcon(), injectSprite()
 //   tools/i18n.js   → loadI18n(), resolveLang(), getBrowserLang()
 //   tools/styles.js  → THEMES, resolveAppearance(), injectTheme(), injectStyles(), CONTENT_STYLES
+//   tools/browser.js → getBrowserLocale(), copyToClipboard()
 
 (function () {
   'use strict';
@@ -206,9 +207,7 @@
   }
 
   async function copyText(text, btn) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
+    if (!window.copyToClipboard || !(await window.copyToClipboard(text))) {
       const ta = document.createElement('textarea');
       ta.value = text;
       document.body.appendChild(ta);
@@ -278,9 +277,7 @@
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const targetLang = s.language && s.language !== 'auto'
           ? s.language
-          : (navigator.language?.startsWith('zh') ? 'Chinese'
-             : navigator.language?.startsWith('ja') ? 'Japanese'
-             : 'English');
+          : (window.getBrowserLocale ? window.getBrowserLocale() : 'English');
         const prompt = `You are a professional translator. Translate the following text to ${targetLang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ${text}`;
         await apiCall(prompt, port, token);
 
@@ -288,9 +285,7 @@
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const lang = s.language && s.language !== 'auto'
           ? s.language
-          : (navigator.language?.startsWith('zh') ? 'Chinese'
-             : navigator.language?.startsWith('ja') ? 'Japanese'
-             : 'English');
+          : (window.getBrowserLocale ? window.getBrowserLocale() : 'English');
         const prompt = `You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ${lang}. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ${url}`;
         await apiCall(prompt, port, token);
 
@@ -298,9 +293,7 @@
         cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
         const lang = s.language && s.language !== 'auto'
           ? s.language
-          : (navigator.language?.startsWith('zh') ? 'Chinese'
-             : navigator.language?.startsWith('ja') ? 'Japanese'
-             : 'English');
+          : (window.getBrowserLocale ? window.getBrowserLocale() : 'English');
         const prompt = text
           ? `You are a helpful assistant. Answer in ${lang}. The user selected this text from a webpage:\n\n"${text}"\n\nPage: ${url}\n\nUser question: ${question || 'Please analyze and explain the selected text.'}`
           : `You are a helpful assistant. Answer in ${lang}. The user is viewing this page: ${url}\n\nUser question: ${question || 'Please summarize this page.'}`;
