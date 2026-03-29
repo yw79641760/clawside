@@ -55,6 +55,7 @@
         "tools/i18n.js",
         "tools/styles.js",
         "tools/browser.js",
+        "comp/bubble/bubble.js",
         "content.js"
       ],
       "run_at": "document_end"
