@@ -29,7 +29,7 @@
     const appearance = window.resolveAppearance ? window.resolveAppearance(settings.appearance) : 'dark';
     window.injectTheme(THEMES[appearance] || THEMES.dark);
     window.injectStyles();
-    await window.injectSprite(chrome.runtime.getURL('icons.svg'));
+    await window.injectSprite(chrome.runtime.getURL('icons/icons.svg'));
     createDock();
     chrome.runtime.sendMessage({ type: 'content_ready', url: window.location.href, title: document.title }).catch(() => {});
   });

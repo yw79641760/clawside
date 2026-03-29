@@ -754,7 +754,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   // === Icon Helper (inline SVG, no <use> dependency) ===
-  // All icons reference icons.svg sprite via <use>.
+  // All icons reference icons/icons.svg sprite via <use>.
   const SVG = {
     translate: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
     summarize: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',

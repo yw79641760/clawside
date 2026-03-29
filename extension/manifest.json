@@ -34,7 +34,7 @@
       "resources": [
         "icons/icon32.png",
         "icons/icon48.png",
-        "icons.svg",
+        "icons/icons.svg",
         "res/i18n.json"
       ],
       "matches": [
