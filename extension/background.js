@@ -1,111 +1,7 @@
 // ClawSide - Service Worker (Background)
-// Handles API calls (streaming + non-streaming) + message routing
+// Handles message routing, panel behavior, and forwards API calls to tools/openclaw.js.
 
-// === Streaming API Call ===
-async function apiStream(prompt, port, token, requestId, toolName = 'default') {
-  port = String(port || '18789');
-  token = String(token || '').trim();
-  const user = 'clawside:' + toolName;
-
-  const response = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-      model: 'openclaw/main',
-      user,
-      messages: [{ role: 'user', content: prompt }],
-      stream: true
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (data === '[DONE]') {
-        chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
-        return;
-      }
-      try {
-        const json = JSON.parse(data);
-        const content = json.choices?.[0]?.delta?.content || '';
-        if (content) {
-          chrome.runtime.sendMessage({ type: 'clawside-stream-chunk', requestId, content }).catch(() => {});
-        }
-      } catch {}
-    }
-  }
-  chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
-}
-
-// === Non-streaming API Call ===
-async function apiNonStream(prompt, port, token, requestId, toolName = 'default') {
-  port = String(port || '18789');
-  token = String(token || '').trim();
-  const user = 'clawside:' + toolName;
-
-  const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-      model: 'openclaw/main',
-      user,
-      messages: [{ role: 'user', content: prompt }],
-      stream: false
-    })
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const result = data.choices?.[0]?.message?.content?.trim() || '';
-  chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
-}
-
-// === Non-streaming single-fetch API Call ===
-async function apiCall(prompt, port, token, toolName = 'default') {
-  port = String(port || '18789');
-  token = String(token || '').trim();
-  const user = 'clawside:' + toolName;
-
-  const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
-    },
-    body: JSON.stringify({
-      model: 'openclaw/main',
-      user,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error?.message || `HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
-}
+import { apiStream, apiNonStream } from './tools/openclaw.js';
 
 // === Initialize Side Panel behavior ===
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
@@ -118,7 +14,6 @@ chrome.action?.onClicked?.addListener((tab) => {
 });
 
 // === Toggle side panel (Ctrl+Shift+P) ===
-// chrome.commands.onCommand is triggered directly by Chrome (user gesture guaranteed).
 chrome.commands.onCommand.addListener((command) => {
   if (command === '_execute_sidePanel') {
     chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).then((contexts) => {
@@ -168,7 +63,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Floating-ball radial menu: open panel + jump to a specific tool tab
   if (msg.type === 'panel-open-with-tab') {
     const { tab, url, title, text } = msg;
-    // Store intent in chrome.storage — sidepanel listens via storage.onChanged
     chrome.storage.local.set({
       _pendingTab: tab,
       _pendingUrl: url || '',
@@ -184,7 +78,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Forward tab-switch message to an already-open side panel
   if (msg.type === 'OPEN_TAB_IN_PANEL') {
-    // Same: use storage as the communication channel
     chrome.storage.local.set({
       _pendingTab: msg.tab,
       _pendingUrl: msg.url || '',
