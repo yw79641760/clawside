@@ -5,6 +5,9 @@
 (function() {
   'use strict';
 
+  // Max chars of page body injected into Ask system prompt (TCM often caps at ~10k).
+  var ASK_PAGE_CONTENT_MAX = 12000;
+
   class ChatSession {
     constructor(tabId) {
       this.tabId = tabId;
@@ -61,45 +64,69 @@
       return this.messages.slice(-count);
     }
 
-    // Build API request format
-    buildPrompt(includeContext = true) {
-      const systemPrompt = this.buildSystemPrompt();
-      const messages = [];
-      
-      if (systemPrompt) {
-        messages.push({ role: 'system', content: systemPrompt });
-      }
-      
-      this.messages.forEach(msg => {
-        messages.push({
-          role: msg.role,
-          content: msg.content
-        });
-      });
-      
-      return messages;
+    // Build API request prompt (plain text) for better LLM adherence.
+    buildPrompt(includeContext = true, extraSystemPrompt = '') {
+      const systemPrompt = includeContext ? this.buildSystemPrompt(extraSystemPrompt) : '';
+
+      // If the last assistant message is an empty streaming placeholder,
+      // omit it and ask the model to produce the next assistant answer.
+      const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
+      const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
+        ? this.messages.slice(0, -1)
+        : this.messages;
+
+      const convo = msgsToInclude.map((msg) => {
+        const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
+        return `${roleLabel}: ${msg.content}`;
+      }).join('\n\n');
+
+      // Let the model know it should answer next.
+      const tail = 'Assistant:';
+      return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
     }
 
     // Build system prompt with page context
-    buildSystemPrompt() {
+    buildSystemPrompt(extraSystemPrompt = '') {
       const parts = [];
-      
+
+      parts.push([
+        'You are a helpful assistant for webpage Q&A.',
+        'Follow the user question and use the provided page context.',
+        'If selected text is present, prefer it over the full content.',
+        'If the answer cannot be found in the provided context, say so explicitly and explain what is missing.',
+        'Respond in Markdown.',
+        'Be concise: prefer 3-8 bullet points or short paragraphs.'
+      ].join('\n'));
+
       if (this.context.title || this.context.url) {
-        let contextInfo = 'Current page context:\n';
-        if (this.context.title) contextInfo += `- Title: ${this.context.title}\n`;
-        if (this.context.url) contextInfo += `- URL: ${this.context.url}\n`;
+        const contextInfo = [
+          'Current page:',
+          this.context.title ? `- Title: ${this.context.title}` : null,
+          this.context.url ? `- URL: ${this.context.url}` : null
+        ].filter(Boolean).join('\n');
         parts.push(contextInfo);
       }
-      
-      if (this.context.selectedText) {
-        parts.push(`\nSelected text from page:\n"${this.context.selectedText}"`);
+
+      if (this.context.selectedText && String(this.context.selectedText).trim()) {
+        parts.push('User-selected text from the page (prioritize this when relevant):\n'
+          + `"${String(this.context.selectedText).trim()}"`);
       }
-      
-      if (this.context.content) {
-        parts.push(`\nPage content excerpt:\n${this.context.content.substring(0, 2000)}...`);
+
+      var body = this.context.content && String(this.context.content).trim()
+        ? String(this.context.content).trim()
+        : '';
+      if (body) {
+        var truncated = body.length > ASK_PAGE_CONTENT_MAX
+          ? body.slice(0, ASK_PAGE_CONTENT_MAX)
+          : body;
+        parts.push('Page main content (excerpt for this tab; may be partial):\n' + truncated
+          + (body.length > ASK_PAGE_CONTENT_MAX
+            ? '\n\n[Truncated — refresh context in the panel if you need more.]'
+            : ''));
       }
-      
-      return parts.length > 0 ? parts.join('\n') + '\n\nPlease answer in the same language as the user\'s question.' : '';
+
+      const base = parts.join('\n\n');
+      return extraSystemPrompt ? `${base}\n\n${extraSystemPrompt}` : base;
     }
 
     // Save to storage

@@ -28,7 +28,15 @@
 - **Highlights**: standout facts, data, or quotes worth noting
 
 Output Markdown only. Be concise and let the content determine the depth of each section.\n\nPage title: {title}\nPage URL: {url}\n\nContent:\n{content}`,
-    ask: `You are a helpful assistant. Answer in {lang}.\n\n{hasSelection}User selected this text from a webpage:\n\n"{selectedText}"\n\n{/hasSelection}Page title: {title}\nPage URL: {url}\n\n{hasContent}Page content (excerpt):\n{content}\n\n{/hasContent}User question: {question}`
+    ask: `You are ClawSide's Ask assistant, helping the user with questions about the current webpage.\n
+Use the provided context to answer.\n
+Prefer {hasSelection}the user-selected text{/hasSelection}{hasContent}the page content excerpt{/hasContent}.\n
+If the answer is not present in the provided context, say so and explain what is missing.\n
+Respond in {lang} and use Markdown.\n
+Keep it concise: 3-8 bullet points or short paragraphs.\n
+If the user's question is ambiguous, ask 1 clarifying question before answering.\n\n
+Page title: {title}\nPage URL: {url}\n
+{hasSelection}SelectedText:\n\"{selectedText}\"\n\n{/hasSelection}{hasContent}PageContent:\n{content}\n\n{/hasContent}User question:\n{question}`
   };
 
   function applyPrompt(template, vars) {
@@ -272,6 +280,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
     const prompts = settings.toolPrompts || {};
     $('promptTranslate') && ($('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate);
     $('promptSummarize') && ($('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize);
+    $('promptAsk') && ($('promptAsk').value = prompts.ask || DEFAULT_PROMPTS.ask);
   }
 
   function applyLanguage() {
@@ -573,10 +582,18 @@ Output Markdown only. Be concise and let the content determine the depth of each
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      const prompt = chatSession.buildPrompt(true);
-      
-      // Load settings
       await loadSettings();
+      const langCode = window.resolveLang(settings.language, browserLang);
+      const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
+      chatSession.setContext({
+        url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
+        title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
+        content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
+        selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
+      });
+      const extraSystemPrompt = `Response language: ${langLabel}.`;
+      const promptText = chatSession.buildPrompt(true, extraSystemPrompt);
+      
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
       
@@ -611,7 +628,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
         // Send streaming request
         chrome.runtime.sendMessage({
           type: 'clawside-api',
-          prompt: JSON.stringify(prompt),
+          prompt: promptText,
           port,
           token,
           requestId,
