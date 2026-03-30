@@ -1146,6 +1146,7 @@ textarea#translateInput::placeholder {
 .chat-message.user {
   flex-direction: row-reverse;
   position: relative;
+  justify-content: flex-start;
 }
 
 .chat-message.user .message-content {
@@ -1223,6 +1224,7 @@ textarea#translateInput::placeholder {
   opacity: 0.75;
   transition: opacity var(--transition), transform var(--transition);
   transform: translateY(0);
+  flex-shrink: 0;
 }
 
 .chat-message.user:hover .message-actions-left {
@@ -1293,10 +1295,12 @@ textarea#translateInput::placeholder {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+  flex-direction: row;
+  align-items: flex-end;
 }
 
 .chat-input-area textarea {
-  order: 2;
+  order: 1;
   flex: 1;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1326,7 +1330,7 @@ textarea#translateInput::placeholder {
 }
 
 .btn-send {
-  order: 1;
+  order: 2;
   width: 44px;
   height: 44px;
   border-radius: var(--radius);
@@ -1393,7 +1397,7 @@ textarea#translateInput::placeholder {
 
 /* Assistant message button hover - Dark background */
 .chat-message.assistant .message-action-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   opacity: 1;
 }
 
