@@ -1296,6 +1296,7 @@ textarea#translateInput::placeholder {
 }
 
 .chat-input-area textarea {
+  order: 2;
   flex: 1;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1325,6 +1326,7 @@ textarea#translateInput::placeholder {
 }
 
 .btn-send {
+  order: 1;
   width: 44px;
   height: 44px;
   border-radius: var(--radius);
