@@ -1,14 +1,15 @@
 // ClawSide - Content Script Entry Point
-// Initializes the floating-ball UI (bubble + popup + dock + radial menu).
-// All floating-UI logic lives in comp/bubble/bubble.js.
+// Initializes popup (selection bubble + result popup) and dock (floating ball + radial menu).
+// Tool modules: src/components/popup.js and src/components/dock.js.
 
 (function () {
   'use strict';
 
   if (window.location.protocol === 'chrome-extension:') return;
 
-  // csBubble.init() is called after tools are loaded via manifest.json content_scripts.
-  // All tool globals (injectTheme, injectStyles, etc.) are available via window.*.
-  window.csBubble.init();
+  // popup.js handles selection bubble, result popup, streaming, and messages.
+  // dock.js handles the floating dock, radial menu, and panel state.
+  window.csPopup.init();
+  window.csDock.init();
 
 })();

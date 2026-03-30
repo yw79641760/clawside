@@ -2,7 +2,7 @@
 // Encapsulates raw-text buffer + RAF-throttled innerHTML rendering for markdown result areas.
 // Used by sidepanel.js. Depends on `marked` (loaded via sidepanel.html <script src="marked.min.js">).
 
-export class StreamingResult {
+class StreamingResult {
   /**
    * @param {{ element: HTMLElement }} options
    */

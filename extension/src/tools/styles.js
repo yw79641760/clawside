@@ -3,7 +3,7 @@
 // Used by content.js only (the side panel uses sidepanel.css loaded via <link>).
 
 /** Theme CSS variable sets for the floating-ball / popup / radial-menu UI. */
-export const THEMES = {
+const THEMES = {
   dark: {
     '--cs-bg': '#161b22',
     '--cs-border': '#30363d',
@@ -33,7 +33,7 @@ export const THEMES = {
 };
 
 /** Determine effective appearance from setting + system preference. */
-export function resolveAppearance(appearanceSetting = 'system') {
+function resolveAppearance(appearanceSetting = 'system') {
   if (appearanceSetting === 'system') {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
@@ -41,7 +41,7 @@ export function resolveAppearance(appearanceSetting = 'system') {
 }
 
 /** Inject CSS custom-property theme variables into the page document root. */
-export function injectTheme(vars) {
+function injectTheme(vars) {
   const existing = document.getElementById('cs-theme');
   if (existing) existing.remove();
   const s = document.createElement('style');
@@ -53,8 +53,8 @@ export function injectTheme(vars) {
   document.head.appendChild(s);
 }
 
-/** Content-script CSS bundle for bubble, popup, radial menu, and dock. */
-export const CONTENT_STYLES = `
+/** Content-script CSS bundle for popup (selection bubble + result popup), radial menu, and dock. */
+const CONTENT_STYLES = `
   .cs-bubble {
     position: fixed; z-index: 2147483647;
     display: flex; gap: 4px;
@@ -184,6 +184,12 @@ export const CONTENT_STYLES = `
   .cs-radial-backdrop.visible {
     opacity: 1;
   }
+  .cs-radial-btn > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
   .cs-radial-label {
     position: absolute; white-space: nowrap;
     font-size: 11px; font-family: system-ui, sans-serif;
@@ -253,10 +259,16 @@ export const CONTENT_STYLES = `
 `;
 
 /** Inject the content-script CSS bundle into the page. */
-export function injectStyles() {
+function injectStyles() {
   if (document.getElementById('clawside-styles')) return;
   const s = document.createElement('style');
   s.id = 'clawside-styles';
   s.textContent = CONTENT_STYLES;
   document.head.appendChild(s);
 }
+
+// Expose globals for non-module scripts (content.js, popup.js, and dock.js are not ES modules)
+window.THEMES = THEMES;
+window.resolveAppearance = resolveAppearance;
+window.injectTheme = injectTheme;
+window.injectStyles = injectStyles;

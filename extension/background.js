@@ -1,7 +1,11 @@
 // ClawSide - Service Worker (Background)
 // Handles message routing, panel behavior, and forwards API calls to tools/openclaw.js.
 
-import { apiStream, apiNonStream } from './tools/openclaw.js';
+import { apiStream, apiNonStream } from './src/tools/openclaw.js';
+
+// Cached side panel tab ID — registered by the panel itself on load.
+// Kept in storage so the SW can persist it across restarts.
+let _panelTabId = null;
 
 // === Initialize Side Panel behavior ===
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
@@ -18,7 +22,7 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === '_execute_sidePanel') {
     chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).then((contexts) => {
       if (contexts.length > 0) {
-        // Panel open → close it
+        // Panel open -- close it
         chrome.tabs.query({ currentWindow: true }, (tabs) => {
           const sidePanelTab = tabs.find((t) => t.url?.includes('sidepanel'));
           if (sidePanelTab?.id) {
@@ -31,7 +35,7 @@ chrome.commands.onCommand.addListener((command) => {
           }
         });
       } else {
-        // Panel closed → open it
+        // Panel closed -- open it
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           const tab = tabs[0];
           if (tab?.windowId) {
@@ -60,17 +64,31 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
-  // Floating-ball radial menu: open panel + jump to a specific tool tab
+  // Side panel registers its own tabId on load (persisted so SW can use it after restart).
+  if (msg.type === 'panel-ready' && msg.panelTabId) {
+    _panelTabId = msg.panelTabId;
+    chrome.storage.local.set({ _panelTabId: msg.panelTabId });
+    // Pending tab data (if any) is read by the panel's own storage.onChanged listener.
+    // No sendMessage needed — eliminates "channel closed" errors when panel reloads.
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  // Floating-ball radial menu: open panel + jump to a specific tool tab.
+  // Communication is purely via chrome.storage.local — the panel reads
+  // pending data via its storage.onChanged listener (handlePendingTab).
+  // No direct chrome.tabs.sendMessage, which fails when the panel refreshes.
   if (msg.type === 'panel-open-with-tab') {
     const { tab, url, title, text } = msg;
     chrome.storage.local.set({
-      _pendingTab: tab,
-      _pendingUrl: url || '',
+      _pendingTab:   tab,
+      _pendingUrl:   url   || '',
       _pendingTitle: title || '',
-      _pendingText: text || ''
+      _pendingText:  text  || '',
     });
-    chrome.windows.getCurrent((win) => {
-      if (win?.id) chrome.sidePanel.open({ windowId: win.id });
+
+    chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT }).catch((err) => {
+      console.error('[ClawSide] sidePanel.open error:', err);
     });
     sendResponse({ ok: true });
     return true;
@@ -87,12 +105,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
+  // Content script bootstrap: request current active tab info.
+  // chrome.tabs is not available in MV3 content scripts — this bridges the gap.
+  if (msg.type === 'get_current_tab') {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs && tabs[0]) {
+        var t = tabs[0];
+        sendResponse({
+          id:     t.id,
+          url:    t.url    || '',
+          title:  t.title  || '',
+          favicon: t.favIconUrl || ''
+        });
+      } else {
+        sendResponse(null);
+      }
+    });
+    return true; // keep message channel open for async sendResponse
+  }
+
   return true;
 });
 
 // === Broadcast panel-state to content scripts (panel closed by any means) ===
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'sidepanel-closed') {
+    _panelTabId = null;
+    chrome.storage.local.remove(['_panelTabId']);
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
         if (tab.id) chrome.tabs.sendMessage(tab.id, { type: 'panel-state', open: false }).catch(() => {});
@@ -103,21 +142,45 @@ chrome.runtime.onMessage.addListener((msg) => {
   return true;
 });
 
-// === Tab Switch Events ===
+// === Tab Switch / Update Events → forward to content scripts ===
+// All chrome.tabs.* listeners live HERE (background/SW), NOT in content scripts.
+// MV3 content scripts cannot access chrome.tabs API.
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await chrome.tabs.get(activeInfo.tabId);
-    chrome.runtime.sendMessage({
-      type: 'text_selected', text: '', url: tab.url || '', title: tab.title || ''
+    chrome.tabs.sendMessage(activeInfo.tabId, {
+      type: 'tabctx-activated', tabId: activeInfo.tabId,
+      url: tab.url || '', title: tab.title || '', favicon: tab.favIconUrl || ''
     }).catch(() => {});
   } catch {}
 });
 
-chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url || changeInfo.title) {
-    chrome.runtime.sendMessage({
-      type: 'text_selected', text: '', url: changeInfo.url || tab.url || '',
-      title: changeInfo.title || tab.title || ''
+    chrome.tabs.sendMessage(tabId, {
+      type: 'tabctx-updated', tabId,
+      url: changeInfo.url || tab.url || '',
+      title: changeInfo.title || tab.title || '',
+      favicon: tab.favIconUrl || ''
     }).catch(() => {});
   }
+});
+
+chrome.webNavigation?.onHistoryStateUpdated.addListener((navInfo) => {
+  chrome.tabs.get(navInfo.tabId).then((tab) => {
+    chrome.tabs.sendMessage(navInfo.tabId, {
+      type: 'tabctx-updated', tabId: navInfo.tabId,
+      url: tab.url || '', title: tab.title || '', favicon: tab.favIconUrl || ''
+    }).catch(() => {});
+  }).catch(() => {});
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, { type: 'tabctx-removed', tabId }).catch(() => {});
+      }
+    });
+  });
 });

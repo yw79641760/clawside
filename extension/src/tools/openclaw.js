@@ -82,7 +82,7 @@ export async function apiStream(prompt, port, token, requestId, toolName = 'defa
         const json = JSON.parse(data);
         const content = json.choices?.[0]?.delta?.content || '';
         if (content) {
-          chrome.runtime.sendMessage({ type: 'clawside-stream-chunk', requestId, content }).catch(() => {});
+          chrome.runtime.sendMessage({ type: 'clawside-stream-chunk', requestId, chunk: content }).catch(() => {});
         }
       } catch {}
     }

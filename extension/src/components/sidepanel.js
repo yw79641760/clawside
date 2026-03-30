@@ -1,9 +1,9 @@
 // ClawSide - Full Side Panel Logic
 // Shared modules loaded via <script> in sidepanel.html:
-//   tools/icons.js        → window.SVG, window.svgIcon()
-//   tools/i18n.js         → window.loadI18n(), window.resolveLang(), window.getBrowserLang()
-//   tools/browser.js      → window.getBrowserLocale(), window.copyToClipboard()
-//   comp/streaming-result.js  → window.StreamingResult
+//   src/tools/icons.js        → window.SVG, window.svgIcon()
+//   src/tools/browser.js      → getBrowserLocale(), copyToClipboard(), resolveLang(), getBrowserLang()
+//   src/tools/streaming-result.js  → window.StreamingResult
+//   src/shared/chat-session.js → ChatSession, chatSessionManager
 
 (function () {
   'use strict';
@@ -14,6 +14,10 @@
   });
 
   const DEFAULT_PORT = '18789';
+
+  // === Chat State ===
+  let chatSession = null;
+  let currentChatMessageId = null;
 
   // === Default Tool Prompts ===
   const DEFAULT_PROMPTS = {
@@ -43,70 +47,54 @@ Output Markdown only. Be concise and let the content determine the depth of each
 
   // === State ===
   let currentTab = 'translate';
-  let selectedText = '';
-  let currentUrl = '';
-  let currentPageTitle = '';
-  let currentPageContent = '';
   let history = [];
   let browserLang = 'English';
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
+  // Guards the init() pending-tab logic against double-fires from both onChanged
+  // and storage read racing for the same _pendingTab value.
+  let _pendingReadGuard = false;
 
-  // === Translations ===
-  // loadI18n, resolveLang, getBrowserLang are provided by tools/i18n.js
+  // === Translations (chrome.i18n.getMessage + resolveLang/getBrowserLang from browser.js) ===
 
   async function applyPanelLanguage() {
-    const i18n = await window.loadI18n();
-    const lang = window.resolveLang(settings.language, browserLang);
-    const t = i18n[lang] || i18n.en || {};
     // Result titles
-    $('titleTranslate').textContent = t.resultTranslate;
-    $('titleSummarize').textContent = t.resultSummarize;
-    $('titleAnswer').textContent = t.resultAnswer;
+    $('titleTranslate') && ($('titleTranslate').textContent = chrome.i18n.getMessage('resultTranslate'));
+    $('titleSummarize') && ($('titleSummarize').textContent = chrome.i18n.getMessage('resultSummarize'));
+    $('titleAnswer') && ($('titleAnswer').textContent = chrome.i18n.getMessage('resultAnswer'));
     // Copy buttons
-    $('copyTranslateResult').textContent = t.copy;
-    $('copySummarizeResult').textContent = t.copy;
-    $('copyAskResult').textContent = t.copy;
+    $('copyTranslateResult') && ($('copyTranslateResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
+    $('copySummarizeResult') && ($('copySummarizeResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
     // Inputs
-    $('askQuestion').placeholder = t.askPlaceholder;
-    $('translateInput').placeholder = t.translateInputPlaceholder;
+    $('translateInput') && ($('translateInput').placeholder = chrome.i18n.getMessage('translateInputPlaceholder'));
     // Settings
-    $('settingsTitle').textContent = t.settingsTitle;
-    $('labelTargetLang').textContent = t.targetLang;
-    $('labelTargetLangTranslate').textContent = t.labelTargetLangTranslate || t.targetLang;
-    $('labelAppearance').textContent = t.appearance;
-    $('optionAuto').textContent = t.optionAuto;
-    $('optionSystem').textContent = t.systemOpt;
-    $('optionLight').textContent = t.lightOpt;
-    $('optionDark').textContent = t.darkOpt;
-    $('labelPort').textContent = t.gatewayPort;
-    $('labelToken').textContent = t.authToken;
-    $('testConnBtn').textContent = t.testConn;
-
-    $('gatewayNote').innerHTML = t.gatewayNote;
+    $('settingsTitle') && ($('settingsTitle').textContent = chrome.i18n.getMessage('settingsTitle'));
+    $('labelTargetLang') && ($('labelTargetLang').textContent = chrome.i18n.getMessage('targetLang'));
+    $('labelTargetLangTranslate') && ($('labelTargetLangTranslate').textContent = chrome.i18n.getMessage('labelTargetLangTranslate'));
+    $('labelAppearance') && ($('labelAppearance').textContent = chrome.i18n.getMessage('appearance'));
+    $('optionAuto') && ($('optionAuto').textContent = chrome.i18n.getMessage('optionAuto'));
+    $('optionSystem') && ($('optionSystem').textContent = chrome.i18n.getMessage('systemOpt'));
+    $('optionLight') && ($('optionLight').textContent = chrome.i18n.getMessage('lightOpt'));
+    $('optionDark') && ($('optionDark').textContent = chrome.i18n.getMessage('darkOpt'));
+    $('labelPort') && ($('labelPort').textContent = chrome.i18n.getMessage('gatewayPort'));
+    $('labelToken') && ($('labelToken').textContent = chrome.i18n.getMessage('authToken'));
+    $('testConnBtn').textContent = chrome.i18n.getMessage('testConn');
+    $('gatewayNote') && ($('gatewayNote').innerHTML = chrome.i18n.getMessage('gatewayNote'));
     // Panel headers
-    $('titleTranslateHeader').textContent = t.titleTranslateHeader;
-    $('titleSummarizeHeader').textContent = t.titleSummarizeHeader;
-    $('titleAskHeader').textContent = t.titleAskHeader;
-    $('titleHistoryHeader').textContent = t.titleHistoryHeader;
+    $('titleTranslateHeader') && ($('titleTranslateHeader').textContent = chrome.i18n.getMessage('titleTranslateHeader'));
+    $('titleSummarizeHeader') && ($('titleSummarizeHeader').textContent = chrome.i18n.getMessage('titleSummarizeHeader'));
+    $('titleAskHeader') && ($('titleAskHeader').textContent = chrome.i18n.getMessage('titleAskHeader'));
+    $('titleHistoryHeader') && ($('titleHistoryHeader').textContent = chrome.i18n.getMessage('titleHistoryHeader'));
     // Panel labels and buttons
-
-    
-    
-    
-    
-    
-    // History
-    $('labelTranslateInput').textContent = t.labelTranslateInput;
-    $('historyClearBtn').textContent = t.historyClear;
-    // Panel buttons
-    $('labelTranslateBtn').textContent = t.labelTranslateBtn;
-    $('labelSummarizeBtn').textContent = t.labelSummarizeBtn;
-    $('labelAskBtn').textContent = t.labelAskBtn;
+    $('labelTranslateInput') && ($('labelTranslateInput').textContent = chrome.i18n.getMessage('labelTranslateInput'));
+    $('historyClearBtn') && ($('historyClearBtn').textContent = chrome.i18n.getMessage('historyClear'));
+    $('labelTranslateBtn') && ($('labelTranslateBtn').textContent = chrome.i18n.getMessage('labelTranslateBtn'));
+    $('labelSummarizeBtn') && ($('labelSummarizeBtn').textContent = chrome.i18n.getMessage('labelSummarizeBtn'));
+    $('labelAskBtn') && ($('labelAskBtn').textContent = chrome.i18n.getMessage('labelAskBtn'));
     // Loading
-    $('loadingText').textContent = t.loading;
+    $('loadingText') && ($('loadingText').textContent = chrome.i18n.getMessage('loading'));
     // History empty state
-    const historyEmptyText = $('historyEmpty').querySelector('.empty-text');
-    if (historyEmptyText) historyEmptyText.textContent = t.emptyHistory;
+    const historyEmptyText = $('historyEmpty')?.querySelector('.empty-text');
+    if (historyEmptyText) historyEmptyText.textContent = chrome.i18n.getMessage('emptyHistory');
   }
 
   // === DOM ===
@@ -135,26 +123,34 @@ Output Markdown only. Be concise and let the content determine the depth of each
   const copyTranslateResult = $('copyTranslateResult');
   const translateStatus = $('translateStatus');
 
-  // Summarize / Ask shared context
-  const pageContext = $('pageContext');
-  const ctxFavicon = $('ctxFavicon');
-  const ctxTitle = $('ctxTitle');
-  const ctxUrl = $('ctxUrl');
-  const ctxContentPreview = $('ctxContentPreview');
-  const pageUrlEl = $('pageUrl'); // kept for backward compat if any
+  // Page Context DOM refs (passed to src/shared/panel-context.js; also used in init())
+  // (panelContext.init() wires refresh button and text_selected listener internally)
   const summarizeBtn = $('summarizeBtn');
   const summarizeResult = $('summarizeResult');
   const summarizeResultText = $('summarizeResultText');
   const copySummarizeResult = $('copySummarizeResult');
   const summarizeStatus = $('summarizeStatus');
 
-  // Ask
-  const askQuestion = $('askQuestion');
-  const askBtn = $('askBtn');
-  const askResult = $('askResult');
-  const askResultText = $('askResultText');
-  const copyAskResult = $('copyAskResult');
-  const askStatus = $('askStatus');
+  // Ask - Old (Removed, replaced by Chat Interface)
+  // const askQuestion = $('askQuestion');
+  // const askBtn = $('askBtn');
+  // const askResult = $('askResult');
+  // const askResultText = $('askResultText');
+  // const copyAskResult = $('copyAskResult');
+  // const askStatus = $('askStatus');
+
+  // Ask - Streaming Result Component (keep for compatibility if needed)
+  // const askStreaming = new StreamingResult({ element: askResultText });
+
+  // Ask - Chat Interface
+  const chatMessages = $('chatMessages');
+  const chatInput = $('chatInput');
+  const chatSendBtn = $('chatSendBtn');
+  const chatEmptyState = $('chatEmptyState');
+  const chatEmptyText = $('chatEmptyText');
+  const chatEmptyHint = $('chatEmptyHint');
+  const chatStatus = $('chatStatus');
+  const clearChatBtn = $('clearChatBtn');
 
   // History
   const historyList = $('historyList');
@@ -181,7 +177,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
   // === Streaming Result Components ===
   const translateStreaming = new StreamingResult({ element: translateResultText });
   const summarizeStreaming = new StreamingResult({ element: summarizeResultText });
-  const askStreaming = new StreamingResult({ element: askResultText });
+  // const askStreaming = new StreamingResult({ element: askResultText }); // Removed with old Ask UI
 
   // === Utilities ===
   function showLoading(text) {
@@ -214,10 +210,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
     panelHistory.classList.toggle('hidden', tab !== 'history');
     panelSettings.classList.toggle('hidden', tab !== 'settings');
     settingsBtn.classList.toggle('active', tab === 'settings');
-    if (pageContext) pageContext.classList.toggle('hidden', !['summarize', 'ask'].includes(tab));
-    // Show the right heading inside pageContext
-    $('ctxHeadingSummarize')?.classList.toggle('hidden', tab !== 'summarize');
-    $('ctxHeadingAsk')?.classList.toggle('hidden', tab !== 'ask');
+    window.panelContext.updateVisibility(tab);
 
     if (tab === 'history') renderHistory();
     if (tab === 'settings') {
@@ -225,12 +218,13 @@ Output Markdown only. Be concise and let the content determine the depth of each
       showSettingsSubTab('basic');
       if (browserLangHint) {
         const resolvedLang = window.resolveLang(settings.language, browserLang);
-        const i18n2 = await window.loadI18n();
-        const t2 = i18n2[resolvedLang] || i18n2.en || {};
-        browserLangHint.textContent = `${t2.browserLangHint || 'Browser language'} → ${browserLang}`;
+        browserLangHint.textContent = `${chrome.i18n.getMessage('browserLangHint')} → ${browserLang}`;
       }
     }
-    if (tab === 'ask') askQuestion.focus();
+    if (tab === 'ask') {
+      await initChat();
+      chatInput.focus();
+    }
   }
 
   function showSettingsSubTab(subtab) {
@@ -258,9 +252,8 @@ Output Markdown only. Be concise and let the content determine the depth of each
 
   function loadToolPrompts() {
     const prompts = settings.toolPrompts || {};
-    $('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate;
-    $('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize;
-    $('promptAsk').value = prompts.ask || DEFAULT_PROMPTS.ask;
+    $('promptTranslate') && ($('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate);
+    $('promptSummarize') && ($('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize);
   }
 
   function applyLanguage() {
@@ -335,6 +328,308 @@ Output Markdown only. Be concise and let the content determine the depth of each
       }
       gatewayStatusEl.style.color = 'var(--error)';
     }
+  }
+
+  // === Chat Interface Functions ===
+  
+  // Initialize chat session for current tab
+  async function initChat() {
+    if (!chatSession) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        chatSession = new window.ChatSession(tab.id);
+        await chatSession.load();
+        
+        // Set page context using available methods
+        chatSession.setContext({
+          url: window.panelContext.getCurrentUrl() || '',
+          title: window.panelContext.getCurrentPageTitle() || '',
+          content: window.panelContext.getCurrentPageContent() || '',
+          selectedText: window.panelContext.getSelectedText() || ''
+        });
+      }
+    }
+    
+    renderChatMessages();
+    updateChatInputState();
+  }
+
+  // Render all chat messages
+  function renderChatMessages() {
+    if (!chatSession) return;
+    
+    const messages = chatSession.getMessages();
+    chatMessages.innerHTML = '';
+    
+    if (messages.length === 0) {
+      chatEmptyState.classList.remove('hidden');
+      chatMessages.classList.add('hidden');
+    } else {
+      chatEmptyState.classList.add('hidden');
+      chatMessages.classList.remove('hidden');
+      
+      messages.forEach(msg => {
+        const msgEl = createMessageElement(msg.role, msg.content);
+        chatMessages.appendChild(msgEl);
+      });
+      
+      scrollToBottom();
+    }
+  }
+
+  // Create message DOM element
+  function createMessageElement(role, content) {
+    const div = document.createElement('div');
+    div.className = `chat-message ${role}`;
+    
+    const avatar = role === 'user' ? '👤' : '🤖';
+    const htmlContent = window.marked.parse(content);
+    
+    // User message: edit and copy icons between avatar and content (on the left side of content bubble)
+    if (role === 'user') {
+      div.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-actions-left">
+          <button class="message-action-btn" data-action="edit" title="Edit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="message-action-btn" data-action="copy" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="message-content">
+          ${htmlContent}
+        </div>
+      `;
+      
+      // Wire edit button
+      const editBtn = div.querySelector('[data-action="edit"]');
+      editBtn.addEventListener('click', () => {
+        chatInput.value = content;
+        chatInput.focus();
+        updateChatInputState();
+      });
+      
+      // Wire copy button
+      const copyBtn = div.querySelector('[data-action="copy"]');
+      copyBtn.addEventListener('click', () => {
+        window.copyToClipboard(content);
+        showCopiedFeedback(copyBtn);
+      });
+    } 
+    // Assistant message: copy icon on right outside bubble
+    else {
+      div.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">
+          ${htmlContent}
+        </div>
+        <div class="message-actions-right">
+          <button class="message-action-btn" data-action="copy" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+      
+      // Wire copy button
+      const copyBtn = div.querySelector('[data-action="copy"]');
+      copyBtn.addEventListener('click', () => {
+        window.copyToClipboard(content);
+        showCopiedFeedback(copyBtn);
+      });
+    }
+    
+    return div;
+  }
+
+  // Add user message to chat
+  function addUserMessage(content) {
+    if (!chatSession) return;
+    
+    chatSession.addUserMessage(content);
+    const msgEl = createMessageElement('user', content);
+    chatMessages.appendChild(msgEl);
+    chatSession.save();
+    scrollToBottom();
+  }
+
+  // Add assistant message placeholder (for streaming)
+  function addAssistantMessagePlaceholder() {
+    if (!chatSession) return null;
+    
+    const msg = chatSession.addAssistantMessage('');
+    const div = document.createElement('div');
+    div.className = 'chat-message assistant';
+    div.dataset.streaming = 'true';
+    
+    div.innerHTML = `
+      <div class="message-avatar">🤖</div>
+      <div class="message-content streaming"></div>
+    `;
+    
+    chatMessages.appendChild(div);
+    scrollToBottom();
+    return { msg, div };
+  }
+
+  // Update streaming message content
+  function updateStreamingMessage(content) {
+    const streamingDiv = chatMessages.querySelector('.chat-message.assistant[data-streaming="true"] .message-content');
+    if (streamingDiv) {
+      streamingDiv.innerHTML = window.marked.parse(content);
+      scrollToBottom();
+    }
+  }
+
+  // Finalize streaming message
+  function finalizeStreamingMessage(content) {
+    const streamingDiv = chatMessages.querySelector('.chat-message.assistant[data-streaming="true"]');
+    if (streamingDiv) {
+      streamingDiv.classList.remove('streaming');
+      streamingDiv.removeAttribute('data-streaming');
+      
+      // Add actions
+      const actionsHtml = `
+        <div class="message-actions-right">
+          <button class="message-action-btn" data-action="copy" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+      streamingDiv.insertAdjacentHTML('beforeend', actionsHtml);
+      
+      // Wire copy button
+      const copyBtn = streamingDiv.querySelector('[data-action="copy"]');
+      copyBtn.addEventListener('click', () => {
+        window.copyToClipboard(content);
+        showCopiedFeedback(copyBtn);
+      });
+      
+      // Update session
+      if (chatSession) {
+        chatSession.updateLastAssistantMessage(content);
+        chatSession.save();
+      }
+    }
+  }
+
+  // Scroll chat to bottom
+  function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Update chat input state
+  function updateChatInputState() {
+    const hasContent = chatInput.value.trim().length > 0;
+    chatSendBtn.disabled = !hasContent;
+  }
+
+  // Send chat message
+  async function sendChatMessage() {
+    const question = chatInput.value.trim();
+    if (!question || !chatSession) return;
+    
+    // Disable input during request
+    chatInput.disabled = true;
+    chatSendBtn.disabled = true;
+    
+    try {
+      // Add user message
+      addUserMessage(question);
+      chatInput.value = '';
+      updateChatInputState();
+      
+      // Add assistant placeholder
+      addAssistantMessagePlaceholder();
+      
+      // Build prompt with conversation history
+      const prompt = chatSession.buildPrompt(true);
+      
+      // Load settings
+      await loadSettings();
+      const port = settings.gatewayPort || DEFAULT_PORT;
+      const token = settings.authToken || '';
+      
+      // Make API call
+      let accumulatedContent = '';
+      
+      await new Promise((resolve, reject) => {
+        const requestId = 'chat_' + Date.now();
+        const timeout = setTimeout(() => {
+          chrome.runtime.onMessage.removeListener(handler);
+          reject(new Error('Request timeout'));
+        }, 60000);
+        
+        const handler = (msg) => {
+          if (msg.requestId === requestId) {
+            clearTimeout(timeout);
+            chrome.runtime.onMessage.removeListener(handler);
+            
+            if (msg.type === 'clawside-stream-chunk') {
+              accumulatedContent += msg.chunk;
+              updateStreamingMessage(accumulatedContent);
+            } else if (msg.type === 'clawside-stream-done') {
+              resolve();
+            } else if (msg.type === 'clawside-stream-error') {
+              reject(new Error(msg.error || 'Streaming error'));
+            }
+          }
+        };
+        
+        chrome.runtime.onMessage.addListener(handler);
+        
+        // Send streaming request
+        chrome.runtime.sendMessage({
+          type: 'clawside-api',
+          prompt: JSON.stringify(prompt),
+          port,
+          token,
+          requestId,
+          stream: true,
+          toolName: 'chat'
+        });
+      });
+      
+      // Finalize message
+      finalizeStreamingMessage(accumulatedContent);
+      
+    } catch (err) {
+      console.error('[Chat] Error:', err);
+      showStatus(chatStatus, err.message || 'Failed to send message');
+      
+      // Remove failed assistant message
+      const failedMsg = chatMessages.querySelector('.chat-message.assistant[data-streaming="true"]');
+      if (failedMsg) failedMsg.remove();
+      
+    } finally {
+      // Re-enable input
+      chatInput.disabled = false;
+      updateChatInputState();
+      chatInput.focus();
+    }
+  }
+
+  // Clear chat
+  async function clearChat() {
+    if (!chatSession) return;
+    
+    chatSession.clear();
+    await chatSession.removeFromStorage();
+    chatMessages.innerHTML = '';
+    chatEmptyState.classList.remove('hidden');
+    chatMessages.classList.add('hidden');
   }
 
   // === Memory ===
@@ -431,7 +726,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
         original: text, result, lang: targetLang,
-        url: currentUrl, timestamp: Date.now()
+        url: window.panelContext.getCurrentUrl(), timestamp: Date.now()
       });
     } catch (err) {
       showStatus(translateStatus, err.message);
@@ -442,7 +737,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   async function doSummarize() {
-    if (!currentUrl) {
+    if (!window.panelContext.getCurrentUrl()) {
       showStatus(summarizeStatus, 'No current page detected. Navigate to a page first.');
       return;
     }
@@ -451,7 +746,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
     summarizeBtn.disabled = true;
 
     // Reuse currentPageContent from shared context; re-extract only if stale/empty
-    let pageContent = currentPageContent;
+    let pageContent = window.panelContext.getCurrentPageContent();
     let extractionFailed = false;
 
     if (!pageContent || pageContent.trim().length < 100) {
@@ -461,11 +756,11 @@ Output Markdown only. Be concise and let the content determine the depth of each
         if (tab?.id) {
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: extractPageContent
+            func: window.panelContext.extractPageContext
           });
           const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
           pageContent = extracted.content + (extracted.jsonLd || '');
-          currentPageContent = pageContent; // update shared context
+          window.panelContext.setCurrentPageContent(pageContent); // update shared context
           if (!pageContent || pageContent.trim().length < 100) {
             extractionFailed = true;
           }
@@ -492,8 +787,8 @@ Output Markdown only. Be concise and let the content determine the depth of each
       const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
       const prompt = applyPrompt(template, {
         lang: langLabel,
-        title: currentPageTitle,
-        url: currentUrl,
+        title: window.panelContext.getCurrentPageTitle(),
+        url: window.panelContext.getCurrentUrl(),
         content: pageContent ? pageContent.slice(0, 8000) : ''
       });
       await apiCall(prompt, {
@@ -507,7 +802,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
       const summary = summarizeStreaming.getRawText();
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'summarize',
-        url: currentUrl, title: currentPageTitle,
+        url: window.panelContext.getCurrentUrl(), title: window.panelContext.getCurrentPageTitle(),
         summary, timestamp: Date.now()
       });
     } catch (err) {
@@ -518,81 +813,8 @@ Output Markdown only. Be concise and let the content determine the depth of each
     }
   }
 
-  async function doAsk() {
-    const question = askQuestion.value.trim();
-    if (!question) {
-      showStatus(askStatus, 'Please enter a question');
-      return;
-    }
-    askStreaming.reset();
-    askResult.classList.add('hidden');
-    askBtn.disabled = true;
-
-    // Reuse currentPageContent from shared context; re-extract only if stale/empty
-    let pageContent = currentPageContent;
-    let extractionFailed = false;
-
-    if (!pageContent || pageContent.trim().length < 100) {
-      showLoading('Extracting page context...');
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id) {
-          const results = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: extractPageContent
-          });
-          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
-          pageContent = extracted.content + (extracted.jsonLd || '');
-          currentPageContent = pageContent; // update shared context
-          if (!pageContent || pageContent.trim().length < 100) {
-            extractionFailed = true;
-          }
-        } else {
-          extractionFailed = true;
-        }
-      } catch (err) {
-        extractionFailed = true;
-      }
-      if (extractionFailed) {
-        pageContent = '';
-      }
-    }
-
-    showLoading('Thinking...');
-    try {
-      await loadSettings();
-      const template = settings.toolPrompts?.ask || DEFAULT_PROMPTS.ask;
-      const targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
-      const prompt = applyPrompt(template, {
-        lang: targetLang,
-        title: currentPageTitle,
-        url: currentUrl,
-        content: pageContent ? pageContent.slice(0, 6000) : '',
-        question,
-        selectedText: selectedText || ''
-      });
-      await apiCall(prompt, {
-        toolName: 'ask',
-        onChunk: (chunk) => {
-          askStreaming.appendChunk(chunk);
-          askResult.classList.remove('hidden');
-        }
-      });
-      askStreaming.flush();
-      const answer = askStreaming.getRawText();
-      await addHistoryItem({
-        id: crypto.randomUUID(), type: 'ask',
-        question, answer,
-        context: selectedText || currentUrl,
-        url: currentUrl, timestamp: Date.now()
-      });
-    } catch (err) {
-      showStatus(askStatus, err.message);
-    } finally {
-      hideLoading();
-      askBtn.disabled = false;
-    }
-  }
+  // === Deprecated: doAsk (Replaced by Chat Interface) ===
+  // async function doAsk() { ... }
 
   async function doCopy(text, btn) {
     if (window.copyToClipboard) await window.copyToClipboard(text);
@@ -601,144 +823,13 @@ Output Markdown only. Be concise and let the content determine the depth of each
     setTimeout(() => { btn.innerHTML = svgIcon('copy') + ' Copy'; btn.classList.remove('copied'); }, 1500);
   }
 
-  // === Page Content Extraction (injected into page) ===
-  // This function runs in the context of the web page
-  function extractPageContent() {
-    try {
-      // Clone body to avoid mutating the actual page
-      const clone = document.body.cloneNode(true);
-
-      // Remove obvious noise
-      const noiseSelectors = [
-        'script', 'style', 'noscript', 'iframe', 'svg', 'button', 'input',
-        'nav', 'footer', 'aside',
-        '.ad', '.ads', '.advert', '.advertisement',
-        '.sidebar', '#sidebar', '.nav', '.menu', '.footer',
-        '.social', '.share', '.related', '.comment', '#comments',
-        '.pagination', '.breadcrumb', '.nav-links'
-      ];
-      noiseSelectors.forEach(sel => {
-        try { clone.querySelectorAll(sel).forEach(el => el.remove()); } catch {}
-      });
-
-      // Strategy 1: try innerText (visible rendered text)
-      let text = clone.innerText?.trim() || '';
-
-      // Strategy 2: if innerText is too short, use textContent
-      if (text.length < 200) {
-        text = (clone.textContent || '').trim();
-      }
-
-      // Clean up: collapse whitespace, remove unicode whitespace
-      text = text.replace(/[\r\n]+/g, '\n').replace(/[ \t]+/g, ' ').replace(/[\u200b-\u200f\u2028-\u202f]/g, '').trim();
-
-      // Remove very short lines (likely UI noise)
-      const lines = text.split('\n').filter(line => line.trim().length > 10);
-      text = lines.join('\n');
-
-      // Truncate to avoid token limits
-      text = text.slice(0, 10000).trim();
-
-      // Extract JSON-LD structured data (for AI context enrichment)
-      let jsonLdText = '';
-      try {
-        const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
-        const parts = [];
-        ldScripts.forEach((script) => {
-          try {
-            const data = JSON.parse(script.textContent);
-            // Handle @graph arrays (multiple entities in one script)
-            const items = Array.isArray(data) ? data : (data['@graph'] ? data['@graph'] : [data]);
-            items.forEach((item) => {
-              if (!item) return;
-              // Extract useful fields
-              const fields = ['headline', 'name', 'articleBody', 'text', 'contentText',
-                              'description', 'summary', 'author', 'creator', 'publisher',
-                              'datePublished', 'dateCreated', 'dateModified'];
-              const extracted = [];
-              fields.forEach((f) => {
-                if (item[f]) {
-                  const val = typeof item[f] === 'object' ? item[f].name || item[f] : item[f];
-                  extracted.push(`${f}: ${val}`);
-                }
-              });
-              if (extracted.length > 0) {
-                parts.push(extracted.join(', '));
-              }
-            });
-          } catch {}
-        });
-        if (parts.length > 0) {
-          jsonLdText = '\n[Structured Data]\n' + parts.join('\n');
-        }
-      } catch {}
-
-      return { content: text, jsonLd: jsonLdText };
-    } catch (err) {
-      return { content: '', jsonLd: '' };
-    }
-  }
-
-  // === Tab Switch Detection ===
-  // Listen for tab changes so we can update current page URL
-  async function updatePageContext() {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab) return;
-
-      const prevUrl = currentUrl;
-      currentUrl = tab.url || '';
-      currentPageTitle = tab.title || '';
-      const favicon = tab.favIconUrl || '';
-
-      // Extract page content from the active web page tab (not the side panel itself)
-      let content = '';
-      const activeTabId = tab.id;
-      const isExtensionPage = !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://');
-      if (activeTabId && !isExtensionPage) {
-        try {
-          const results = await chrome.scripting.executeScript({
-            target: { tabId: activeTabId },
-            func: extractPageContent
-          });
-          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
-          content = extracted.content + (extracted.jsonLd || '');
-          console.log('[ClawSide] extractPageContent result length:', content.length);
-        } catch (err) {
-          console.warn('[ClawSide] extractPageContent failed:', err.message || err);
-        }
-      } else if (isExtensionPage) {
-        console.warn('[ClawSide] updatePageContext: active tab is extension page, skipping extract:', tab.url);
-      } else {
-        console.warn('[ClawSide] updatePageContext: no active tab id');
-      }
-      currentPageContent = content;
-
-      // Update shared context box
-      if (ctxFavicon) ctxFavicon.src = favicon;
-      if (ctxTitle) ctxTitle.textContent = currentPageTitle || '—';
-      if (ctxUrl) ctxUrl.textContent = currentUrl || '—';
-      if (ctxContentPreview) ctxContentPreview.textContent = content ? truncate(content, 20) : '';
-
-      // If URL changed significantly, clear old selection
-      if (prevUrl && prevUrl !== currentUrl) {
-        selectedText = '';
-        translateInput.value = '';
-        askQuestion.value = '';
-      }
-
-      // Try to get selected text from content script
-      chrome.tabs.sendMessage(tab.id, { type: 'get_selection' }).catch(() => {});
-    } catch (err) {
-      console.warn('[ClawSide] updatePageContext error:', err.message || err);
-    }
-  }
+  // ── Context state delegated to src/shared/panel-context.js ──────
 
 
-  function truncate(str, max) {
+  var truncate = window.truncate || function (str, max) {
     if (!str) return '';
-    return str.length > max ? str.slice(0, max) + '…' : str;
-  }
+    return str.length > max ? str.slice(0, max) + '\u2026' : str;
+  };
 
   function truncateUrl(url) {
     if (!url) return '—';
@@ -751,7 +842,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   // === Icon Helper (inline SVG, no <use> dependency) ===
-  // All icons reference icons/icons.svg sprite via <use>.
+  // All icons reference resources/icons/icons.svg sprite via <use>.
   const SVG = {
     translate: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
     summarize: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
@@ -788,9 +879,6 @@ Output Markdown only. Be concise and let the content determine the depth of each
   }
 
   async function renderHistory() {
-    const i18n = await window.loadI18n();
-    const lang = window.resolveLang(settings.language, browserLang);
-    const t = i18n[lang] || i18n.en || {};
     const items = await loadHistory();
     historyCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
     historyEmpty.classList.toggle('hidden', items.length > 0);
@@ -801,7 +889,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
       const el = document.createElement('div');
       el.className = 'history-item';
       const itemIcon = item.type === 'translate' ? svgIcon('translate') : item.type === 'summarize' ? svgIcon('summarize') : svgIcon('ask');
-      const typeLabel = item.type === 'translate' ? t.tabTranslate : item.type === 'summarize' ? t.tabSummarize : t.tabAsk;
+      const typeLabel = item.type === 'translate' ? chrome.i18n.getMessage('tabTranslate') : item.type === 'summarize' ? chrome.i18n.getMessage('tabSummarize') : chrome.i18n.getMessage('tabAsk');
 
         let preview;
         if (item.type === 'translate') {
@@ -875,50 +963,22 @@ Output Markdown only. Be concise and let the content determine the depth of each
   });
 
   // === Messages from content script / background ===
+  // text_selected is handled by src/shared/panel-context.js internally.
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'text_selected') {
-      selectedText = msg.text || '';
-      currentUrl = msg.url || '';
-      currentPageTitle = msg.title || '';
-
-      // Update translate input
-      if (selectedText && !translateInput.value) {
-        translateInput.value = selectedText;
-      }
-
-      // Update context box
-      if (ctxTitle) ctxTitle.textContent = currentPageTitle || '—';
-      if (ctxUrl) ctxUrl.textContent = currentUrl || '—';
-      if (ctxContentPreview) {
-        if (selectedText) {
-          ctxContentPreview.textContent = `"${truncate(selectedText, 100)}"`;
-        } else {
-          ctxContentPreview.textContent = currentPageContent ? truncate(currentPageContent, 20) : '';
-        }
-      }
-
-      // Update summarize URL
-      if (pageUrlEl) pageUrlEl.textContent = currentUrl || '—';
-    }
-
-    // Floating ball: jump to a specific tool tab
+    // Floating ball: jump to a specific tool tab AND refresh context content.
+    // Data arrives via chrome.storage.local (set by background.js) — the
+    // storage.onChanged listener below handles it. The direct message is a
+    // fallback only when the panel is already open and stable.
     if (msg.type === 'OPEN_TAB_IN_PANEL' && msg.tab) {
-      console.log('[ClawSide sidepanel] OPEN_TAB_IN_PANEL received:', msg.tab, msg.url);
-      const tab = msg.tab; // 'translate' | 'summarize' | 'ask'
-      currentUrl = msg.url || currentUrl;
-      currentPageTitle = msg.title || currentPageTitle;
-      selectedText = msg.text || selectedText;
-      if (tab === 'ask' && selectedText && askQuestion) askQuestion.value = selectedText;
-      showTab(tab);
+      handlePendingTab(msg.tab, msg.url || '', msg.title || '', msg.text || '');
     }
-
-    return true;
+    return false; // fire-and-forget; no sendResponse needed
   });
 
   // === Event Listeners ===
   tabTranslate.addEventListener('click', () => showTab('translate'));
-  tabSummarize.addEventListener('click', () => showTab('summarize'));
-  tabAsk.addEventListener('click', () => showTab('ask'));
+  tabSummarize.addEventListener('click', () => { showTab('summarize'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
+  tabAsk.addEventListener('click', () => { showTab('ask'); /* Chat initialization happens in showTab */ });
   tabHistory.addEventListener('click', () => showTab('history'));
   settingsBtn.addEventListener('click', () => showTab('settings'));
 
@@ -947,12 +1007,18 @@ Output Markdown only. Be concise and let the content determine the depth of each
 
   translateBtn.addEventListener('click', doTranslate);
   summarizeBtn.addEventListener('click', doSummarize);
-  askBtn.addEventListener('click', doAsk);
 
-  // Refresh: calls the full updatePageContext to also refresh favicon / url / title / content
-  $('ctxRefreshBtn')?.addEventListener('click', () => { updatePageContext(); });
+  // Chat event listeners
+  chatSendBtn.addEventListener('click', sendChatMessage);
+  chatInput.addEventListener('input', updateChatInputState);
+  chatInput.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+  clearChatBtn.addEventListener('click', clearChat);
 
-  // Ctrl+Enter in translate input
   translateInput.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -960,13 +1026,13 @@ Output Markdown only. Be concise and let the content determine the depth of each
     }
   });
 
-  // Ctrl+Enter in ask textarea
-  askQuestion.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      doAsk();
-    }
-  });
+  // Ctrl+Enter in ask textarea - REMOVED (replaced by chat interface)
+  // askQuestion.addEventListener('keydown', (e) => {
+  //   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+  //     e.preventDefault();
+  //     doAsk();
+  //   }
+  // });
 
   // Clear translate result when input changes
   translateInput.addEventListener('input', () => {
@@ -975,7 +1041,7 @@ Output Markdown only. Be concise and let the content determine the depth of each
 
   copyTranslateResult.addEventListener('click', () => doCopy(translateStreaming.getRawText(), copyTranslateResult));
   copySummarizeResult.addEventListener('click', () => doCopy(summarizeStreaming.getRawText(), copySummarizeResult));
-  copyAskResult.addEventListener('click', () => doCopy(askStreaming.getRawText(), copyAskResult));
+  // copyAskResult.addEventListener('click', () => doCopy(askStreaming.getRawText(), copyAskResult));
 
   clearHistoryBtn.addEventListener('click', doClearHistory);
 
@@ -1024,7 +1090,6 @@ Output Markdown only. Be concise and let the content determine the depth of each
     applyLanguage();
     await applyPanelLanguage();
     await chrome.storage.local.set({ clawside_settings: settings });
-    console.log('[DEBUG] Language saved:', newLang, 'browserLang:', browserLang);
   });
   settingAppearance.addEventListener('change', async () => {
     settings.appearance = settingAppearance.value || 'system';
@@ -1042,52 +1107,80 @@ Output Markdown only. Be concise and let the content determine the depth of each
 
   // === Init ===
   async function init() {
+    // Init panel context — MUST await so tabContextManager finishes loading storage
+    // before updatePageContext() tries to read from its map.
+    await window.panelContext.init({
+      panelContext: $('panelContext'),
+      ctxFavicon: $('ctxFavicon'),
+      ctxTitle: $('ctxTitle'),
+      ctxUrl: $('ctxUrl'),
+      ctxContentPreview: $('ctxContentPreview'),
+      ctxHeadingSummarize: $('ctxHeadingSummarize'),
+      ctxHeadingAsk: $('ctxHeadingAsk'),
+      ctxRefreshBtn: $('ctxRefreshBtn'),
+      translateInput: translateInput,
+      // askQuestion: askQuestion, // Removed - replaced by chat interface
+    });
+
     // Detect browser language
     browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
     const rawLang = navigator.language || navigator.userLanguage || 'en';
     await loadSettings();
-    const i18nData = await window.loadI18n();
-    const resolvedLang = window.resolveLang(settings.language, browserLang);
-    const t = i18nData[resolvedLang] || i18nData.en || {};
-    if (browserLangHint) browserLangHint.textContent = `${t.browserLangHint || 'Browser language'}: ${rawLang} → ${browserLang}`;
-    await updatePageContext();
+    if (browserLangHint) browserLangHint.textContent = `${chrome.i18n.getMessage('browserLangHint')}: ${rawLang} → ${browserLang}`;
 
-    // Listen for radial-menu tab-switch intents stored by the background script.
-    // chrome.storage is shared across all extension contexts, so this works reliably
-    // without needing to find the side panel tab ID.
+    // Register the storage listener FIRST — it handles floating-ball clicks when
+    // the panel is already open. The write is synchronous, so onChanged fires
+    // (and this callback runs) before chrome.storage.local.set returns.
     chrome.storage.onChanged.addListener((changes) => {
-      if (changes._pendingTab) {
-        const tab = changes._pendingTab.newValue;
-        if (!tab) return;
-        chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (stored) => {
-          currentUrl = stored._pendingUrl || currentUrl;
-          currentPageTitle = stored._pendingTitle || currentPageTitle;
-          selectedText = stored._pendingText || selectedText;
-          showTab(tab);
-          // Clear so the same tab can be requested again
-          chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
-        });
-      }
+      if (!changes._pendingTab) return;
+      const tab = changes._pendingTab.newValue;
+      if (!tab) return;
+      // Guard is module-scoped — set synchronously before the async storage.get call.
+      _pendingReadGuard = true;
+      chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (stored) => {
+        handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '');
+      });
     });
 
-    // Check for any pending tab that was set before this side panel opened
-    chrome.storage.local.get(['_pendingTab'], (stored) => {
-      if (stored._pendingTab) {
-        chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (rest) => {
-          currentUrl = rest._pendingUrl || currentUrl;
-          currentPageTitle = rest._pendingTitle || currentPageTitle;
-          selectedText = rest._pendingText || selectedText;
-          showTab(stored._pendingTab);
-          chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
-        });
-      } else {
-        showTab('translate');
+    // Read pending tab AFTER listener is registered.
+    // IMPORTANT: we must await panelContext.init() so that TCM finishes loading
+    // storage before handlePendingTab tries to TCM.get(tabId) — otherwise the
+    // TCM map is still empty and TCM.set() overwrites existing content with ''.
+    // Cases:
+    //  a) Panel freshly opened with pending tab (SW set _pendingTab before open):
+    //       onChanged fires → guard=true, _pendingTab still in storage
+    //       → storage read sees _pendingTab, guard=true → skip
+    //       → panel already on correct tab from onChanged
+    //  b) Panel freshly opened, SW set _pendingTab, SW restarted before onChanged:
+    //       onChanged fires (guard=true, _pendingTab in storage)
+    //       → storage read sees _pendingTab, guard=true → skip
+    //       → same as (a)
+    //  c) Panel already open, new floating ball click (SW didn't restart):
+    //       onChanged fires → guard=true, _pendingTab cleared
+    //       → storage read sees no _pendingTab → showTab('translate') ← CORRECT
+    //  d) Panel opened without floating ball (no pending tab):
+    //       onChanged never fires, guard=false, _pendingTab=null
+    //       → storage read → showTab('translate') ← CORRECT
+    const stored = await new Promise((resolve) =>
+      chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText'], resolve)
+    );
+    if (stored._pendingTab) {
+      if (!_pendingReadGuard) {
+        _pendingReadGuard = true;
+        // NOTE: handlePendingTab runs AFTER panelContext.init() completes
+        // (see below — chained via .then) so TCM storage is already loaded.
+        handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '');
       }
-    });
+    } else {
+      showTab('translate');
+    }
+
+    // Populate context box after tab switch/initial show settles
+    await window.panelContext.updatePageContext();
 
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {
-      await updatePageContext();
+      await window.panelContext.updatePageContext();
     });
 
     // Listen for same-tab URL changes (including SPA client-side navigation)
@@ -1095,20 +1188,101 @@ Output Markdown only. Be concise and let the content determine the depth of each
       if (!changeInfo.url && !changeInfo.title) return;
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab?.id === tabId) {
-        await updatePageContext();
+        await window.panelContext.updatePageContext();
       }
     });
 
     // SPA router: history.pushState/replaceState doesn't change the URL in a way tabs.onUpdated catches,
     // but webNavigation.onHistoryStateUpdated fires for these. Requires "webNavigation" permission.
-    // Safe to call even if permission is not granted — it just won't fire.
     chrome.webNavigation?.onHistoryStateUpdated.addListener(async (navInfo) => {
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab?.id === navInfo.tabId) {
-        // Give the page a moment to render the new content after pushState
-        setTimeout(async () => { await updatePageContext(); }, 600);
+        setTimeout(async () => { await window.panelContext.updatePageContext(); }, 600);
       }
     });
+
+    // Register this panel tab's ID with the background so it can message us later.
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.runtime.sendMessage({ type: 'panel-ready', panelTabId: tabs[0].id }).catch(() => {});
+      }
+    });
+  }
+
+  // ── Floating-ball tab switch handler ─────────────────────────────────────────
+  // Called by: (1) storage.onChanged when floating ball is clicked (panel already open),
+  //            (2) initial storage read when panel first opens.
+  // No guard needed here — callers are responsible for avoiding double-calls.
+  function handlePendingTab(tab, url, title, text) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs && tabs[0];
+      if (!activeTab || !activeTab.id) return;
+
+      const actualUrl     = url   || activeTab.url     || '';
+      const actualTitle   = title || activeTab.title   || '';
+      const actualFavicon = activeTab.favIconUrl       || '';
+
+      const existingCtx = window.tabContextManager.get(activeTab.id);
+      // Prefer TCM content (content script already extracted and stored it),
+      // but if TCM is empty (content script hasn't written yet, or panel
+      // reloaded and lost in-memory map), we re-extract via executeScript.
+      const existingContent  = existingCtx && existingCtx.content ? existingCtx.content : '';
+      const selectedTxt      = text || (existingCtx ? existingCtx.selectedText : '');
+
+      function finishWithContent(finalContent) {
+        const ctx = { url: actualUrl, title: actualTitle, favicon: actualFavicon, content: finalContent, selectedText: selectedTxt };
+        window.tabContextManager.set(activeTab.id, ctx);
+        window.tabContextManager.setActiveTabId(activeTab.id);
+        showTab(tab);
+        if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+      }
+
+      const isExtensionPage = !actualUrl
+        || actualUrl.startsWith('chrome://')
+        || actualUrl.startsWith('chrome-extension://');
+
+      // IMPORTANT: executeScript is async — its .then() fires AFTER handlePendingTab
+      // returns and init() continues. To avoid a race where TCM={} is written before
+      // executeScript resolves, we ONLY call finishWithContent inside the .then().
+      // When TCM already has content, executeScript is skipped and finishWithContent
+      // is called immediately (synchronously). When TCM is empty, we wait for
+      // executeScript to resolve before calling finishWithContent.
+      if (existingContent) {
+        // TCM has content — use it directly, no executeScript needed
+        finishWithContent(existingContent);
+      } else if (activeTab.id && !isExtensionPage) {
+        // TCM is empty — extract via executeScript, call finishWithContent when done
+        chrome.scripting.executeScript({
+          target: { tabId: activeTab.id },
+          func: window.tabContextManager.extractPageContext
+        }).then((results) => {
+          const extracted = results?.[0]?.result || { content: '', jsonLd: '' };
+          finishWithContent(extracted.content + (extracted.jsonLd || ''));
+        }).catch(() => {
+          finishWithContent('');
+        });
+      } else {
+        // Extension page or no tab — just show the tab
+        showTab(tab);
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+      }
+    });
+  }
+
+  // Show copied feedback on button
+  function showCopiedFeedback(button) {
+    const originalHtml = button.innerHTML;
+    button.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    `;
+    button.style.color = 'var(--success)';
+    setTimeout(() => {
+      button.innerHTML = originalHtml;
+      button.style.color = '';
+    }, 2000);
   }
 
   init();
