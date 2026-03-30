@@ -20,6 +20,16 @@
 
   // ── DOM Elements ─────────────────────────────────────────────
   let _el = {};
+  const FALLBACK_FAVICON_PATH = 'assets/icons/icon16.png';
+  const MIN_CONTENT_LENGTH = 100;
+
+  function getFallbackFaviconUrl() {
+    try {
+      return chrome.runtime.getURL(FALLBACK_FAVICON_PATH);
+    } catch {
+      return FALLBACK_FAVICON_PATH;
+    }
+  }
 
   // ── DOM Init ─────────────────────────────────────────────────
   // @param {object} dom  { panelContext, ctxFavicon, ctxTitle, ctxUrl,
@@ -48,6 +58,8 @@
     window.addEventListener('tabctx-updated', function (e) {
       var ctx = e.detail && e.detail.ctx;
       if (!ctx) return;
+      // Keep context UI synced, but don't let async empty payloads wipe existing content.
+      applyContextToDOM(mergeCtxPreserveContent(ctx));
       if (ctx.selectedText && _el.translateInput && !_el.translateInput.value) {
         _el.translateInput.value = ctx.selectedText;
       }
@@ -65,7 +77,15 @@
       return s.length > max ? s.slice(0, max) + '\u2026' : s;
     };
     // Metadata
-    if (_el.ctxFavicon) _el.ctxFavicon.src = ctx.favicon || '';
+    if (_el.ctxFavicon) {
+      const fallbackFavicon = getFallbackFaviconUrl();
+      _el.ctxFavicon.onerror = function () {
+        if (_el.ctxFavicon.src !== fallbackFavicon) {
+          _el.ctxFavicon.src = fallbackFavicon;
+        }
+      };
+      _el.ctxFavicon.src = ctx.favicon || fallbackFavicon;
+    }
     if (_el.ctxTitle)   _el.ctxTitle.textContent = truncate(ctx.title, 40) || '—';
     if (_el.ctxUrl)     _el.ctxUrl.textContent = truncate(ctx.url, 40) || '—';
     // Preview: first 40 chars of page body content
@@ -84,6 +104,22 @@
   function getCurrentPageTitle()  { var c = window.tabContextManager.getCurrent(); return c ? (c.title || '') : ''; }
   function getCurrentPageContent(){ var c = window.tabContextManager.getCurrent(); return c ? (c.content || '') : ''; }
   function getSelectedText()      { var c = window.tabContextManager.getCurrent(); return c ? (c.selectedText || '') : ''; }
+
+  function mergeCtxPreserveContent(incomingCtx) {
+    var current = window.tabContextManager.getCurrent();
+    var incomingContent = incomingCtx && incomingCtx.content ? incomingCtx.content : '';
+    var currentContent = current && current.content ? current.content : '';
+    if (incomingContent && incomingContent.trim().length >= MIN_CONTENT_LENGTH) {
+      return incomingCtx;
+    }
+    return {
+      url: incomingCtx.url || (current ? current.url : ''),
+      title: incomingCtx.title || (current ? current.title : ''),
+      favicon: incomingCtx.favicon || (current ? current.favicon : ''),
+      content: currentContent,
+      selectedText: incomingCtx.selectedText || (current ? current.selectedText : '')
+    };
+  }
 
   // Setters — used by sidepanel.js to inject context from floating-ball messages.
   // Updates the in-memory map (and persists in content script context via storage bridge).
@@ -202,7 +238,7 @@
       // IMPORTANT: executeScript is async — its .then() fires AFTER this block returns.
       // We use gotFreshContent so the guard below knows whether we should write TCM.
       let gotFreshContent = false;
-      if (tab.id && !isExtensionPage && !content) {
+      if (tab.id && !isExtensionPage && (!content || content.trim().length < MIN_CONTENT_LENGTH)) {
         try {
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -224,6 +260,9 @@
         content:      content,
         selectedText: selectedText,
       };
+
+      // Keep side panel view aligned with the actual active browser tab.
+      window.tabContextManager.setActiveTabId(activeTabId);
 
       // Update TCM only when executeScript succeeded AND TCM was already empty.
       // - gotFreshContent=true (TCM was empty, executeScript got page content)  → update TCM ✓

@@ -348,7 +348,7 @@
 
     // Tab activated / updated → update manager + re-extract content inline.
     chrome.runtime.onMessage.addListener(function (msg, sender, _sendResponse) {
-      var tabId = sender.tab && sender.tab.id;
+      var tabId = msg && msg.tabId ? msg.tabId : (sender.tab && sender.tab.id);
       if (!tabId) return true;
 
       if (msg.type === 'tabctx-activated' || msg.type === 'tabctx-updated') {

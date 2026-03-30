@@ -50,6 +50,11 @@ Output Markdown only. Be concise and let the content determine the depth of each
   let history = [];
   let browserLang = 'English';
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
+  // Per-tool deferred context backfill marker, keyed by current page URL.
+  const deferredContextBackfillUrl = {
+    summarize: '',
+    ask: ''
+  };
   // Guards the init() pending-tab logic against double-fires from both onChanged
   // and storage read racing for the same _pendingTab value.
   let _pendingReadGuard = false;
@@ -197,6 +202,16 @@ Output Markdown only. Be concise and let the content determine the depth of each
     setTimeout(() => el.classList.add('hidden'), 5000);
   }
 
+  function scheduleDeferredContextBackfill(toolTab) {
+    if (!['summarize', 'ask'].includes(toolTab)) return;
+    const currentUrl = window.panelContext.getCurrentUrl() || '';
+    if (deferredContextBackfillUrl[toolTab] === currentUrl) return;
+    deferredContextBackfillUrl[toolTab] = currentUrl;
+    setTimeout(() => {
+      window.panelContext.updatePageContext(translateInput).catch(() => {});
+    }, 500);
+  }
+
   async function showTab(tab) {
     currentTab = tab;
     tabTranslate.classList.toggle('active', tab === 'translate');
@@ -224,6 +239,9 @@ Output Markdown only. Be concise and let the content determine the depth of each
     if (tab === 'ask') {
       await initChat();
       chatInput.focus();
+    }
+    if (tab === 'summarize' || tab === 'ask') {
+      scheduleDeferredContextBackfill(tab);
     }
   }
 
