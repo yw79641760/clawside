@@ -12,9 +12,10 @@ Chrome Page
        OpenClaw Gateway → LLM
 ```
 
-Two modes:
-- **Inline popup** (primary): select text → click bubble icon → result in small popup
-- **Full side panel**: click extension icon → full Translate/Summarize/Ask/History interface
+Three interaction modes:
+1. **Floating bubble**: Select text → bubble appears → click icon → result in popup
+2. **Radial menu**: Long press on bubble → radial menu with translate/summarize/ask
+3. **Full side panel**: Click extension icon → full Translate/Summarize/Ask/History interface
 
 ## Prerequisites
 
@@ -36,35 +37,51 @@ Add to `~/.openclaw/openclaw.json`:
 
 Restart OpenClaw:
 ```bash
-node ~/Dev/openclaw/dist/index.js gateway restart
+openclaw gateway restart
 ```
 
 ## Quick Start
 
 1. Open Chrome → `chrome://extensions/`
 2. Enable **Developer mode** → **Load unpacked** → select `extension/`
-3. Click extension icon → **Open side panel** (full features)
-4. Or just select text on any page → floating bubble appears ✨
+3. Select text on any page → floating bubble appears → click an icon
+4. Or click extension icon → **Open side panel** (full features)
 
 ## Features
 
-### Inline Popup (Quick)
+### Floating Bubble (Quick)
 Select text on any page → floating bubble appears → click an icon:
-- 🌐 翻译 — translated text in small popup
-- 📄 总结 — page summary in small popup
-- 💬 提问 — answer in small popup
+- 🌐 **Translate** — translated text in popup
+- 📄 **Summarize** — page summary in popup (auto-triggers if no existing result)
+- 💬 **Ask** — answer in popup
 
-### Full Side Panel (via extension icon)
+### Radial Menu
+Long press/right-click on bubble → radial menu with tool buttons:
+- 🌐 Translate
+- 📄 Summarize
+- 💬 Ask
+
+Clicking a tool opens the side panel to the corresponding tab.
+
+### Full Side Panel
 Click the ClawSide extension icon in toolbar:
 - 🌐 **Translate** — translate selected text, choose target language
-- 📄 **Summarize** — summarize current page
-- 💬 **Ask** — ask custom questions, Ctrl+Enter to send
+- 📄 **Summarize** — summarize current page, click ask icon to jump to Ask with context
+- 💬 **Ask** — ask custom questions, Ctrl+Enter to send, chat history preserved per tab+URL
 - 📜 **History** — view all past interactions, expand to see details
+
+### Ask from Summarize
+In summarize result header, click the ask icon to:
+- Jump to Ask tab
+- Load summarize result as conversation context
+- Auto-scroll to input box
 
 ### Settings
 Click ⚙️ in side panel:
 - Gateway Port (default: `18789`)
 - Auth Token (if your gateway requires it)
+- Language preference
+- Tool prompt customization
 
 ## Troubleshooting
 
