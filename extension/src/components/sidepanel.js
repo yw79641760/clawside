@@ -708,7 +708,47 @@ Page title: {title}\nPage URL: {url}\n
     }
   }
 
-  // === Memory ===
+  // === Memory (per-tab + global history) ===
+
+  // Get summarize storage key for tab+url
+  function getSummarizeKey(tabId, url) {
+    // Reuse hashUrl function
+    const hashUrl = (url) => {
+      if (!url) return 'none';
+      try {
+        const u = new URL(url);
+        const key = u.origin + u.pathname;
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) {
+          const char = key.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36);
+      } catch {
+        let hash = 0;
+        for (let i = 0; i < url.length; i++) {
+          const char = url.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36);
+      }
+    };
+    return `clawside_summarize_${tabId}_${hashUrl(url)}`;
+  }
+
+  async function loadSummarizeResult(tabId, url) {
+    const key = getSummarizeKey(tabId, url);
+    const result = await chrome.storage.local.get([key]);
+    return result[key] || null;
+  }
+
+  async function saveSummarizeResult(tabId, url, summary, title) {
+    const key = getSummarizeKey(tabId, url);
+    await chrome.storage.local.set({ [key]: { summary, title, url, timestamp: Date.now() } });
+  }
+
   async function loadHistory() {
     const result = await chrome.storage.local.get(['clawside_memory']);
     return result.clawside_memory || [];
@@ -813,10 +853,27 @@ Page title: {title}\nPage URL: {url}\n
   }
 
   async function doSummarize() {
-    if (!window.panelContext.getCurrentUrl()) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tabId = tab?.id;
+    const currentUrl = window.panelContext.getCurrentUrl();
+
+    if (!currentUrl) {
       showStatus(summarizeStatus, 'No current page detected. Navigate to a page first.');
       return;
     }
+
+    // Try to load existing summarize result for this tab+url
+    if (tabId) {
+      const existing = await loadSummarizeResult(tabId, currentUrl);
+      if (existing?.summary) {
+        summarizeStreaming.reset();
+        summarizeStreaming.appendChunk(existing.summary);
+        summarizeStreaming.flush();
+        summarizeResult.classList.remove('hidden');
+        return;
+      }
+    }
+
     summarizeStreaming.reset();
     summarizeResult.classList.add('hidden');
     summarizeBtn.disabled = true;
@@ -828,7 +885,6 @@ Page title: {title}\nPage URL: {url}\n
     if (!pageContent || pageContent.trim().length < 100) {
       showLoading('Extracting page content...');
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -876,9 +932,14 @@ Page title: {title}\nPage URL: {url}\n
       });
       summarizeStreaming.flush();
       const summary = summarizeStreaming.getRawText();
+      const title = window.panelContext.getCurrentPageTitle();
+      const url = window.panelContext.getCurrentUrl();
+      // Save to tab+url specific storage
+      await saveSummarizeResult(tabId, url, summary, title);
+      // Also add to global history
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'summarize',
-        url: window.panelContext.getCurrentUrl(), title: window.panelContext.getCurrentPageTitle(),
+        url, title,
         summary, timestamp: Date.now()
       });
     } catch (err) {
