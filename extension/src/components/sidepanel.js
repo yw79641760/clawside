@@ -1164,7 +1164,7 @@ Page title: {title}\nPage URL: {url}\n
   // === Event Listeners ===
   tabTranslate.addEventListener('click', () => showTab('translate'));
   tabSummarize.addEventListener('click', () => { showTab('summarize'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
-  tabAsk.addEventListener('click', () => { showTab('ask'); /* Chat initialization happens in showTab */ });
+  tabAsk.addEventListener('click', () => { showTab('ask'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
   tabHistory.addEventListener('click', () => showTab('history'));
   settingsBtn.addEventListener('click', () => showTab('settings'));
 
