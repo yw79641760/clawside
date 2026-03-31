@@ -75,9 +75,9 @@
   // Chrome delivers a single onChanged event.
   function persist() {
     // Also persist from side panel context (needed for tab switching)
-    var isSidePanel = typeof chrome.runtime.getContexts !== 'undefined'
-      ? chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).length > 0
-      : false;
+    var proto = typeof window !== 'undefined' ? window.location.protocol : '';
+    var isSidePanel = proto === 'chrome-extension:';
+    console.log('[DEBUG TCM persist] isContentScript:', isContentScript, 'isSidePanel:', isSidePanel, 'map size:', map.size, 'activeTabId:', activeTabId);
     if (!isContentScript && !isSidePanel) return;
 
     var version = Date.now(); // monotonic-ish timestamp
@@ -87,7 +87,12 @@
       lruOrder:    map.lruKeys,
       _version:    version,
     };
-    chrome.storage.local.set({ _tabCtxData: data, _tabCtxVersion: version }).catch(function () {});
+    console.log('[DEBUG TCM persist] map.size:', map.size, 'map.lruKeys:', map.lruKeys, 'contexts count:', Object.keys(data.contexts || {}).length);
+    chrome.storage.local.set({ _tabCtxData: data, _tabCtxVersion: version })
+      .then(() => console.log('[DEBUG TCM persist] saved OK'))
+      .catch(function (e) {
+        console.error('[DEBUG TCM persist] save error:', e);
+      });
   }
 
   // ── Page Content Extraction ─────────────────────────────────────────────────
@@ -375,14 +380,31 @@
     // execution contexts. Module-level `initialized` guard handles SW restarts.
     // NOTE: side panel TCM has its own JS context — initialized=false on each SW
     // startup, even if content script's TCM already ran in a previous session.
-    isContentScript = typeof chrome.runtime.getContexts !== 'undefined'
-      ? chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).length === 0
-      : (typeof document !== 'undefined');
+    // Use window.location.protocol for more reliable detection:
+    // - content script: http: or https:
+    // - side panel: chrome-extension:
+    var proto = typeof window !== 'undefined' ? window.location.protocol : '';
+    isContentScript = proto === 'http:' || proto === 'https:';
+    console.log('[DEBUG TCM init] context detection:', { proto, isContentScript });
 
     if (isContentScript) {
-      // Content script: wire Chrome tab listeners, persist to storage on every mutation
-      wireContentScriptListeners();
-      return Promise.resolve();
+      // Content script: wire Chrome tab listeners
+      // IMPORTANT: Load and merge existing contexts from storage before persisting
+      // This ensures we don't overwrite other tabs' contexts
+      return new Promise(function (resolve) {
+        chrome.storage.local.get([STORAGE_KEY], function (result) {
+          var data = result[STORAGE_KEY];
+          if (data && data.contexts) {
+            // Merge existing contexts into our map
+            for (var key in data.contexts) {
+              map.set(key, data.contexts[key]);
+            }
+          }
+          console.log('[DEBUG TCM init] merged contexts, map.size:', map.size);
+          wireContentScriptListeners();
+          resolve();
+        });
+      });
     } else {
       // Side panel: read from storage, listen for changes, emit CustomEvent
       wireSidePanelListeners();

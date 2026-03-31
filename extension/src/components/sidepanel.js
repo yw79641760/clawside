@@ -542,7 +542,7 @@ Page title: {title}\nPage URL: {url}\n
       chatMessages.classList.remove('hidden');
       chatEmptyState && chatEmptyState.classList.add('hidden');
     }
-    chatSession.save();
+    // Don't save immediately - only save after assistant responds
     if (chatMessages) scrollToBottom();
   }
 

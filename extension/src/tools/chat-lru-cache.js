@@ -128,7 +128,14 @@
     async save(messages, tabId = null, url = '') {
       const saveTabId = tabId || this.tabId;
       const saveUrl = url || this.url;
-      console.log('[DEBUG ChatLRUCache.save] tabId:', saveTabId, 'url:', saveUrl, 'messages:', messages?.length);
+
+      // Only save if there are actual messages
+      if (!messages || messages.length === 0) {
+        console.log('[DEBUG ChatLRUCache.save] skipping - no messages');
+        return;
+      }
+
+      console.log('[DEBUG ChatLRUCache.save] tabId:', saveTabId, 'url:', saveUrl, 'messages:', messages.length);
       if (!saveTabId) {
         console.log('[DEBUG ChatLRUCache.save] early return - no tabId');
         return;
