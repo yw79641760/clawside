@@ -74,7 +74,12 @@
   // storage.onChanged listener fires. Both keys updated in a single call so
   // Chrome delivers a single onChanged event.
   function persist() {
-    if (!isContentScript) return;
+    // Also persist from side panel context (needed for tab switching)
+    var isSidePanel = typeof chrome.runtime.getContexts !== 'undefined'
+      ? chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).length > 0
+      : false;
+    if (!isContentScript && !isSidePanel) return;
+
     var version = Date.now(); // monotonic-ish timestamp
     var data = {
       contexts:    map.toJSON(),
