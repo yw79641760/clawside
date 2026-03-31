@@ -74,9 +74,9 @@ Page title: {title}\nPage URL: {url}\n
     $('titleTranslate') && ($('titleTranslate').textContent = chrome.i18n.getMessage('resultTranslate'));
     $('titleSummarize') && ($('titleSummarize').textContent = chrome.i18n.getMessage('resultSummarize'));
     $('titleAnswer') && ($('titleAnswer').textContent = chrome.i18n.getMessage('resultAnswer'));
-    // Copy buttons
-    $('copyTranslateResult') && ($('copyTranslateResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
-    $('copySummarizeResult') && ($('copySummarizeResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
+    // Copy buttons - icon only, no text
+    // $('copyTranslateResult') && ($('copyTranslateResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
+    // $('copySummarizeResult') && ($('copySummarizeResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
     // Inputs
     $('translateInput') && ($('translateInput').placeholder = chrome.i18n.getMessage('translateInputPlaceholder'));
     // Settings
