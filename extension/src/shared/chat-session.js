@@ -254,6 +254,11 @@
         return this.currentSession;
       }
 
+      // Save current session before switching to new one
+      if (this.currentSession) {
+        await this.currentSession.save();
+      }
+
       // Create new session with LRU cache
       const session = new ChatSession(tabId, url, this.lruCache);
       await session.load();
