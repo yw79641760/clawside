@@ -5,6 +5,10 @@
 //   src/tools/streaming-result.js  → window.StreamingResult
 //   src/shared/chat-session.js → ChatSession, chatSessionManager
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SECTION 1: Config & Constants
+// ═══════════════════════════════════════════════════════════════════════════════
+
 (function () {
   'use strict';
 
@@ -19,7 +23,7 @@
   let chatSession = null;
   let currentChatMessageId = null;
 
-  // === Default Tool Prompts ===
+  // === Default Tool Prompts (Section 1) ===
   const DEFAULT_PROMPTS = {
     translate: `You are a professional translator. Translate the following text to {lang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: {text}`,
     summarize: `Summarize the following page in {lang}. Use this structure:
@@ -53,19 +57,28 @@ Page title: {title}\nPage URL: {url}\n
       .replace(/\{hasContent\}[\s\S]*?\{\/hasContent\}/g, vars.content ? template.match(/\{hasContent\}[\s\S]*?\{\/hasContent\}/)?.[0].replace(/\{hasContent\}|\{\/hasContent\}/g, '') || '' : '');
   }
 
-  // === State ===
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 2: State Variables
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // === UI State ===
   let currentTab = 'translate';
   let history = [];
   let browserLang = 'English';
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
+
   // Per-tool deferred context backfill marker, keyed by current page URL.
   const deferredContextBackfillUrl = {
     summarize: '',
     ask: ''
   };
-  // Guards the init() pending-tab logic against double-fires from both onChanged
-  // and storage read racing for the same _pendingTab value.
+
+  // Guards the init() pending-tab logic against double-fires
   let _pendingReadGuard = false;
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 3: Language & i18n
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   // === Translations (chrome.i18n.getMessage + resolveLang/getBrowserLang from browser.js) ===
 
@@ -149,17 +162,6 @@ Page title: {title}\nPage URL: {url}\n
   const copySummarizeResult = $('copySummarizeResult');
   const summarizeStatus = $('summarizeStatus');
 
-  // Ask - Old (Removed, replaced by Chat Interface)
-  // const askQuestion = $('askQuestion');
-  // const askBtn = $('askBtn');
-  // const askResult = $('askResult');
-  // const askResultText = $('askResultText');
-  // const copyAskResult = $('copyAskResult');
-  // const askStatus = $('askStatus');
-
-  // Ask - Streaming Result Component (keep for compatibility if needed)
-  // const askStreaming = new StreamingResult({ element: askResultText });
-
   // Ask - Chat Interface
   const chatMessages = $('chatMessages');
   const chatInput = $('chatInput');
@@ -195,7 +197,6 @@ Page title: {title}\nPage URL: {url}\n
   // === Streaming Result Components ===
   const translateStreaming = new StreamingResult({ element: translateResultText });
   const summarizeStreaming = new StreamingResult({ element: summarizeResultText });
-  // const askStreaming = new StreamingResult({ element: askResultText }); // Removed with old Ask UI
 
   // === Utilities ===
   function showLoading(text) {
@@ -224,6 +225,10 @@ Page title: {title}\nPage URL: {url}\n
       window.panelContext.updatePageContext(translateInput).catch(() => {});
     }, 500);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 4: Tab Navigation
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   async function showTab(tab) {
     currentTab = tab;
@@ -264,6 +269,10 @@ Page title: {title}\nPage URL: {url}\n
     $('settingsTabBasic')?.classList.toggle('active', subtab === 'basic');
     $('settingsTabTools')?.classList.toggle('active', subtab === 'tools');
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 5: Settings
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   // === Settings ===
   async function loadSettings() {
@@ -361,6 +370,10 @@ Page title: {title}\nPage URL: {url}\n
       gatewayStatusEl.style.color = 'var(--error)';
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 6: Chat Interface
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   // === Chat Interface Functions ===
 
@@ -860,6 +873,10 @@ Page title: {title}\nPage URL: {url}\n
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 7: Tool Actions (Translate, Summarize, Ask)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   // === Actions (streaming) ===
   async function doTranslate() {
     const text = translateInput.value.trim();
@@ -999,9 +1016,6 @@ Page title: {title}\nPage URL: {url}\n
     }
   }
 
-  // === Deprecated: doAsk (Replaced by Chat Interface) ===
-  // async function doAsk() { ... }
-
   async function doCopy(text, btn) {
     if (window.copyToClipboard) await window.copyToClipboard(text);
     btn.innerHTML = svgIcon('check') + ' Copied';
@@ -1063,6 +1077,10 @@ Page title: {title}\nPage URL: {url}\n
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/\n/g,'<br>');
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 8: History
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   async function renderHistory() {
     const items = await loadHistory();
@@ -1212,14 +1230,6 @@ Page title: {title}\nPage URL: {url}\n
     }
   });
 
-  // Ctrl+Enter in ask textarea - REMOVED (replaced by chat interface)
-  // askQuestion.addEventListener('keydown', (e) => {
-  //   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-  //     e.preventDefault();
-  //     doAsk();
-  //   }
-  // });
-
   // Clear translate result when input changes
   translateInput.addEventListener('input', () => {
     translateResult.classList.add('hidden');
@@ -1340,6 +1350,10 @@ Page title: {title}\nPage URL: {url}\n
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 9: Initialization
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   // === Init ===
   async function init() {
     // Inject SVG sprite for icons
@@ -1357,7 +1371,6 @@ Page title: {title}\nPage URL: {url}\n
       ctxHeadingAsk: $('ctxHeadingAsk'),
       ctxRefreshBtn: $('ctxRefreshBtn'),
       translateInput: translateInput,
-      // askQuestion: askQuestion, // Removed - replaced by chat interface
     });
 
     // Detect browser language
@@ -1458,6 +1471,10 @@ Page title: {title}\nPage URL: {url}\n
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 10: Floating Ball Handler & Utilities
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   // ── Floating-ball tab switch handler ─────────────────────────────────────────
   // Called by: (1) storage.onChanged when floating ball is clicked (panel already open),
   //            (2) initial storage read when panel first opens.
@@ -1533,6 +1550,10 @@ Page title: {title}\nPage URL: {url}\n
       }
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SECTION 11: End of File
+  // ═══════════════════════════════════════════════════════════════════════════════
 
   // Show copied feedback on button
   function showCopiedFeedback(button) {
