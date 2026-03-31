@@ -1342,6 +1342,9 @@ Page title: {title}\nPage URL: {url}\n
 
   // === Init ===
   async function init() {
+    // Inject SVG sprite for icons
+    window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(() => {});
+
     // Init panel context — MUST await so tabContextManager finishes loading storage
     // before updatePageContext() tries to read from its map.
     await window.panelContext.init({
@@ -1372,8 +1375,9 @@ Page title: {title}\nPage URL: {url}\n
       if (!tab) return;
       // Guard is module-scoped — set synchronously before the async storage.get call.
       _pendingReadGuard = true;
-      chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText'], (stored) => {
-        handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '');
+      chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], (stored) => {
+        console.log('[DEBUG onChanged] _pendingAction:', stored._pendingAction);
+        handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
       });
     });
 
@@ -1397,14 +1401,16 @@ Page title: {title}\nPage URL: {url}\n
     //       onChanged never fires, guard=false, _pendingTab=null
     //       → storage read → showTab('translate') ← CORRECT
     const stored = await new Promise((resolve) =>
-      chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText'], resolve)
+      chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], resolve)
     );
+    console.log('[DEBUG init] stored._pendingTab:', stored._pendingTab, '_pendingAction:', stored._pendingAction);
     if (stored._pendingTab) {
       if (!_pendingReadGuard) {
         _pendingReadGuard = true;
         // NOTE: handlePendingTab runs AFTER panelContext.init() completes
         // (see below — chained via .then) so TCM storage is already loaded.
-        handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '');
+        console.log('[DEBUG init] calling handlePendingTab with action:', stored._pendingAction);
+        handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
       }
     } else {
       showTab('translate');
@@ -1456,7 +1462,7 @@ Page title: {title}\nPage URL: {url}\n
   // Called by: (1) storage.onChanged when floating ball is clicked (panel already open),
   //            (2) initial storage read when panel first opens.
   // No guard needed here — callers are responsible for avoiding double-calls.
-  function handlePendingTab(tab, url, title, text) {
+  function handlePendingTab(tab, url, title, text, action) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs && tabs[0];
       if (!activeTab || !activeTab.id) return;
@@ -1472,13 +1478,28 @@ Page title: {title}\nPage URL: {url}\n
       const existingContent  = existingCtx && existingCtx.content ? existingCtx.content : '';
       const selectedTxt      = text || (existingCtx ? existingCtx.selectedText : '');
 
-      function finishWithContent(finalContent) {
+      async function finishWithContent(finalContent) {
         const ctx = { url: actualUrl, title: actualTitle, favicon: actualFavicon, content: finalContent, selectedText: selectedTxt };
         window.tabContextManager.set(activeTab.id, ctx);
         window.tabContextManager.setActiveTabId(activeTab.id);
         showTab(tab);
         if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
-        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction']);
+
+        // Auto-trigger summarize if action is 'summarize' and no existing result
+        console.log('[DEBUG autoSummarize] action:', action, 'tab:', tab, 'url:', actualUrl);
+        if (action === 'summarize') {
+          console.log('[DEBUG autoSummarize] action is summarize, checking existing result...');
+          const existing = await loadSummarizeResult(activeTab.id, actualUrl);
+          console.log('[DEBUG autoSummarize] existing result:', existing);
+          if (!existing?.summary) {
+            console.log('[DEBUG autoSummarize] no existing result, triggering doSummarize...');
+            setTimeout(() => {
+              console.log('[DEBUG autoSummarize] calling doSummarize...');
+              doSummarize();
+            }, 100);
+          }
+        }
       }
 
       const isExtensionPage = !actualUrl
@@ -1508,7 +1529,7 @@ Page title: {title}\nPage URL: {url}\n
       } else {
         // Extension page or no tab — just show the tab
         showTab(tab);
-        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText']);
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction']);
       }
     });
   }

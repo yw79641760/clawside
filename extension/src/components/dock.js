@@ -176,14 +176,16 @@
       _pendingTab:   tab,
       _pendingUrl:   url,
       _pendingTitle:  title,
-      _pendingText:   text
+      _pendingText:   text,
+      _pendingAction: tab // use tab id as action (translate/summarize/ask)
     });
     chrome.runtime.sendMessage({
       type:  'panel-open-with-tab',
       tab:   tab,
       url:   url,
       title: title,
-      text:  text
+      text:  text,
+      action: tab
     }).catch(function () {});
   }
 

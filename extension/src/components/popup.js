@@ -369,11 +369,28 @@
       else if (id === 'cs-btn-summarize') action = 'summarize';
       else if (id === 'cs-btn-ask') action = 'ask';
       if (!action) return;
+
       // Pull selected text from tabContextManager (shared across all tabs)
       var currentCtx = window.tabContextManager.getCurrent();
       var text = currentCtx ? currentCtx.selectedText : '';
-      if (!text) return;
-      doAction(action, text, window.location.href, document.title, null);
+
+      // Open side panel with the action tab, then auto-trigger if summarize
+      chrome.storage.local.set({
+        _pendingTab: currentCtx?.tabId || null,
+        _pendingUrl: window.location.href,
+        _pendingTitle: document.title,
+        _pendingText: text,
+        _pendingAction: action
+      });
+      chrome.runtime.sendMessage({
+        type: 'panel-open-with-tab',
+        tab: currentCtx?.tabId || null,
+        url: window.location.href,
+        title: document.title,
+        text: text,
+        action: action
+      }).catch(function () {});
+
       hideBubble();
     });
   }
