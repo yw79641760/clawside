@@ -391,6 +391,8 @@ Page title: {title}\nPage URL: {url}\n
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
       const url = tab.url || '';
+
+      // Refresh chat session
       chatSession = await window.chatSessionManager.switchContext(tab.id, url);
 
       // Update context
@@ -402,6 +404,28 @@ Page title: {title}\nPage URL: {url}\n
       });
 
       renderChatMessages();
+
+      // Refresh summarize result for current tab
+      await loadSummarizeToUi(tab.id, url);
+    }
+  }
+
+  // Load summarize result to UI for given tab+url
+  async function loadSummarizeToUi(tabId, url) {
+    if (!tabId || !url) {
+      summarizeStreaming.reset();
+      summarizeResult.classList.add('hidden');
+      return;
+    }
+    const existing = await loadSummarizeResult(tabId, url);
+    if (existing?.summary) {
+      summarizeStreaming.reset();
+      summarizeStreaming.appendChunk(existing.summary);
+      summarizeStreaming.flush();
+      summarizeResult.classList.remove('hidden');
+    } else {
+      summarizeStreaming.reset();
+      summarizeResult.classList.add('hidden');
     }
   }
 
@@ -433,8 +457,10 @@ Page title: {title}\nPage URL: {url}\n
   function createMessageElement(role, content) {
     const div = document.createElement('div');
     div.className = `chat-message ${role}`;
-    
-    const avatar = role === 'user' ? '👤' : '🤖';
+
+    const userAvatar = '👤';
+    const assistantAvatar = '<img src="../assets/icons/icon16.png" width="28" height="28" alt="AI">';
+    const avatar = role === 'user' ? userAvatar : assistantAvatar;
     const htmlContent = window.marked.parse(content);
     
     // User message: edit and copy icons between avatar and content (on the left side of content bubble)
@@ -531,7 +557,7 @@ Page title: {title}\nPage URL: {url}\n
     div.dataset.streaming = 'true';
 
     div.innerHTML = `
-      <div class="message-avatar">🤖</div>
+      <div class="message-avatar"><img src="../assets/icons/icon16.png" width="28" height="28" alt="AI"></div>
       <div class="message-content streaming"></div>
     `;
 
