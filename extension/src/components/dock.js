@@ -178,7 +178,8 @@
       _pendingTitle:  title,
       _pendingText:   text,
       _pendingAction: tab // use tab id as action (translate/summarize/ask)
-    });
+    }).catch(function () {}); // Ignore errors (e.g., extension context invalidated)
+
     chrome.runtime.sendMessage({
       type:  'panel-open-with-tab',
       tab:   tab,

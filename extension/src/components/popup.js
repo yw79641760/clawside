@@ -381,7 +381,7 @@
         _pendingTitle: document.title,
         _pendingText: text,
         _pendingAction: action
-      });
+      }).catch(function () {}); // Ignore errors (e.g., extension context invalidated)
       chrome.runtime.sendMessage({
         type: 'panel-open-with-tab',
         tab: currentCtx?.tabId || null,
