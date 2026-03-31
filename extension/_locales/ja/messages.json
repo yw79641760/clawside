@@ -1,7 +1,7 @@
 {
   "tabTranslate": { "message": "翻訳" },
   "tabSummarize": { "message": "要約" },
-  "tabAsk": { "message": "チャット" },
+  "tabAsk": { "message": "質問" },
   "tabHistory": { "message": "履歴" },
   "resultTranslate": { "message": "翻訳結果" },
   "resultSummarize": { "message": "要約" },
@@ -43,9 +43,10 @@
   "labelTargetLangTranslate": { "message": "目標言語" },
   "titleTranslateHeader": { "message": "翻訳" },
   "titleSummarizeHeader": { "message": "要約" },
-  "titleAskHeader": { "message": "チャット" },
+  "titleAskHeader": { "message": "質問" },
   "titleHistoryHeader": { "message": "履歴" },
   "chatEmptyText": { "message": "このページについての会話を始める" },
   "chatEmptyHint": { "message": "現在のページまたは選択テキストについて何でも質問してください" },
-  "clearChat": { "message": "チャット履歴をクリア" }
+  "clearChat": { "message": "チャット履歴をクリア" },
+  "chatInputPlaceholder": { "message": "質問を入力..." }
 }

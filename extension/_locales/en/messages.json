@@ -1,7 +1,7 @@
 {
   "tabTranslate": { "message": "Translate" },
   "tabSummarize": { "message": "Summarize" },
-  "tabAsk": { "message": "Chat" },
+  "tabAsk": { "message": "Ask" },
   "tabHistory": { "message": "History" },
   "resultTranslate": { "message": "Translation" },
   "resultSummarize": { "message": "Summary" },
@@ -43,9 +43,10 @@
   "labelTargetLangTranslate": { "message": "Target language" },
   "titleTranslateHeader": { "message": "Translate" },
   "titleSummarizeHeader": { "message": "Summarize" },
-  "titleAskHeader": { "message": "Chat" },
+  "titleAskHeader": { "message": "Ask" },
   "titleHistoryHeader": { "message": "History" },
   "chatEmptyText": { "message": "Start a conversation about this page" },
   "chatEmptyHint": { "message": "Ask anything about the current page or selected text" },
-  "clearChat": { "message": "Clear chat history" }
+  "clearChat": { "message": "Clear chat history" },
+  "chatInputPlaceholder": { "message": "Type your question here..." }
 }

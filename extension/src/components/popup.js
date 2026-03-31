@@ -59,10 +59,13 @@
     if (bubble) bubble.remove();
     var el = document.createElement('div');
     el.className = 'cs-bubble';
+    var translateTooltip = chrome.i18n.getMessage('tabTranslate') || 'Translate';
+    var summarizeTooltip = chrome.i18n.getMessage('tabSummarize') || 'Summarize';
+    var askTooltip = chrome.i18n.getMessage('tabAsk') || 'Ask';
     el.innerHTML =
-      '<button class="cs-btn" id="cs-btn-translate" title="翻译">' + BUBBLE_ICONS.translate + '</button>' +
-      '<button class="cs-btn" id="cs-btn-summarize" title="总结">' + BUBBLE_ICONS.summarize + '</button>' +
-      '<button class="cs-btn" id="cs-btn-ask" title="提问">' + BUBBLE_ICONS.ask + '</button>';
+      '<button class="cs-btn" id="cs-btn-translate" title="' + translateTooltip + '">' + BUBBLE_ICONS.translate + '</button>' +
+      '<button class="cs-btn" id="cs-btn-summarize" title="' + summarizeTooltip + '">' + BUBBLE_ICONS.summarize + '</button>' +
+      '<button class="cs-btn" id="cs-btn-ask" title="' + askTooltip + '">' + BUBBLE_ICONS.ask + '</button>';
     document.body.appendChild(el);
     return el;
   }

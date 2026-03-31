@@ -1,7 +1,7 @@
 {
   "tabTranslate": { "message": "翻译" },
   "tabSummarize": { "message": "总结" },
-  "tabAsk": { "message": "聊天" },
+  "tabAsk": { "message": "提问" },
   "tabHistory": { "message": "历史" },
   "resultTranslate": { "message": "翻译结果" },
   "resultSummarize": { "message": "摘要" },
@@ -43,9 +43,10 @@
   "labelTargetLangTranslate": { "message": "目标语言" },
   "titleTranslateHeader": { "message": "翻译" },
   "titleSummarizeHeader": { "message": "总结" },
-  "titleAskHeader": { "message": "聊天" },
+  "titleAskHeader": { "message": "提问" },
   "titleHistoryHeader": { "message": "历史" },
   "chatEmptyText": { "message": "开始关于此页面的对话" },
   "chatEmptyHint": { "message": "询问任何关于当前页面或选中文本的问题" },
-  "clearChat": { "message": "清空聊天记录" }
+  "clearChat": { "message": "清空聊天记录" },
+  "chatInputPlaceholder": { "message": "在此输入问题..." }
 }

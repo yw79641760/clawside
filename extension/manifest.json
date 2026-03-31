@@ -56,6 +56,8 @@
         "src/tools/styles.js",
         "src/tools/browser.js",
         "lib/readability.iife.js",
+        "src/tools/lru-cache.js",
+        "src/tools/context-lru-cache.js",
         "src/shared/tab-context-manager.js",
         "src/components/popup.js",
         "src/components/dock.js",

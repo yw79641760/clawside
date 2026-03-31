@@ -97,6 +97,11 @@ Page title: {title}\nPage URL: {url}\n
     $('titleSummarizeHeader') && ($('titleSummarizeHeader').textContent = chrome.i18n.getMessage('titleSummarizeHeader'));
     $('titleAskHeader') && ($('titleAskHeader').textContent = chrome.i18n.getMessage('titleAskHeader'));
     $('titleHistoryHeader') && ($('titleHistoryHeader').textContent = chrome.i18n.getMessage('titleHistoryHeader'));
+    // Chat empty state
+    $('chatEmptyText') && ($('chatEmptyText').textContent = chrome.i18n.getMessage('chatEmptyText'));
+    $('chatEmptyHint') && ($('chatEmptyHint').textContent = chrome.i18n.getMessage('chatEmptyHint'));
+    // Chat input placeholder
+    $('chatInput') && ($('chatInput').placeholder = chrome.i18n.getMessage('chatInputPlaceholder'));
     // Panel labels and buttons
     $('labelTranslateInput') && ($('labelTranslateInput').textContent = chrome.i18n.getMessage('labelTranslateInput'));
     $('historyClearBtn') && ($('historyClearBtn').textContent = chrome.i18n.getMessage('historyClear'));
@@ -401,22 +406,23 @@ Page title: {title}\nPage URL: {url}\n
   // Render all chat messages
   function renderChatMessages() {
     if (!chatSession) return;
-    
+    if (!chatMessages) return;
+
     const messages = chatSession.getMessages();
     chatMessages.innerHTML = '';
-    
+
     if (messages.length === 0) {
-      chatEmptyState.classList.remove('hidden');
+      chatEmptyState && chatEmptyState.classList.remove('hidden');
       chatMessages.classList.add('hidden');
     } else {
-      chatEmptyState.classList.add('hidden');
+      chatEmptyState && chatEmptyState.classList.add('hidden');
       chatMessages.classList.remove('hidden');
-      
+
       messages.forEach(msg => {
         const msgEl = createMessageElement(msg.role, msg.content);
         chatMessages.appendChild(msgEl);
       });
-      
+
       scrollToBottom();
     }
   }
@@ -498,28 +504,35 @@ Page title: {title}\nPage URL: {url}\n
   // Add user message to chat
   function addUserMessage(content) {
     if (!chatSession) return;
-    
+
     chatSession.addUserMessage(content);
-    const msgEl = createMessageElement('user', content);
-    chatMessages.appendChild(msgEl);
+    if (chatMessages) {
+      const msgEl = createMessageElement('user', content);
+      chatMessages.appendChild(msgEl);
+
+      // Show messages container, hide empty state
+      chatMessages.classList.remove('hidden');
+      chatEmptyState && chatEmptyState.classList.add('hidden');
+    }
     chatSession.save();
-    scrollToBottom();
+    if (chatMessages) scrollToBottom();
   }
 
   // Add assistant message placeholder (for streaming)
   function addAssistantMessagePlaceholder() {
     if (!chatSession) return null;
-    
+    if (!chatMessages) return null;
+
     const msg = chatSession.addAssistantMessage('');
     const div = document.createElement('div');
     div.className = 'chat-message assistant';
     div.dataset.streaming = 'true';
-    
+
     div.innerHTML = `
       <div class="message-avatar">🤖</div>
       <div class="message-content streaming"></div>
     `;
-    
+
     chatMessages.appendChild(div);
     scrollToBottom();
     return { msg, div };
@@ -528,10 +541,10 @@ Page title: {title}\nPage URL: {url}\n
   // Update streaming message content
   function updateStreamingMessage(content) {
     const streamingDiv = chatMessages.querySelector('.chat-message.assistant[data-streaming="true"] .message-content');
-    if (streamingDiv) {
-      streamingDiv.innerHTML = window.marked.parse(content);
-      scrollToBottom();
-    }
+    if (!streamingDiv) return;
+
+    streamingDiv.innerHTML = window.marked.parse(content);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   // Finalize streaming message
@@ -540,7 +553,13 @@ Page title: {title}\nPage URL: {url}\n
     if (streamingDiv) {
       streamingDiv.classList.remove('streaming');
       streamingDiv.removeAttribute('data-streaming');
-      
+
+      // Update content with final text
+      const contentDiv = streamingDiv.querySelector('.message-content');
+      if (contentDiv && content) {
+        contentDiv.innerHTML = window.marked.parse(content);
+      }
+
       // Add actions
       const actionsHtml = `
         <div class="message-actions-right">
@@ -553,14 +572,14 @@ Page title: {title}\nPage URL: {url}\n
         </div>
       `;
       streamingDiv.insertAdjacentHTML('beforeend', actionsHtml);
-      
+
       // Wire copy button
       const copyBtn = streamingDiv.querySelector('[data-action="copy"]');
       copyBtn.addEventListener('click', () => {
         window.copyToClipboard(content);
         showCopiedFeedback(copyBtn);
       });
-      
+
       // Update session
       if (chatSession) {
         chatSession.updateLastAssistantMessage(content);
@@ -626,15 +645,16 @@ Page title: {title}\nPage URL: {url}\n
         
         const handler = (msg) => {
           if (msg.requestId === requestId) {
-            clearTimeout(timeout);
-            chrome.runtime.onMessage.removeListener(handler);
-            
             if (msg.type === 'clawside-stream-chunk') {
               accumulatedContent += msg.chunk;
               updateStreamingMessage(accumulatedContent);
             } else if (msg.type === 'clawside-stream-done') {
+              clearTimeout(timeout);
+              chrome.runtime.onMessage.removeListener(handler);
               resolve();
             } else if (msg.type === 'clawside-stream-error') {
+              clearTimeout(timeout);
+              chrome.runtime.onMessage.removeListener(handler);
               reject(new Error(msg.error || 'Streaming error'));
             }
           }
@@ -676,12 +696,14 @@ Page title: {title}\nPage URL: {url}\n
   // Clear chat
   async function clearChat() {
     if (!chatSession) return;
-    
+
     chatSession.clear();
     await chatSession.removeFromStorage();
-    chatMessages.innerHTML = '';
-    chatEmptyState.classList.remove('hidden');
-    chatMessages.classList.add('hidden');
+    if (chatMessages) {
+      chatMessages.innerHTML = '';
+      chatEmptyState.classList.remove('hidden');
+      chatMessages.classList.add('hidden');
+    }
   }
 
   // === Memory ===
