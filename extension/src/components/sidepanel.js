@@ -616,9 +616,9 @@ Page title: {title}\nPage URL: {url}\n
     }
   }
 
-  // Scroll chat to bottom
+  // Scroll side panel to bottom (to make input visible)
   function scrollToBottom() {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    window.scrollTo(0, document.body.scrollHeight);
   }
 
   // Update chat input state
@@ -1259,6 +1259,13 @@ Page title: {title}\nPage URL: {url}\n
         chatSession.addAssistantMessage(summary, timestamp);
         chatSession.save();
         renderChatMessages();
+
+        // Scroll chat to bottom after DOM update
+        if (chatMessages) {
+          requestAnimationFrame(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          });
+        }
       }
 
       // Focus on chat input
