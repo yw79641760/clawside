@@ -1,6 +1,6 @@
 // ClawSide - Chat Session Manager
-// Manages multi-turn conversation history per tab
-// Storage key: clawside_chat_{tabId}
+// Manages multi-turn conversation history per tab + URL
+// Uses ChatLRUCache for LRU storage with automatic cleanup
 
 (function() {
   'use strict';
@@ -9,9 +9,10 @@
   var ASK_PAGE_CONTENT_MAX = 12000;
 
   class ChatSession {
-    constructor(tabId) {
+    constructor(tabId, url = '', lruCache = null) {
       this.tabId = tabId;
-      this.storageKey = `clawside_chat_${tabId}`;
+      this.url = url || '';
+      this.lruCache = lruCache;
       this.messages = [];
       this.context = {
         url: '',
@@ -19,6 +20,36 @@
         content: '',
         selectedText: ''
       };
+    }
+
+    // Get storage key for this session
+    getStorageKey() {
+      return this.lruCache ? this.lruCache.makeKey(this.tabId, this.url) : `clawside_chat_${this.tabId}`;
+    }
+
+    // Switch to different tab/url context
+    async switchContext(tabId, url) {
+      // Save current before switching
+      if (this.lruCache) {
+        await this.lruCache.save(this.messages);
+      }
+
+      this.tabId = tabId;
+      this.url = url || '';
+      this.messages = [];
+      this.context = {
+        url: '',
+        title: '',
+        content: '',
+        selectedText: ''
+      };
+
+      // Load messages for new context
+      if (this.lruCache) {
+        this.messages = await this.lruCache.switchContext(tabId, url);
+      }
+
+      return this.messages;
     }
 
     // Set page context for the conversation
@@ -80,8 +111,12 @@
         return `${roleLabel}: ${msg.content}`;
       }).join('\n\n');
 
-      // Let the model know it should answer next.
-      const tail = 'Assistant:';
+      // Only add tail if last included message is from assistant (continuing conversation).
+      // If last message is from user (or empty), the model should answer directly.
+      const needsTail = msgsToInclude.length > 0
+        && msgsToInclude[msgsToInclude.length - 1].role === 'assistant';
+      const tail = needsTail ? 'Assistant:' : '';
+
       return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
     }
 
@@ -129,26 +164,37 @@
       return extraSystemPrompt ? `${base}\n\n${extraSystemPrompt}` : base;
     }
 
-    // Save to storage
+    // Save to storage (via LRU cache)
     async save() {
-      try {
-        await chrome.storage.local.set({ [this.storageKey]: this.messages });
-      } catch (err) {
-        console.error('[ChatSession] Save error:', err);
+      if (this.lruCache) {
+        await this.lruCache.save(this.messages);
+      } else {
+        // Fallback: direct storage
+        const key = this.getStorageKey();
+        try {
+          await chrome.storage.local.set({ [key]: this.messages });
+        } catch (err) {
+          console.error('[ChatSession] Save error:', err);
+        }
       }
     }
 
-    // Load from storage
+    // Load from storage (via LRU cache)
     async load() {
-      try {
-        const result = await chrome.storage.local.get([this.storageKey]);
-        this.messages = result[this.storageKey] || [];
-        return this.messages;
-      } catch (err) {
-        console.error('[ChatSession] Load error:', err);
-        this.messages = [];
-        return [];
+      if (this.lruCache) {
+        this.messages = await this.lruCache.getOrBuild();
+      } else {
+        // Fallback: direct storage
+        const key = this.getStorageKey();
+        try {
+          const result = await chrome.storage.local.get([key]);
+          this.messages = result[key] || [];
+        } catch (err) {
+          console.error('[ChatSession] Load error:', err);
+          this.messages = [];
+        }
       }
+      return this.messages;
     }
 
     // Clear all messages
@@ -158,8 +204,9 @@
 
     // Remove from storage
     async removeFromStorage() {
+      const key = this.getStorageKey();
       try {
-        await chrome.storage.local.remove([this.storageKey]);
+        await chrome.storage.local.remove([key]);
       } catch (err) {
         console.error('[ChatSession] Remove error:', err);
       }
@@ -174,7 +221,8 @@
     export() {
       return {
         tabId: this.tabId,
-        url: this.context.url,
+        url: this.url,
+        contextUrl: this.context.url,
         title: this.context.title,
         messages: this.messages,
         exportedAt: new Date().toISOString()
@@ -185,39 +233,98 @@
   // Chat sessions manager (singleton pattern)
   class ChatSessionManager {
     constructor() {
-      this.sessions = new Map();
+      this.currentSession = null;
+      // Create LRU cache with max 50 conversations
+      this.lruCache = new window.ChatLRUCache({ maxSize: 50 });
     }
 
-    getSession(tabId) {
-      if (!this.sessions.has(tabId)) {
-        this.sessions.set(tabId, new ChatSession(tabId));
+    /**
+     * Get or create session for tabId + url.
+     * Switches context if tabId/url changed.
+     *
+     * @param {number|string} tabId
+     * @param {string} url
+     * @returns {Promise<ChatSession>}
+     */
+    async getSession(tabId, url = '') {
+      // Check if we need to switch context
+      if (this.currentSession &&
+          String(this.currentSession.tabId) === String(tabId) &&
+          this.currentSession.url === url) {
+        return this.currentSession;
       }
-      return this.sessions.get(tabId);
+
+      // Create new session with LRU cache
+      const session = new ChatSession(tabId, url, this.lruCache);
+      await session.load();
+
+      this.currentSession = session;
+      return session;
     }
 
-    async removeSession(tabId) {
-      const session = this.sessions.get(tabId);
-      if (session) {
-        await session.removeFromStorage();
-        this.sessions.delete(tabId);
+    /**
+     * Switch to different tab/url context.
+     *
+     * @param {number|string} tabId
+     * @param {string} url
+     * @returns {Promise<ChatSession>}
+     */
+    async switchContext(tabId, url = '') {
+      if (!this.currentSession) {
+        return this.getSession(tabId, url);
       }
+
+      // Save current before switching
+      await this.currentSession.save();
+
+      // Switch and load new context
+      await this.currentSession.switchContext(tabId, url);
+      return this.currentSession;
     }
 
+    /**
+     * Get current session.
+     *
+     * @returns {ChatSession|null}
+     */
+    getCurrentSession() {
+      return this.currentSession;
+    }
+
+    /**
+     * Remove session from LRU cache.
+     *
+     * @param {number|string} tabId
+     * @param {string} url
+     */
+    removeSession(tabId, url = '') {
+      const key = this.lruCache.makeKey(tabId, url);
+      this.lruCache.delete(key);
+    }
+
+    /**
+     * Clear all sessions.
+     */
     async clearAllSessions() {
-      const keys = await chrome.storage.local.get(null);
-      const chatKeys = Object.keys(keys).filter(k => k.startsWith('clawside_chat_'));
-      if (chatKeys.length > 0) {
-        await chrome.storage.local.remove(chatKeys);
-      }
-      this.sessions.clear();
+      await this.lruCache.clearAll();
+      this.currentSession = null;
     }
 
+    /**
+     * Get all sessions info.
+     */
     getAllSessions() {
-      return Array.from(this.sessions.entries()).map(([tabId, session]) => ({
-        tabId,
-        messageCount: session.getMessageCount(),
-        context: session.context
-      }));
+      const entries = this.lruCache.entries();
+      return entries.map(([key, messages]) => {
+        // Parse key: clawside_chat_{tabId}_{urlHash}
+        const parts = key.replace('clawside_chat_', '').split('_');
+        const tabId = parts[0];
+        return {
+          key,
+          tabId,
+          messageCount: Array.isArray(messages) ? messages.length : 0
+        };
+      });
     }
   }
 

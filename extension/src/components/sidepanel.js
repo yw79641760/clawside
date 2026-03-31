@@ -358,27 +358,44 @@ Page title: {title}\nPage URL: {url}\n
   }
 
   // === Chat Interface Functions ===
-  
+
   // Initialize chat session for current tab
   async function initChat() {
-    if (!chatSession) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        chatSession = new window.ChatSession(tab.id);
-        await chatSession.load();
-        
-        // Set page context using available methods
-        chatSession.setContext({
-          url: window.panelContext.getCurrentUrl() || '',
-          title: window.panelContext.getCurrentPageTitle() || '',
-          content: window.panelContext.getCurrentPageContent() || '',
-          selectedText: window.panelContext.getSelectedText() || ''
-        });
-      }
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      const url = tab.url || '';
+      chatSession = await window.chatSessionManager.getSession(tab.id, url);
+
+      // Set page context using available methods
+      chatSession.setContext({
+        url: window.panelContext.getCurrentUrl() || url,
+        title: window.panelContext.getCurrentPageTitle() || '',
+        content: window.panelContext.getCurrentPageContent() || '',
+        selectedText: window.panelContext.getSelectedText() || ''
+      });
     }
-    
+
     renderChatMessages();
     updateChatInputState();
+  }
+
+  // Refresh chat session for current tab (e.g., when URL changes)
+  async function refreshChatContext() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      const url = tab.url || '';
+      chatSession = await window.chatSessionManager.switchContext(tab.id, url);
+
+      // Update context
+      chatSession.setContext({
+        url: window.panelContext.getCurrentUrl() || url,
+        title: window.panelContext.getCurrentPageTitle() || '',
+        content: window.panelContext.getCurrentPageContent() || '',
+        selectedText: window.panelContext.getSelectedText() || ''
+      });
+
+      renderChatMessages();
+    }
   }
 
   // Render all chat messages
@@ -1216,6 +1233,7 @@ Page title: {title}\nPage URL: {url}\n
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {
       await window.panelContext.updatePageContext();
+      await refreshChatContext();
     });
 
     // Listen for same-tab URL changes (including SPA client-side navigation)
@@ -1224,6 +1242,7 @@ Page title: {title}\nPage URL: {url}\n
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab?.id === tabId) {
         await window.panelContext.updatePageContext();
+        await refreshChatContext();
       }
     });
 
@@ -1232,7 +1251,10 @@ Page title: {title}\nPage URL: {url}\n
     chrome.webNavigation?.onHistoryStateUpdated.addListener(async (navInfo) => {
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab?.id === navInfo.tabId) {
-        setTimeout(async () => { await window.panelContext.updatePageContext(); }, 600);
+        setTimeout(async () => {
+          await window.panelContext.updatePageContext();
+          await refreshChatContext();
+        }, 600);
       }
     });
 

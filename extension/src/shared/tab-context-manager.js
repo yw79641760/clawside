@@ -54,92 +54,14 @@
     };
   };
 
-  // ── In-memory Map + LRU ────────────────────────────────────────────────────
-  function TabContextMap() {
-    this._contexts = {}; // tabId string → TabContext
-    this._ids     = []; // insertion order (FIFO for map eviction)
-    this._lru    = []; // most-recently-used at end
-  }
+  // ── In-memory Map + LRU (using ContextLRUCache) ─────────────────────────────
+  // Use ContextLRUCache for LRU management with dual-size limits
+  var map = new window.ContextLRUCache({
+    maxMapSize: MAX_MAP_SIZE,
+    maxLruSize: MAX_LRU_SIZE
+  });
 
-  TabContextMap.prototype._evictLRU = function () {
-    if (this._lru.length >= MAX_LRU_SIZE) this._lru.shift();
-  };
-
-  TabContextMap.prototype._evictMap = function () {
-    if (this._ids.length >= MAX_MAP_SIZE) {
-      var oldest = this._ids.shift();
-      delete this._contexts[oldest];
-    }
-  };
-
-  TabContextMap.prototype.get = function (tabId) {
-    var ctx = this._contexts[String(tabId)];
-    if (!ctx) return null;
-    ctx.lastAccessed = Date.now();
-    this._touchLRU(String(tabId));
-    return ctx;
-  };
-
-  TabContextMap.prototype.set = function (tabId, ctx) {
-    var id = String(tabId);
-    if (this._contexts[id]) {
-      this._contexts[id] = ctx;
-      ctx.lastAccessed = Date.now();
-      this._touchLRU(id);
-    } else {
-      this._evictLRU();
-      this._evictMap();
-      this._ids.push(id);
-      this._contexts[id] = ctx;
-      ctx.lastAccessed = Date.now();
-      this._lru.push(id);
-    }
-  };
-
-  TabContextMap.prototype.remove = function (tabId) {
-    var id = String(tabId);
-    delete this._contexts[id];
-    var idx = this._ids.indexOf(id);
-    if (idx !== -1) this._ids.splice(idx, 1);
-    var lruIdx = this._lru.indexOf(id);
-    if (lruIdx !== -1) this._lru.splice(lruIdx, 1);
-  };
-
-  TabContextMap.prototype._touchLRU = function (id) {
-    var idx = this._lru.indexOf(id);
-    if (idx !== -1) this._lru.splice(idx, 1);
-    this._lru.push(id);
-  };
-
-  TabContextMap.prototype.size = function ()    { return this._ids.length; };
-  TabContextMap.prototype.lruSize = function ()  { return this._lru.length; };
-  TabContextMap.prototype.isLRU = function (id)  { return this._lru.indexOf(String(id)) !== -1; };
-
-  TabContextMap.prototype.toJSON = function () {
-    var out = {};
-    for (var k in this._contexts) {
-      out[k] = this._contexts[k];
-    }
-    return out;
-  };
-
-  TabContextMap.prototype.fromJSON = function (data) {
-    this._contexts = {};
-    this._ids = [];
-    this._lru = [];
-    if (!data) return;
-    for (var tabId in data) {
-      var raw = data[tabId];
-      var ctx = new TabContext(raw.url, raw.title, raw.content, raw.selectedText, raw.favicon);
-      ctx.lastAccessed = raw.lastAccessed || Date.now();
-      this._contexts[tabId] = ctx;
-      this._ids.push(tabId);
-      this._lru.push(tabId);
-    }
-  };
-
-  // ── Module State ────────────────────────────────────────────────────────────
-  var map         = new TabContextMap();
+  // ── Module State ───────────────────────────────────────────────────────────
   var activeTabId = null;
   var initialized = false;
   var isContentScript = false; // true when running in content script context
@@ -157,7 +79,7 @@
     var data = {
       contexts:    map.toJSON(),
       activeTabId: activeTabId,
-      lruOrder:    map._lru,
+      lruOrder:    map.lruKeys,
       _version:    version,
     };
     chrome.storage.local.set({ _tabCtxData: data, _tabCtxVersion: version }).catch(function () {});
@@ -275,7 +197,7 @@
     } catch (err) { return { content: '', jsonLd: '' }; }
   }
 
-  // ── Context Operations ───────────────────────────────────────────────────────
+  // ── Context Operations ───────────────────────────────────────────────────
   // tab param (optional): { id, url, title, favIconUrl } — passed directly from
   // bootstrap (via background response) or from chrome.tabs.query fallback.
   //
@@ -374,7 +296,7 @@
       }
 
       if (msg.type === 'tabctx-removed') {
-        map.remove(msg.tabId);
+        map.delete(msg.tabId);
         persist();
         return true;
       }
@@ -491,9 +413,9 @@
   // Lightweight: just update activeTabId without extracting content (used by panel to sync).
   function setActiveTabId(id) { activeTabId = id; }
 
-  function size()               { return map.size(); }
-  function lruSize()          { return map.lruSize(); }
-  function isLRU(id)          { return map.isLRU(id); }
+  function size()               { return map.size; }
+  function lruSize()          { return map.lruSize; }
+  function isLRU(id)          { return map.isLru(id); }
 
   // Expose to other scripts in the same context
   window.tabContextManager = {
