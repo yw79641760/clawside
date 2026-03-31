@@ -382,9 +382,7 @@ Page title: {title}\nPage URL: {url}\n
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
       const url = tab.url || '';
-      console.log('[DEBUG initChat] tabId:', tab.id, 'url:', url);
       chatSession = await window.chatSessionManager.getSession(tab.id, url);
-      console.log('[DEBUG initChat] session loaded, messages:', chatSession.getMessages().length);
 
       // Set page context using available methods
       chatSession.setContext({
@@ -1389,7 +1387,6 @@ Page title: {title}\nPage URL: {url}\n
       // Guard is module-scoped — set synchronously before the async storage.get call.
       _pendingReadGuard = true;
       chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], (stored) => {
-        console.log('[DEBUG onChanged] _pendingAction:', stored._pendingAction);
         handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
       });
     });
@@ -1416,13 +1413,11 @@ Page title: {title}\nPage URL: {url}\n
     const stored = await new Promise((resolve) =>
       chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], resolve)
     );
-    console.log('[DEBUG init] stored._pendingTab:', stored._pendingTab, '_pendingAction:', stored._pendingAction);
     if (stored._pendingTab) {
       if (!_pendingReadGuard) {
         _pendingReadGuard = true;
         // NOTE: handlePendingTab runs AFTER panelContext.init() completes
         // (see below — chained via .then) so TCM storage is already loaded.
-        console.log('[DEBUG init] calling handlePendingTab with action:', stored._pendingAction);
         handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
       }
     } else {
@@ -1504,17 +1499,10 @@ Page title: {title}\nPage URL: {url}\n
         chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction']);
 
         // Auto-trigger summarize if action is 'summarize' and no existing result
-        console.log('[DEBUG autoSummarize] action:', action, 'tab:', tab, 'url:', actualUrl);
         if (action === 'summarize') {
-          console.log('[DEBUG autoSummarize] action is summarize, checking existing result...');
           const existing = await loadSummarizeResult(activeTab.id, actualUrl);
-          console.log('[DEBUG autoSummarize] existing result:', existing);
           if (!existing?.summary) {
-            console.log('[DEBUG autoSummarize] no existing result, triggering doSummarize...');
-            setTimeout(() => {
-              console.log('[DEBUG autoSummarize] calling doSummarize...');
-              doSummarize();
-            }, 100);
+            setTimeout(() => doSummarize(), 100);
           }
         }
       }
