@@ -58,22 +58,22 @@
     }
 
     // Add user message
-    addUserMessage(content) {
+    addUserMessage(content, timestamp = null) {
       const msg = {
         role: 'user',
         content,
-        timestamp: Date.now()
+        timestamp: timestamp || Date.now()
       };
       this.messages.push(msg);
       return msg;
     }
 
     // Add assistant message (initially empty for streaming)
-    addAssistantMessage(content = '') {
+    addAssistantMessage(content = '', timestamp = null) {
       const msg = {
         role: 'assistant',
         content,
-        timestamp: Date.now()
+        timestamp: timestamp || Date.now()
       };
       this.messages.push(msg);
       return msg;

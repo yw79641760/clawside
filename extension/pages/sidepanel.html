@@ -41,7 +41,16 @@
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l-.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </symbol>
+    <symbol id="cs-icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <symbol id="cs-icon-broom" viewBox="0 0 1024 1024">
+      <path d="M650.666667 672h-42.666667v-85.333333h-27.733333v85.333333h-57.6v-85.333333h-27.733334v85.333333h-55.466666v-85.333333h-29.866667v85.333333h-36.266667c2.133333-14.933333 4.266667-17.066667 4.266667-38.4v-91.733333h266.666667v91.733333c2.133333 21.333333 4.266667 23.466667 6.4 38.4z m-298.666667-204.8h153.6v-115.2h12.8v115.2h153.6v38.4h-320v-38.4z m219.733333-55.466667V298.666667h-119.466666v113.066666H298.666667v128h27.733333v91.733334c0 38.4-8.533333 70.4-8.533333 70.4 0 4.266667-4.266667 10.666667-8.533334 23.466666h405.333334c-4.266667-10.666667-8.533333-19.2-8.533334-23.466666 0 0-8.533333-32-8.533333-70.4v-91.733334H725.333333v-128h-153.6z"></path>
+    </symbol>
   </svg>
+  <!-- Inject icons.svg inline -->
+  <script src="../assets/icons/icons.svg"></script>
 </head>
 <body>
 <div class="app">
@@ -96,7 +105,7 @@
           <div class="result-header">
             <span class="result-icon"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg></span>
             <span class="result-title" id="titleTranslate">Translation</span>
-            <button class="btn-copy" id="copyTranslateResult"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg> Copy</button>
+            <button class="btn-copy" id="copyTranslateResult" title="Copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
           </div>
           <div class="result-body" id="translateResultText"></div>
         </div>
@@ -133,7 +142,10 @@
           <div class="result-header">
             <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg></span>
             <span class="result-title" id="titleSummarize">Summary</span>
-            <button class="btn-copy" id="copySummarizeResult"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg> Copy</button>
+            <button class="btn-copy" id="copySummarizeResult" title="Copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
+            <button class="btn-icon" id="askFromSummarize" title="Ask about this">
+              <svg width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>
+            </button>
           </div>
           <div class="result-body" id="summarizeResultText"></div>
         </div>
@@ -146,9 +158,8 @@
         <div class="chat-header">
           <h3 id="titleAskHeader" class="panel-title">提问</h3>
           <button class="btn-icon btn-clear-chat" id="clearChatBtn" title="Clear chat history">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            <svg width="24" height="24" viewBox="0 0 64 64" fill="currentColor">
+              <use href="#cs-icon-broom"></use>
             </svg>
           </button>
         </div>

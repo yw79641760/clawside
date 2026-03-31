@@ -458,7 +458,7 @@ Page title: {title}\nPage URL: {url}\n
     const div = document.createElement('div');
     div.className = `chat-message ${role}`;
 
-    const userAvatar = '👤';
+    const userAvatar = '<svg class="avatar-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const assistantAvatar = '<img src="../assets/icons/icon16.png" width="28" height="28" alt="AI">';
     const avatar = role === 'user' ? userAvatar : assistantAvatar;
     const htmlContent = window.marked.parse(content);
@@ -1227,6 +1227,48 @@ Page title: {title}\nPage URL: {url}\n
 
   copyTranslateResult.addEventListener('click', () => doCopy(translateStreaming.getRawText(), copyTranslateResult));
   copySummarizeResult.addEventListener('click', () => doCopy(summarizeStreaming.getRawText(), copySummarizeResult));
+
+  // Ask from summarize - switch to Ask tab and load summarize as context
+  const askFromSummarize = $('askFromSummarize');
+  if (askFromSummarize) {
+    askFromSummarize.addEventListener('click', async () => {
+      const summary = summarizeStreaming.getRawText();
+      if (!summary) return;
+
+      // Switch to Ask tab
+      showTab('ask');
+
+      // Get current session and add summarize context
+      if (chatSession) {
+        // Get current tab info
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const currentTabId = tab?.id;
+        const currentUrl = window.panelContext.getCurrentUrl();
+
+        // Load existing summarize result to get timestamp
+        let timestamp = Date.now();
+        if (currentTabId && currentUrl) {
+          const existing = await loadSummarizeResult(currentTabId, currentUrl);
+          if (existing?.timestamp) {
+            timestamp = existing.timestamp;
+          }
+        }
+        // Add user message asking about the summary
+        chatSession.addUserMessage('Here is the summary of the current page:', timestamp);
+        // Add assistant message with the summarize result
+        chatSession.addAssistantMessage(summary, timestamp);
+        chatSession.save();
+        renderChatMessages();
+      }
+
+      // Focus on chat input
+      const chatInput = $('chatInput');
+      if (chatInput) {
+        chatInput.focus();
+      }
+    });
+  }
+
   // copyAskResult.addEventListener('click', () => doCopy(askStreaming.getRawText(), copyAskResult));
 
   clearHistoryBtn.addEventListener('click', doClearHistory);
@@ -1363,6 +1405,9 @@ Page title: {title}\nPage URL: {url}\n
 
     // Populate context box after tab switch/initial show settles
     await window.panelContext.updatePageContext();
+
+    // Load summarize result for current tab on init
+    await refreshChatContext();
 
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {

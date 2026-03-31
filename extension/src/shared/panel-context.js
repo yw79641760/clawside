@@ -224,7 +224,6 @@
       // (which might be a different tab if user switched tabs before opening panel).
       const activeTabId = tab.id;
       const existingCtx = window.tabContextManager.get(activeTabId);
-      const existingContentLen = existingCtx && existingCtx.content ? existingCtx.content.length : 0;
       const selectedText = existingCtx ? existingCtx.selectedText : '';
 
       // Extract page body content. Prefer TCM content (loaded from storage by content script)
@@ -264,10 +263,9 @@
       // Keep side panel view aligned with the actual active browser tab.
       window.tabContextManager.setActiveTabId(activeTabId);
 
-      // Update TCM only when executeScript succeeded AND TCM was already empty.
-      // - gotFreshContent=true (TCM was empty, executeScript got page content)  → update TCM ✓
-      // - gotFreshContent=false (TCM already had content, or executeScript failed) → skip TCM ✓
-      if (tab.id && gotFreshContent && !existingContentLen) {
+      // Always update TCM with refreshed content (even if existing content exists).
+      // This ensures refresh button properly updates localStorage.
+      if (tab.id && gotFreshContent) {
         window.tabContextManager.set(tab.id, ctx);
         window.tabContextManager.setActive(tab.id);
       }
