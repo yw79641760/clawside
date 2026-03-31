@@ -746,7 +746,30 @@ Page title: {title}\nPage URL: {url}\n
 
   async function saveSummarizeResult(tabId, url, summary, title) {
     const key = getSummarizeKey(tabId, url);
+    // Clean up old summarize keys before saving (keep last 50)
+    await cleanupOldSummarizeKeys();
     await chrome.storage.local.set({ [key]: { summary, title, url, timestamp: Date.now() } });
+  }
+
+  // Cleanup old summarize keys (keep most recent 50)
+  async function cleanupOldSummarizeKeys() {
+    const all = await chrome.storage.local.get(null);
+    const summarizeKeys = Object.keys(all).filter(k => k.startsWith('clawside_summarize_'));
+    if (summarizeKeys.length > 50) {
+      // Sort by timestamp desc
+      const keysWithTime = await Promise.all(
+        summarizeKeys.map(async k => {
+          const val = all[k];
+          return { key: k, timestamp: val?.timestamp || 0 };
+        })
+      );
+      keysWithTime.sort((a, b) => b.timestamp - a.timestamp);
+      // Delete old ones
+      const toDelete = keysWithTime.slice(50).map(k => k.key);
+      if (toDelete.length > 0) {
+        await chrome.storage.local.remove(toDelete);
+      }
+    }
   }
 
   async function loadHistory() {
