@@ -43,11 +43,15 @@ MVP focus: lightweight, fast, works offline except for LLM calls.
 ## 3. Architecture
 
 ```
-Chrome Side Panel (UI)
-       ↓ HTTP POST (chrome-extension → 127.0.0.1:18789)
-OpenClaw Gateway (direct /v1/chat/completions)
+Chrome Extension
+  ├─ Content Script (floating bubble + radial menu)
+  ├─ Side Panel (full UI)
+  └─ Service Worker (background.js)
+       ↓ HTTP POST (chrome.runtime.sendMessage)
+       ↓ HTTP POST (fetch → 127.0.0.1:18789)
+OpenClaw Gateway (/v1/chat/completions)
        ↓
-LLM (configured provider: GLM-5 via Minimax)
+LLM (configured provider)
 ```
 
 **No bridge server needed** — Chrome extensions can access localhost directly with `host_permissions` declared in manifest.
@@ -56,64 +60,63 @@ LLM (configured provider: GLM-5 via Minimax)
 
 ## 4. Features & Interactions
 
-### MVP (this version)
+### 4.1 Three Interaction Modes
 
-#### 4.1 Inline Popup (Primary UX)
+#### Floating Bubble (Primary)
 - **Trigger**: User selects text on any page → floating bubble appears after ~250ms
-- **Bubble buttons**:
-  - 🌐 translate
-  - 📄 summarize
-  - 💬 ask
-- **Flow**: Click button → small popup appears inline near selection → result shown directly
-- **Popup**: 320px wide, max 280px tall, scrollable, with Copy button
+- **Bubble buttons**: 🌐 translate, 📄 summarize, 💬 ask
+- **Flow**: Click button → small popup appears inline → result shown directly
+- **Popup**: 320px wide, max 280px tall, scrollable, with copy button
 - **Auto-hide**: Bubble + popup disappear on click outside or Escape
-- **Position**: Below selection, clamped to viewport. If near bottom, shows above.
-- **Memory**: All interactions stored
 
-#### 4.2 Text Translation (Side Panel)
-- **Trigger**: Click extension icon → open full side panel → Translate tab
-- **Flow**: Side panel → Translate tab → select target language → click Translate
-- **Output**: Translated text in card with "Copy" button
+#### Radial Menu
+- **Trigger**: Long press / right-click on floating bubble → radial menu appears
+- **Menu items**: translate, summarize, ask (arranged radially)
+- **Flow**: Click item → opens side panel to corresponding tab → auto-triggers action
 
-#### 4.3 Page Summarization
-- **Trigger**: Click "Summarize" button OR context menu → 总结
-- **Flow**: Page URL → `/v1/chat/completions` → 3-5 sentence summary → side panel
-- **Output**: Summary in card with "Copy" button
-- **Memory**: `{ type: "summarize", url, title, summary, timestamp }`
+#### Full Side Panel
+- **Trigger**: Click extension icon or Ctrl+Shift+P
+- **Tabs**: Translate, Summarize, Ask, History, Settings
+- **Features**: Full chat interface, context management, tool prompts
 
-#### 4.4 Ask
-- **Trigger**: Click "Ask" tab OR context menu → 提问
-- **Flow**: Selected text + question → `/v1/chat/completions` → answer → side panel
-- **Context**: If no text selected, uses current page URL as context
-- **Output**: Answer in card with "Copy" button
-- **Memory**: `{ type: "ask", question, answer, context, url, timestamp }`
+### 4.2 Translation
 
-#### 4.5 Interaction History
-- **Trigger**: Click "History" tab
-- **Flow**: Read from `chrome.storage.local`
-- **Output**: Chronological list, expandable items, last 50 interactions
+- **Trigger**: Bubble button / Side panel Translate tab / Radial menu
+- **Side panel flow**: Select target language → click Translate → result in card
+- **Output**: Translated text with copy button
+- **History**: Stored in `clawside_chat_{tabId}_{urlHash}`
 
-#### 4.6 Clear Memory
-- **Trigger**: "Clear All" button in History tab
-- **Output**: Empty state
+### 4.3 Page Summarization
 
-### Interactions Detail
+- **Trigger**: Bubble button / Side panel Summarize tab / Radial menu
+- **Flow**: Page URL + content → `/v1/chat/completions` → 3-5 sentence summary
+- **Auto-trigger**: When opening via summarize action with no existing result, automatically triggers
+- **Output**: Summary in card with copy button and ask icon (jump to Ask with context)
+- **Storage**: `clawside_summarize_{tabId}_{urlHash}`
 
-| Element | Hover | Click | Loading State |
-|---------|-------|-------|---------------|
-| Translate button | bg lighten | → spinner, auto-scroll | "Translating..." |
-| Summarize button | bg lighten | → spinner | "Summarizing..." |
-| Ask button | bg lighten | → spinner | "Thinking..." |
-| Copy button | scale 1.05 | → "Copied!" 1.5s | — |
-| History item | border highlight | expand/collapse | — |
-| Floating bubble | fade + scale in | open side panel, auto-trigger action | — |
+### 4.4 Ask / Chat Interface
 
-### Error Handling
-- Network error → "Failed to fetch" — check gateway is running
-- 401 → Gateway auth required — enter token in settings
-- Empty selection for Ask → uses page context only
-- LLM error → show error message from OpenClaw
-- Empty selection → "Please select some text first"
+- **Trigger**: Bubble button / Side panel Ask tab / Radial menu
+- **Flow**: User question + page context → LLM → answer
+- **Context**: Current page URL, title, content, selected text
+- **History**: Per-tab+URL conversation, max 50 sessions with LRU eviction
+- **Features**: Markdown rendering, streaming responses, Ctrl+Enter to send
+
+### 4.5 Ask from Summarize
+
+- **Trigger**: Click ask icon in summarize result header
+- **Flow**: Jump to Ask tab → load summarize result as conversation context → auto-scroll to input
+- **Context format**: User message + assistant message with summary content
+
+### 4.6 Interaction History
+
+- **Trigger**: Click "History" tab in side panel
+- **Output**: Chronological list of all translate/summarize/ask interactions, expandable items
+
+### 4.7 Settings
+
+- **Trigger**: Click gear icon in action bar
+- **Options**: Gateway port, auth token, language preference, tool prompt customization
 
 ---
 
@@ -122,45 +125,37 @@ LLM (configured provider: GLM-5 via Minimax)
 ### Side Panel Layout
 ```
 ┌─────────────────────────────────┐
-│  🔗 ClawSide           [⚙️]     │  ← header
+│  [🌐] [📄] [💬]       [⚙️] [📜] │  ← action bar (sticky)
 ├─────────────────────────────────┤
-│  [Translate]  [Summarize]       │  ← tab/action bar
+│  [Context: page info + refresh] │  ← page context
 ├─────────────────────────────────┤
 │                                 │
 │  (content area)                 │
-│                                 │
-│  - Result card (after action)  │
-│  - History list (history tab)  │
+│  - Result card                 │
+│  - Chat messages               │
+│  - Input area                  │
 │                                 │
 └─────────────────────────────────┘
 ```
 
-### Result Card
+### Result Card (Translate/Summarize)
 ```
 ┌─────────────────────────────────┐
-│ 📝 Translate          [📋 Copy]│
+│ 📝 Translate      [📋] [💬]     │  ← copy + ask icons
 ├─────────────────────────────────┤
 │                                 │
-│  Translated text goes here...   │
+│  Result text goes here...       │
 │                                 │
 └─────────────────────────────────┘
 ```
 
-### History Item (collapsed)
+### Chat Interface (Ask)
 ```
 ┌─────────────────────────────────┐
-│ 🔤 Translate · 12:34 PM  today  │
-│ "original text snippet..."      │
-└─────────────────────────────────┘
-```
-
-### History Item (expanded)
-```
-┌─────────────────────────────────┐
-│ 🔤 Translate · 12:34 PM  today  │
-│ Original: "hello world"         │
-│ Result:   "你好世界"            │
-│ Source: example.com             │
+│ 👤 User message                 │
+│ 🤖 AI response (streaming)      │
+├─────────────────────────────────┤
+│ [Input...              ] [Send] │
 └─────────────────────────────────┘
 ```
 
@@ -169,74 +164,59 @@ LLM (configured provider: GLM-5 via Minimax)
 ## 6. Technical Approach
 
 ### Chrome Extension (Manifest V3)
-- `sidepanel.js` — main UI logic, tab management, history
-- `content.js` — floating bubble UI, selection detection, positioning
-- `background.js` — service worker, message routing
-- `manifest.json` — extension config
 
-### Direct Gateway Integration
-- Extension calls `http://127.0.0.1:18789/v1/chat/completions` directly
-- No bridge server or separate process needed
-- Chrome `host_permissions` allows localhost access
+**Key Components**:
+- `extension/src/components/sidepanel.js` — Main UI, tabs, chat, auto-trigger
+- `extension/src/components/popup.js` — Floating bubble, action dispatch
+- `extension/src/components/dock.js` — Radial menu
+- `extension/src/shared/chat-session.js` — Per-tab+URL chat management
+- `extension/src/shared/panel-context.js` — Page context management
+- `extension/src/shared/tab-context-manager.js` — Tab context with LRU cache
+- `extension/background.js` — Service worker, message routing
+- `extension/src/tools/icons.js` — SVG icon system with injectSprite
+
+### Storage Keys
+
+| Key Pattern | Purpose |
+|-------------|---------|
+| `clawside_settings` | User settings (port, token, language, prompts) |
+| `clawside_chat_{tabId}_{urlHash}` | Chat history per tab+URL (max 50) |
+| `clawside_summarize_{tabId}_{urlHash}` | Summarize results per tab+URL |
+| `_pendingTab`, `_pendingAction` | Panel-open flow (temporary) |
+
+### LRU Cache
+
+- **ChatLRUCache**: maxMapSize 50 (tabs), maxLruSize 10 (sessions per tab)
+- **ContextLRUCache**: maxMapSize 50 (tabs), maxLruSize 10 (contexts)
 
 ### API Design
 
 **Extension → OpenClaw Gateway HTTP**
-
 ```
 POST /v1/chat/completions
 Headers: Authorization: Bearer <token>
-Body: { model: "main", messages: [{role:"user", content: "<prompt>"}] }
-Response: { choices: [{message: {content: "..."}}] }
+Body: { model: "openclaw/main", messages: [{role:"user", content: "<prompt>"}] }
+Response: streaming { choices: [{delta: {content: "..."}}] }
 ```
 
 ### Floating Bubble
-- Created by content script on text selection (300ms debounce)
+- Created by content script on text selection (250ms debounce)
 - Positioned via `getBoundingClientRect()` + viewport clamping
 - Auto-hides on click outside or selection cleared
 - z-index: 2147483647 (max safe integer)
 
-### Memory Storage
-- `chrome.storage.local` — key `clawside_memory`
-- Schema:
-```json
-{
-  "items": [
-    {
-      "id": "uuid",
-      "type": "translate" | "summarize" | "ask",
-      "original": "...",
-      "result": "...",
-      "url": "https://...",
-      "timestamp": 1742000000000
-    }
-  ]
-}
-```
-
-### File Structure
-```
-clawside/
-├── SPEC.md
-├── README.md
-└── extension/
-    ├── manifest.json
-    ├── background.js
-    ├── content.js
-    ├── sidepanel.html
-    ├── sidepanel.css
-    ├── sidepanel.js
-    └── icons/
-        ├── icon16.png
-        ├── icon48.png
-        └── icon128.png
-```
+### SVG Icons
+- Icons stored in `extension/assets/icons/icons.svg` as symbols
+- Loaded via `injectSprite()` in sidepanel init
+- Usage: `<svg><use href="#cs-icon-name"></use></svg>`
 
 ---
 
-## 7. MVP Out of Scope
+## 7. MVP Out of Scope (Completed)
 
-- Streaming responses
-- Error retry logic
-- Multi-language prompt templates
-- Custom prompt input for Ask tab
+- ✅ Streaming responses
+- ✅ Per-tab+URL chat history
+- ✅ Tool prompt customization
+- ✅ Auto-trigger summarize
+- ✅ Ask from Summarize
+- ✅ Radial menu
