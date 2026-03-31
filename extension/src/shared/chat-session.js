@@ -166,11 +166,13 @@
 
     // Save to storage (via LRU cache)
     async save() {
+      console.log('[DEBUG ChatSession.save] tabId:', this.tabId, 'messages:', this.messages.length);
       if (this.lruCache) {
-        await this.lruCache.save(this.messages);
+        await this.lruCache.save(this.messages, this.tabId, this.url);
       } else {
         // Fallback: direct storage
         const key = this.getStorageKey();
+        console.log('[DEBUG ChatSession.save] fallback key:', key);
         try {
           await chrome.storage.local.set({ [key]: this.messages });
         } catch (err) {
@@ -181,11 +183,13 @@
 
     // Load from storage (via LRU cache)
     async load() {
+      console.log('[DEBUG ChatSession.load] tabId:', this.tabId, 'url:', this.url, 'lruCache:', !!this.lruCache);
       if (this.lruCache) {
-        this.messages = await this.lruCache.getOrBuild();
+        this.messages = await this.lruCache.getOrBuild(this.tabId, this.url);
       } else {
         // Fallback: direct storage
         const key = this.getStorageKey();
+        console.log('[DEBUG ChatSession.load] fallback key:', key);
         try {
           const result = await chrome.storage.local.get([key]);
           this.messages = result[key] || [];
@@ -194,6 +198,7 @@
           this.messages = [];
         }
       }
+      console.log('[DEBUG ChatSession.load] loaded messages:', this.messages.length);
       return this.messages;
     }
 

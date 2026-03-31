@@ -369,7 +369,9 @@ Page title: {title}\nPage URL: {url}\n
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
       const url = tab.url || '';
+      console.log('[DEBUG initChat] tabId:', tab.id, 'url:', url);
       chatSession = await window.chatSessionManager.getSession(tab.id, url);
+      console.log('[DEBUG initChat] session loaded, messages:', chatSession.getMessages().length);
 
       // Set page context using available methods
       chatSession.setContext({
@@ -744,8 +746,8 @@ Page title: {title}\nPage URL: {url}\n
         if (msg.requestId !== requestId) return;
 
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
-          fullText += msg.content;
-          onChunk(msg.content, fullText);
+          fullText += msg.chunk;
+          onChunk(msg.chunk, fullText);
           // First chunk → hide loading overlay immediately
           if (!chunkShown) { chunkShown = true; hideLoading(); }
         }
