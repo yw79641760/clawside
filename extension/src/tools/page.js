@@ -8,7 +8,7 @@
   var cachedParagraphs = [];
 
   // Target tags for translation
-  const TARGET_PARAGRAPH_TAG = 'p, h1, h2, h3, h4, h5, h6, li, blockquote';
+  const TARGET_PARAGRAPH_TAG = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, [data-as="p"], [data-as="h1"], [data-as="h2"], [data-as="h3"], [data-as="h4"], [data-as="h5"], [data-as="h6"], [data-as="li"], [data-as="blockquote"]';
 
   // Parse page paragraphs from DOM
   // Returns array of {idx, tag, text, element}
@@ -22,11 +22,14 @@
       var text = el.textContent.trim();
       if (text.length > 0) {
         el.setAttribute('data-cs-idx', idx); // ← 先打标，原文档和克隆都会有
+        // 获取语义标签类型：优先使用 data-as 属性，否则使用原始标签名
+        var semanticTag = el.getAttribute('data-as') || el.tagName.toLowerCase();
         candidateEls[idx] = {
           idx: idx,
-          tag: el.tagName.toLowerCase(),
+          tag: semanticTag,
           text: text,
-          element: el
+          element: el,
+          isSemantic: !!el.getAttribute('data-as') // 标记是否为语义等价标签
         };
       }
     });
@@ -100,7 +103,13 @@
       var transTag = transData.tag || 'p';
       var transEl;
 
-      if (transTag === 'li') {
+      // 如果原始元素有 data-as 属性（语义等价标签），将翻译插入到元素内部
+      if (para.isSemantic) {
+        transEl = document.createElement('span');
+        transEl.className = 'cs-translation';
+        transEl.textContent = text;
+        originalEl.appendChild(transEl);
+      } else if (transTag === 'li') {
         // List item: inline display via span
         transEl = document.createElement('span');
         transEl.className = 'cs-translation';
