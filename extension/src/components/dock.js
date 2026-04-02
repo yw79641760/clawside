@@ -54,8 +54,8 @@
     // Wire Chrome tab/navigation listeners (shared with popup.js via tabContextManager)
     window.tabContextManager.init();
 
-    // Inject SVG sprite for icons
-    window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(function () {});
+    // Inject SVG sprite for icons (await to ensure icons are loaded before translation starts)
+    await window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(function () {});
 
     var appearance = window.resolveAppearance
       ? window.resolveAppearance('system')
