@@ -371,6 +371,15 @@ const CONTENT_STYLES = `
     font-size: 0.95em;
     line-height: 1.5;
   }
+  .cs-translation.cs-loading {
+    display: inline-block;
+    color: var(--cs-muted);
+  }
+  .cs-translation.cs-error {
+    display: inline-block;
+    color: var(--cs-error);
+    border-left-color: var(--cs-error);
+  }
   .cs-translation.hidden {
     display: none;
   }

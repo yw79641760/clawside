@@ -151,11 +151,12 @@
   // Insert translation elements into page
   // translations: {idx: {text, tag}, ...}
   function showTranslation(translations) {
-    // 先清空之前 hidden 的翻译元素（保留 loading placeholder，稍后复用）
+    // 清空之前 hidden 的翻译元素，但保留 loading placeholder（用于复用）
     document.querySelectorAll('.cs-translation.hidden').forEach(function(el) {
-      el.remove();
+      if (!el.classList.contains('cs-loading')) {
+        el.remove();
+      }
     });
-    // 不在这里删除 loading placeholder，留给下面的逻辑复用
 
     // 移除 hidden class
     document.body.classList.remove('cs-page-hidden');
