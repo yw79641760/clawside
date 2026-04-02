@@ -32,7 +32,7 @@ Page title: {title}\nPage URL: {url}\n
 {hasSelection}SelectedText:\n\"{selectedText}\"\n\n{/hasSelection}{hasContent}PageContent:\n{content}\n\n{/hasContent}User question:\n{question}`,
     globalTranslate: `Translate the following paragraphs to {lang}, following these rules:
 1. Keep proper nouns (names of people, places, organizations, brands, products) in original language;
-2. Technical terms with established Chinese translations may be translated; keep artificial terms, proper nouns, and technical codes unchanged;
+2. Technical terms with established translations in the target language may be translated; keep artificial terms, proper nouns, and technical codes unchanged;
 3. Choose the most appropriate meaning for polysemous words based on context, add parenthetical notes if needed.
 
 {paragraphs}
