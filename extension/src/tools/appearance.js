@@ -372,8 +372,12 @@ const CONTENT_STYLES = `
     line-height: 1.5;
   }
   .cs-translation.cs-loading {
-    display: inline-block;
-    color: var(--cs-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    color: var(--cs-primary);
   }
   .cs-translation.cs-error {
     display: inline-block;
