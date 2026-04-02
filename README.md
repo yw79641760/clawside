@@ -12,10 +12,11 @@ Chrome Page
        OpenClaw Gateway → LLM
 ```
 
-Three interaction modes:
+Four interaction modes:
 1. **Floating bubble**: Select text → bubble appears → click icon → result in popup
 2. **Radial menu**: Long press on bubble → radial menu with translate/summarize/ask
-3. **Full side panel**: Click extension icon → full Translate/Summarize/Ask/History interface
+3. **Global page translation**: Click translate in radial menu → translate entire page with loading placeholders
+4. **Full side panel**: Click extension icon → full Translate/Summarize/Ask/History interface
 
 ## Prerequisites
 
@@ -62,6 +63,14 @@ Long press/right-click on bubble → radial menu with tool buttons:
 - 💬 Ask
 
 Clicking a tool opens the side panel to the corresponding tab.
+
+### Global Page Translation
+Click 🌐 Translate in radial menu to translate all paragraphs on the current page:
+- Shows loading placeholder for each paragraph
+- Batch translates 10 paragraphs at a time
+- Shows error icon if translation times out
+- Click again to hide (without re-requesting LLM)
+- Click again to re-show the previous translations
 
 ### Full Side Panel
 Click the ClawSide extension icon in toolbar:
