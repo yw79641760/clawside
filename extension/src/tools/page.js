@@ -67,11 +67,77 @@
         || document.body.classList.contains('cs-page-hidden');
   }
 
+  // Show loading placeholder after a paragraph
+  function showLoadingPlaceholder(idx) {
+    var para = cachedParagraphs[idx];
+    if (!para || !para.element) return;
+
+    // Clear any existing placeholder first
+    clearPlaceholder(para.element, idx);
+
+    var placeholder = document.createElement('span');
+    placeholder.className = 'cs-translation cs-loading';
+    placeholder.dataset.idx = idx;
+    placeholder.innerHTML = window.svgIcon('loading') || '...';
+    insertPlaceholder(para.element, placeholder);
+  }
+
+  // Show error placeholder after a paragraph (for timeout)
+  function showErrorPlaceholder(idx) {
+    var para = cachedParagraphs[idx];
+    if (!para || !para.element) return;
+
+    // Clear any existing placeholder first
+    clearPlaceholder(para.element, idx);
+
+    var placeholder = document.createElement('span');
+    placeholder.className = 'cs-translation cs-error';
+    placeholder.dataset.idx = idx;
+    placeholder.innerHTML = window.svgIcon('error') || '!';
+    placeholder.title = 'Translation timeout';
+    insertPlaceholder(para.element, placeholder);
+  }
+
+  // Clear placeholder elements for a paragraph
+  function clearPlaceholder(element, idx) {
+    var selectors = [
+      '.cs-translation.cs-loading[data-idx="' + idx + '"]',
+      '.cs-translation.cs-error[data-idx="' + idx + '"]'
+    ];
+    selectors.forEach(function(sel) {
+      element.parentNode.querySelectorAll(sel).forEach(function(el) { el.remove(); });
+    });
+  }
+
+  // Insert placeholder after element (handle semantic vs block elements)
+  function insertPlaceholder(originalEl, placeholder) {
+    var parent = originalEl.parentNode;
+    if (!parent) return;
+
+    // For semantic elements (data-as), append inside
+    var para = cachedParagraphs.find(function(p) { return p.element === originalEl; });
+    if (para && para.isSemantic) {
+      originalEl.appendChild(placeholder);
+      return;
+    }
+
+    // For block elements, insert after
+    var nextSibling = originalEl.nextSibling;
+    if (nextSibling) {
+      parent.insertBefore(placeholder, nextSibling);
+    } else {
+      parent.appendChild(placeholder);
+    }
+  }
+
   // Insert translation elements into page
   // translations: {idx: {text, tag}, ...}
   function showTranslation(translations) {
-    // 先清空之前 hidden 的翻译元素
+    // 先清空之前 hidden 的翻译元素和 loading/error 占位符
     document.querySelectorAll('.cs-translation.hidden').forEach(function(el) {
+      el.remove();
+    });
+    document.querySelectorAll('.cs-translation.cs-loading, .cs-translation.cs-error').forEach(function(el) {
       el.remove();
     });
     // 移除 hidden class
@@ -103,13 +169,7 @@
       var transTag = transData.tag || 'p';
       var transEl;
 
-      // 如果原始元素有 data-as 属性（语义等价标签），将翻译插入到元素内部
-      if (para.isSemantic) {
-        transEl = document.createElement('span');
-        transEl.className = 'cs-translation';
-        transEl.textContent = text;
-        originalEl.appendChild(transEl);
-      } else if (transTag === 'li') {
+      if (transTag === 'li') {
         // List item: inline display via span
         transEl = document.createElement('span');
         transEl.className = 'cs-translation';

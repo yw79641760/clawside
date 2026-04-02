@@ -282,6 +282,13 @@
       var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       var fullText = '';
 
+      // Show loading placeholders for all paragraphs in this batch first
+      batch.forEach(function(para) {
+        if (para.idx !== undefined && window.csPageParser.showLoadingPlaceholder) {
+          window.csPageParser.showLoadingPlaceholder(para.idx);
+        }
+      });
+
       var prompt = window.csPageParser.buildTranslationPrompt(batch, targetLang, settings);
 
       chrome.runtime.sendMessage({
@@ -300,9 +307,17 @@
           chrome.runtime.onMessage.removeListener(listener);
           // Use page.js to parse the response
           var translations = window.csPageParser.parseTranslationResponse(fullText);
+          // Show the translations (this will replace loading placeholders)
+          window.csPageParser.showTranslation(translations);
           resolve(translations);
         } else if (msg.type === 'clawside-stream-error') {
           chrome.runtime.onMessage.removeListener(listener);
+          // Show error placeholder for all paragraphs in this batch
+          batch.forEach(function(para) {
+            if (para.idx !== undefined && window.csPageParser.showErrorPlaceholder) {
+              window.csPageParser.showErrorPlaceholder(para.idx);
+            }
+          });
           reject(new Error(msg.error));
         }
       };
@@ -310,6 +325,12 @@
 
       setTimeout(function () {
         chrome.runtime.onMessage.removeListener(listener);
+        // Show error placeholder for all paragraphs in this batch on timeout
+        batch.forEach(function(para) {
+          if (para.idx !== undefined && window.csPageParser.showErrorPlaceholder) {
+            window.csPageParser.showErrorPlaceholder(para.idx);
+          }
+        });
         reject(new Error('Request timeout'));
       }, 180000);
     });
