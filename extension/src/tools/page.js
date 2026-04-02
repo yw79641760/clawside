@@ -78,7 +78,8 @@
     var placeholder = document.createElement('span');
     placeholder.className = 'cs-translation cs-loading';
     placeholder.dataset.idx = idx;
-    placeholder.innerHTML = window.svgIcon('loading') || '...';
+    var iconHtml = window.svgIcon('loading');
+    placeholder.innerHTML = iconHtml || '...';
     insertPlaceholder(para.element, placeholder);
   }
 
@@ -168,22 +169,13 @@
     Object.keys(translations).forEach(function(idx) {
       idx = parseInt(idx);
       var para = cachedParagraphs.get(idx);
-      if (!para) {
-        console.log('[Page] showTranslation SKIPPED: idx=', idx, 'no paragraph data');
-        return;
-      }
+      if (!para) return;
 
       var transData = translations[idx];
-      if (!transData) {
-        console.log('[Page] showTranslation SKIPPED: idx=', idx, 'no translation');
-        return;
-      }
+      if (!transData) return;
 
       var originalEl = para.element;
-      if (!originalEl) {
-        console.log('[Page] showTranslation SKIPPED: idx=', idx, 'element not found');
-        return;
-      }
+      if (!originalEl) return;
 
       var text = transData.text;
       var transTag = transData.tag || 'p';
@@ -321,7 +313,9 @@
     showTranslation: showTranslation,
     hideTranslation: hideTranslation,
     parseTranslationResponse: parseTranslationResponse,
-    buildTranslationPrompt: buildTranslationPrompt
+    buildTranslationPrompt: buildTranslationPrompt,
+    showLoadingPlaceholder: showLoadingPlaceholder,
+    showErrorPlaceholder: showErrorPlaceholder
   };
 
 })();
