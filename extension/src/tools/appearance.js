@@ -284,6 +284,10 @@ const CONTENT_STYLES = `
   .cs-radial-backdrop.visible {
     opacity: 1;
   }
+  .cs-radial-container {
+    position: fixed; z-index: 2147483645;
+    pointer-events: none;
+  }
   .cs-radial-btn > span {
     display: flex;
     align-items: center;
@@ -311,7 +315,7 @@ const CONTENT_STYLES = `
 
   /* === Persistent Dock Ball === */
   .cs-dock {
-    position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
+    position: fixed; bottom: 48px; right: 24px; z-index: 2147483646;
     width: 32px; height: 32px; border-radius: 50%;
     background-color: transparent;
     background-size: cover; background-position: center; background-repeat: no-repeat;

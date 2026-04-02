@@ -72,15 +72,23 @@
   }
 
   // === Radial menu positioning ===
+  // Angle convention: 0°=12点钟(上), 90°=3点钟(右), 180°=6点钟(下), 270°=9点钟(左)
+  // clockwise=false → angles increase → clockwise sweep (12点→1:30→3点)
+  // clockwise=true  → angles decrease → counterclockwise sweep (12点→11点→9点) ← 当前展开方向
+  // Default: startAngle=0 (12 o'clock / top), clockwise=true → translate(12点)→summarize(10:30)→ask(9点)
+  //
+  // Position formula: x=r*sin(θ), y=-r*cos(θ)
+  //   CSS top正值为下方，cos(0)=1→y=r→top=r→dock下方；加负号后top=-r→dock上方
+
   function calculatePetalPositions(radius, perAngle, count, startAngle, clockwise) {
-    startAngle = startAngle !== undefined ? startAngle : -90;
+    startAngle = startAngle !== undefined ? startAngle : 0;
     clockwise = clockwise !== undefined ? clockwise : true;
     var degToRad = function (deg) { return (deg * Math.PI) / 180; };
     return Array.from({ length: count }, function (_, i) {
       var direction = clockwise ? -1 : 1;
       var totalDeg = startAngle + i * perAngle * direction;
       var rad = degToRad(totalDeg);
-      return { x: radius * Math.sin(rad), y: radius * Math.cos(rad) };
+      return { x: radius * Math.sin(rad), y: -radius * Math.cos(rad) };
     });
   }
 
@@ -466,7 +474,6 @@
       dock.style.bottom = Math.max(0, startBottom - dy) + 'px';
     });
     document.addEventListener('mouseup', function () {
-      if (!isDragging) return;
       isDragging = false;
       aboutToDrag = false;
       resetIdleTimer();
