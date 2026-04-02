@@ -15,29 +15,36 @@
   var radialContainer = null;
   var startX, startY, startRight, startBottom;
 
-  // === Inline SVG icons for radial menu buttons ===
+  // === Tool definitions ===
   var TOOLS = [
     {
       id: 'translate',
-      label: chrome.i18n.getMessage('tabTranslate') || '\u7FFB\u8BD1',
+      label: chrome.i18n.getMessage('globalTranslate') || '\u5168\u6587\u7FFB\u8BD1',
+      cancelLabel: chrome.i18n.getMessage('cancelGlobalTranslate') || '\u53D6\u6D88\u5168\u6587\u7FFB\u8BD1',
+      loadingLabel: chrome.i18n.getMessage('translating') || '\u7FFB\u8BD1\u4E2D...',
       color: '#58a6ff',
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>',
+      icon: window.svgIcon('translate'),
+      loadingIcon: window.svgIcon('loading'),
+      cancelIcon: window.svgIcon('cancel'),
     },
     {
       id: 'summarize',
-      label: chrome.i18n.getMessage('tabSummarize') || '\u603B\u7ED3',
+      label: chrome.i18n.getMessage('globalSummarize') || '\u5168\u6587\u603B\u7ED3',
       color: '#3fb950',
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+      icon: window.svgIcon('summarize'),
     },
     {
       id: 'ask',
-      label: chrome.i18n.getMessage('tabAsk') || '\u63D0\u95EE',
+      label: chrome.i18n.getMessage('globalAsk') || '\u5168\u6587\u63D0\u95EE',
       color: '#f0883e',
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+      icon: window.svgIcon('ask'),
     },
   ];
 
-  // Radial menu layout constants
+  // === Translation state ===
+  var isTranslating = false;
+
+  // === Radial menu layout constants ===
   var BUTTON_RADIUS = 16; // px (button is 32x32)
   var EXPAND_RADIUS = 48; // px from dock center to button center
   var PER_ANGLE     = 45; // degrees per button
@@ -46,6 +53,9 @@
   async function init() {
     // Wire Chrome tab/navigation listeners (shared with popup.js via tabContextManager)
     window.tabContextManager.init();
+
+    // Inject SVG sprite for icons
+    window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(function () {});
 
     var appearance = window.resolveAppearance
       ? window.resolveAppearance('system')
@@ -96,11 +106,18 @@
   }
 
   function buildRadialMenu() {
+    // 清理旧的 radialContainer 和 backdrop（如果存在）
+    var oldContainer = document.querySelector('.cs-radial-container');
+    var oldBackdrop = document.querySelector('.cs-radial-backdrop');
+    if (oldContainer) oldContainer.remove();
+    if (oldBackdrop) oldBackdrop.remove();
+
     backdrop = document.createElement('div');
     backdrop.className = 'cs-radial-backdrop';
     document.body.appendChild(backdrop);
 
     radialContainer = document.createElement('div');
+    radialContainer.className = 'cs-radial-container';
 
     var leaveTimer = null;
     dock.addEventListener('mouseleave', function () {
@@ -111,14 +128,29 @@
       }, 2000);
     });
 
+    var pageTranslated = window.csPageParser.isPageTranslated();
+
     TOOLS.forEach(function (tool) {
       var btn = document.createElement('button');
       btn.className = 'cs-radial-btn';
       btn.dataset.tool = tool.id;
       btn.style.cssText += ';background:' + tool.color + '1a;border-color:' + tool.color + '55;';
+
+      var label = tool.label;
+      var icon = tool.icon;
+      if (tool.id === 'translate') {
+        if (isTranslating) {
+          label = tool.loadingLabel || tool.label;
+          icon = tool.loadingIcon || tool.icon;
+        } else if (pageTranslated) {
+          label = tool.cancelLabel || tool.label;
+          icon = tool.cancelIcon || tool.icon;
+        }
+      }
+
       btn.innerHTML =
-        '<span style="color:' + tool.color + '">' + tool.icon + '</span>' +
-        '<span class="cs-radial-label">' + tool.label + '</span>';
+        '<span style="color:' + tool.color + '">' + icon + '</span>' +
+        '<span class="cs-radial-label">' + label + '</span>';
 
       var c = getDockCenter();
       btn.style.left = (c.x - BUTTON_RADIUS) + 'px';
@@ -128,20 +160,34 @@
         if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
       });
       btn.addEventListener('click', function (e) {
+        if (isTranslating) {
+          return;
+        }
         e.stopPropagation();
         closeMenu(false);
-        openPanelWithTab(tool.id);
+        if (tool.id === 'translate') {
+          handleTranslate();
+        } else {
+          openPanelWithTab(tool.id);
+        }
       });
 
       radialContainer.appendChild(btn);
-      document.body.appendChild(btn);
     });
+
+    // 将 radialContainer 添加到 document.body
+    document.body.appendChild(radialContainer);
   }
 
   function openMenu() {
     if (menuOpen) return;
     menuOpen = true;
-    if (!radialContainer) buildRadialMenu();
+    if (radialContainer) {
+      radialContainer.querySelectorAll('.cs-radial-btn').forEach(function (btn) { btn.remove(); });
+      backdrop.remove();
+      radialContainer = null;
+    }
+    buildRadialMenu();
     positionRadialMenu();
     backdrop.classList.add('visible');
     document.querySelectorAll('.cs-radial-btn').forEach(function (btn, i) {
@@ -166,28 +212,51 @@
   }
 
   function openPanelWithTab(tab) {
-    // Pull current tab context from shared tabContextManager (HashMap + LRU).
     var ctx = window.tabContextManager.getCurrent();
     var url   = (ctx && ctx.url)          || window.location.href || '';
     var title = (ctx && ctx.title)        || document.title || '';
     var text  = (ctx && ctx.selectedText) || '';
 
-    chrome.storage.local.set({
-      _pendingTab:   tab,
-      _pendingUrl:   url,
-      _pendingTitle:  title,
-      _pendingText:   text,
-      _pendingAction: tab // use tab id as action (translate/summarize/ask)
-    }).catch(function () {}); // Ignore errors (e.g., extension context invalidated)
+    // Check if side panel is already open by checking the dock's panel-open class
+    var panelAlreadyOpen = dock && dock.classList.contains('panel-open');
 
-    chrome.runtime.sendMessage({
-      type:  'panel-open-with-tab',
-      tab:   tab,
-      url:   url,
-      title: title,
-      text:  text,
-      action: tab
-    }).catch(function () {});
+    if (panelAlreadyOpen) {
+      // Side panel is already open - send message to switch tab directly
+      chrome.runtime.sendMessage({
+        type:  'OPEN_TAB_IN_PANEL',
+        tab:   tab,
+        url:   url,
+        title: title,
+        text:  text,
+        action: tab
+      }).catch(function () {});
+      // Also update storage for the storage listener in sidepanel.js
+      chrome.storage.local.set({
+        _pendingTab:   tab,
+        _pendingUrl:   url,
+        _pendingTitle:  title,
+        _pendingText:   text,
+        _pendingAction: tab
+      }).catch(function () {});
+    } else {
+      // Side panel is not open - use the full open flow
+      chrome.storage.local.set({
+        _pendingTab:   tab,
+        _pendingUrl:   url,
+        _pendingTitle:  title,
+        _pendingText:   text,
+        _pendingAction: tab
+      }).catch(function () {});
+
+      chrome.runtime.sendMessage({
+        type:  'panel-open-with-tab',
+        tab:   tab,
+        url:   url,
+        title: title,
+        text:  text,
+        action: tab
+      }).catch(function () {});
+    }
   }
 
   function stickDock() {
@@ -205,6 +274,108 @@
       if (dock) dock.classList.remove('scrolling');
       stickDock();
     }, 1000);
+  }
+
+  // === Translate batch - sends single request, returns parsed translations ===
+  function translateBatchRequest(batch, targetLang, settings) {
+    return new Promise(function (resolve, reject) {
+      var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      var fullText = '';
+
+      var prompt = window.csPageParser.buildTranslationPrompt(batch, targetLang, settings);
+
+      chrome.runtime.sendMessage({
+        type: 'clawside-api',
+        prompt: prompt,
+        port: settings.gatewayPort,
+        token: settings.authToken,
+        requestId: requestId
+      });
+
+      var listener = function (msg) {
+        if (msg.requestId !== requestId) return;
+        if (msg.type === 'clawside-stream-chunk') {
+          fullText += msg.chunk;
+        } else if (msg.type === 'clawside-stream-done') {
+          chrome.runtime.onMessage.removeListener(listener);
+          // Use page.js to parse the response
+          var translations = window.csPageParser.parseTranslationResponse(fullText);
+          resolve(translations);
+        } else if (msg.type === 'clawside-stream-error') {
+          chrome.runtime.onMessage.removeListener(listener);
+          reject(new Error(msg.error));
+        }
+      };
+      chrome.runtime.onMessage.addListener(listener);
+
+      setTimeout(function () {
+        chrome.runtime.onMessage.removeListener(listener);
+        reject(new Error('Request timeout'));
+      }, 180000);
+    });
+  }
+
+  // === Global translate handler ===
+  async function doGlobalTranslate() {
+    if (window.csPageParser.isPageTranslated()) {
+      window.csPageParser.hideTranslation();
+      if (radialContainer) buildRadialMenu();
+      return;
+    }
+
+    // Use page.js to parse paragraphs from DOM
+    var paragraphData = window.csPageParser.parseParagraph();
+
+    // Get settings
+    var stored = await chrome.storage.local.get(['clawside_settings']);
+    var s = window.csSettings.validateSettings(stored.clawside_settings);
+    var browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
+    var targetLang = (s.translateLanguage && s.translateLanguage !== 'auto')
+      ? s.translateLanguage
+      : (s.language && s.language !== 'auto' ? s.language : browserLang);
+
+    // Batch translate - 10 paragraphs per batch
+    var BATCH_SIZE = 10;
+    var batchCount = Math.ceil(paragraphData.length / BATCH_SIZE);
+
+    for (var i = 0; i < batchCount; i++) {
+      var start = i * BATCH_SIZE;
+      var end = Math.min(start + BATCH_SIZE, paragraphData.length);
+      var batch = paragraphData.slice(start, end);
+
+      var batchTranslations = await translateBatchRequest(batch, targetLang, s);
+
+      // Use page.js to show translation
+      window.csPageParser.showTranslation(batchTranslations);
+    }
+  }
+
+  // === Main translate handler ===
+  async function handleTranslate() {
+    if (isTranslating) {
+      return;
+    }
+
+    if (window.csPageParser.isPageTranslated()) {
+      window.csPageParser.hideTranslation();
+      buildRadialMenu();
+      return;
+    }
+
+    isTranslating = true;
+    // 重新构建菜单以显示 loading 图标，并定位按钮
+    buildRadialMenu();
+    positionRadialMenu();
+
+    try {
+      await doGlobalTranslate();
+    } catch (err) {
+      console.error('Global translate failed:', err);
+    } finally {
+      isTranslating = false;
+      buildRadialMenu();
+      positionRadialMenu();
+    }
   }
 
   function createDock() {
