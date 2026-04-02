@@ -1,9 +1,9 @@
 // ClawSide - Icons
 // Single source of truth for all SVG icon markup.
 // All icons reference the inline <symbol> sprite defined in sidepanel.html.
-// For content scripts: ensure the sprite is injected into the page first (see tools/styles.js).
+// For content scripts: ensure the sprite is injected into the page first (see tools/appearance.js).
 
-const ICON_NAMES = ['translate', 'summarize', 'ask', 'copy', 'check', 'delete', 'eye', 'eyeoff', 'history', 'settings'];
+const ICON_NAMES = ['translate', 'summarize', 'ask', 'copy', 'check', 'delete', 'eye', 'eyeoff', 'history', 'settings', 'loading', 'cancel'];
 
 /** SVG markup map: iconName → <svg> string for use in innerHTML. */
 const SVG = {
@@ -17,6 +17,8 @@ const SVG = {
   eyeoff:     '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-eye-off"></use></svg>',
   history:    '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-history"></use></svg>',
   settings:   '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-settings"></use></svg>',
+  loading:    '<svg class="cs-icon cs-spin" width="20" height="20" viewBox="0 0 24 24"><use href="#cs-icon-loading"></use></svg>',
+  cancel:     '<svg class="cs-icon" width="20" height="20" viewBox="0 0 24 24"><use href="#cs-icon-cancel"></use></svg>',
 };
 
 /** Get SVG markup for an icon by name. Returns '' if not found. */

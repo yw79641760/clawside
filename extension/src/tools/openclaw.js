@@ -41,9 +41,10 @@ export function buildBody(prompt, toolName = 'default') {
  * @param {string}   token
  * @param {string}   requestId
  * @param {string}   toolName
+ * @param {number|null} targetTabId - If provided, send messages to specific tab via chrome.tabs.sendMessage
  * @returns {Promise<void>}
  */
-export async function apiStream(prompt, port, token, requestId, toolName = 'default') {
+export async function apiStream(prompt, port, token, requestId, toolName = 'default', targetTabId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
@@ -65,6 +66,15 @@ export async function apiStream(prompt, port, token, requestId, toolName = 'defa
   const decoder = new TextDecoder();
   let buffer = '';
 
+  // Helper to send message to either tab or runtime
+  const sendMsg = (msg) => {
+    if (targetTabId) {
+      return chrome.tabs.sendMessage(targetTabId, msg).catch(() => {});
+    } else {
+      return chrome.runtime.sendMessage(msg).catch(() => {});
+    }
+  };
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -75,19 +85,19 @@ export async function apiStream(prompt, port, token, requestId, toolName = 'defa
       if (!line.startsWith('data: ')) continue;
       const data = line.slice(6).trim();
       if (data === '[DONE]') {
-        chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
+        sendMsg({ type: 'clawside-stream-done', requestId });
         return;
       }
       try {
         const json = JSON.parse(data);
         const content = json.choices?.[0]?.delta?.content || '';
         if (content) {
-          chrome.runtime.sendMessage({ type: 'clawside-stream-chunk', requestId, chunk: content }).catch(() => {});
+          sendMsg({ type: 'clawside-stream-chunk', requestId, chunk: content });
         }
       } catch {}
     }
   }
-  chrome.runtime.sendMessage({ type: 'clawside-stream-done', requestId }).catch(() => {});
+  sendMsg({ type: 'clawside-stream-done', requestId });
 }
 
 // === Non-streaming API Call (response sent via message) ===

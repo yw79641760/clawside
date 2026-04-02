@@ -56,13 +56,15 @@
       ],
       "js": [
         "src/tools/icons.js",
-        "src/tools/styles.js",
+        "src/tools/appearance.js",
         "src/tools/browser.js",
         "lib/readability.iife.js",
         "src/tools/lru-cache.js",
         "src/tools/context-lru-cache.js",
         "src/shared/tab-context-manager.js",
+        "src/shared/settings.js",
         "src/components/popup.js",
+        "src/tools/page.js",
         "src/components/dock.js",
         "content.js"
       ],

@@ -17,31 +17,13 @@
     chrome.runtime.sendMessage({ type: 'sidepanel-closed' }).catch(() => {});
   });
 
-  const DEFAULT_PORT = '18789';
-
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
 
-  // === Default Tool Prompts (Section 1) ===
-  const DEFAULT_PROMPTS = {
-    translate: `You are a professional translator. Translate the following text to {lang}. Only output the translated text, nothing else. Be accurate and natural.\n\nText: {text}`,
-    summarize: `Summarize the following page in {lang}. Use this structure:
-- **Overview**: 1-2 sentences, what this page is about
-- **Key Points**: bullet points, the most important information (let content decide the count, typically 2-6)
-- **Highlights**: standout facts, data, or quotes worth noting
-
-Output Markdown only. Be concise and let the content determine the depth of each section.\n\nPage title: {title}\nPage URL: {url}\n\nContent:\n{content}`,
-    ask: `You are ClawSide's Ask assistant, helping the user with questions about the current webpage.\n
-Use the provided context to answer.\n
-Prefer {hasSelection}the user-selected text{/hasSelection}{hasContent}the page content excerpt{/hasContent}.\n
-If the answer is not present in the provided context, say so and explain what is missing.\n
-Respond in {lang} and use Markdown.\n
-Keep it concise: 3-8 bullet points or short paragraphs.\n
-If the user's question is ambiguous, ask 1 clarifying question before answering.\n\n
-Page title: {title}\nPage URL: {url}\n
-{hasSelection}SelectedText:\n\"{selectedText}\"\n\n{/hasSelection}{hasContent}PageContent:\n{content}\n\n{/hasContent}User question:\n{question}`
-  };
+  // === Apply Prompt with special variables (hasSelection, hasContent) ===
+  var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
+  var DEFAULT_PORT = window.csSettings.DEFAULT_PORT;
 
   function applyPrompt(template, vars) {
     if (!template) return '';
@@ -65,7 +47,7 @@ Page title: {title}\nPage URL: {url}\n
   let currentTab = 'translate';
   let history = [];
   let browserLang = 'English';
-  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
 
   // Per-tool deferred context backfill marker, keyed by current page URL.
   const deferredContextBackfillUrl = {
@@ -123,6 +105,23 @@ Page title: {title}\nPage URL: {url}\n
     $('labelAskBtn') && ($('labelAskBtn').textContent = chrome.i18n.getMessage('labelAskBtn'));
     // Loading
     $('loadingText') && ($('loadingText').textContent = chrome.i18n.getMessage('loading'));
+    // Settings sub-tabs
+    $('labelSettingsBasic') && ($('labelSettingsBasic').textContent = chrome.i18n.getMessage('labelSettingsBasic'));
+    $('labelSettingsTools') && ($('labelSettingsTools').textContent = chrome.i18n.getMessage('labelSettingsTools'));
+    // Tools settings
+    $('labelToolTranslate') && ($('labelToolTranslate').textContent = chrome.i18n.getMessage('labelToolTranslate'));
+    $('labelToolSummarize') && ($('labelToolSummarize').textContent = chrome.i18n.getMessage('labelToolSummarize'));
+    $('labelToolAsk') && ($('labelToolAsk').textContent = chrome.i18n.getMessage('labelToolAsk'));
+    $('labelToolGlobalTranslate') && ($('labelToolGlobalTranslate').textContent = chrome.i18n.getMessage('labelToolGlobalTranslate'));
+    $('labelPromptVars') && ($('labelPromptVars').innerHTML = chrome.i18n.getMessage('placeholderPromptVars'));
+    // Context headings
+    $('ctxHeadingSummarize') && ($('ctxHeadingSummarize').textContent = chrome.i18n.getMessage('labelContextSummarize'));
+    $('ctxHeadingAsk') && ($('ctxHeadingAsk').textContent = chrome.i18n.getMessage('labelContextAsk'));
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-placeholder');
+      el.placeholder = chrome.i18n.getMessage(key);
+    });
     // History empty state
     const historyEmptyText = $('historyEmpty')?.querySelector('.empty-text');
     if (historyEmptyText) historyEmptyText.textContent = chrome.i18n.getMessage('emptyHistory');
@@ -277,7 +276,7 @@ Page title: {title}\nPage URL: {url}\n
   // === Settings ===
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', appearance: 'system', toolPrompts: {} };
+    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
     settingLanguage.value = settings.language || 'auto';
@@ -295,13 +294,18 @@ Page title: {title}\nPage URL: {url}\n
     $('promptTranslate') && ($('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate);
     $('promptSummarize') && ($('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize);
     $('promptAsk') && ($('promptAsk').value = prompts.ask || DEFAULT_PROMPTS.ask);
+    $('promptGlobalTranslate') && ($('promptGlobalTranslate').value = prompts.globalTranslate || DEFAULT_PROMPTS.globalTranslate);
   }
 
   function applyLanguage() {
-    // For auto mode, use browserLang; otherwise use the saved setting
-    const lang = settings.language === 'auto' ? browserLang : settings.language;
-    targetLangSelect.value = lang;
-    // Keep Settings dropdown in sync with the resolved display
+    // translateLanguage defaults to language setting, can be overridden by user
+    const defaultLang = settings.language === 'auto' ? browserLang : settings.language;
+    const translateLang = (settings.translateLanguage && settings.translateLanguage !== 'auto')
+      ? settings.translateLanguage
+      : defaultLang;
+    targetLangSelect.value = translateLang;
+    // language: reply language preference (for summarize/ask)
+    const replyLang = settings.language === 'auto' ? browserLang : settings.language;
     if (settings.language !== 'auto') {
       settingLanguage.value = settings.language;
     }
@@ -327,8 +331,9 @@ Page title: {title}\nPage URL: {url}\n
   async function checkGatewayStatus() {
     const statusBar = $('gatewayStatusBar');
     statusBar.classList.remove('hidden');
+    // Clear previous status to give visual feedback that button was clicked
     gatewayStatusEl.textContent = 'Checking...';
-    gatewayStatusEl.style.color = '';
+    gatewayStatusEl.style.color = 'var(--text)';
 
     // Reuse apiCall to test connection (goes through background script → gateway)
     try {
@@ -890,7 +895,9 @@ Page title: {title}\nPage URL: {url}\n
       await loadSettings();
       let targetLang = targetLangSelect.value;
       if (targetLang === 'auto') {
-        targetLang = (!settings.language || settings.language === 'auto') ? browserLang : (settings.language || browserLang);
+        // translateLanguage is for translation target; language is for summarize/ask reply
+        const translateLang = settings.translateLanguage;
+        targetLang = (!translateLang || translateLang === 'auto') ? browserLang : (translateLang || browserLang);
       }
       const template = settings.toolPrompts?.translate || DEFAULT_PROMPTS.translate;
       const prompt = applyPrompt(template, { text, lang: targetLang });
@@ -1201,13 +1208,23 @@ Page title: {title}\nPage URL: {url}\n
     $('promptAsk').value = DEFAULT_PROMPTS.ask;
     saveToolPrompts();
   });
+  $('resetPromptGlobalTranslate')?.addEventListener('click', () => {
+    $('promptGlobalTranslate').value = DEFAULT_PROMPTS.globalTranslate;
+    saveToolPrompts();
+  });
 
   // Auto-save tool prompts on input
   $('promptTranslate')?.addEventListener('input', saveToolPrompts);
   $('promptSummarize')?.addEventListener('input', saveToolPrompts);
   $('promptAsk')?.addEventListener('input', saveToolPrompts);
+  $('promptGlobalTranslate')?.addEventListener('input', saveToolPrompts);
 
   translateBtn.addEventListener('click', doTranslate);
+  targetLangSelect.addEventListener('change', () => {
+    const selectedLang = targetLangSelect.value;
+    settings.translateLanguage = selectedLang;
+    chrome.storage.local.set({ clawside_settings: settings });
+  });
   summarizeBtn.addEventListener('click', doSummarize);
 
   // Chat event listeners
@@ -1319,7 +1336,8 @@ Page title: {title}\nPage URL: {url}\n
       settings.toolPrompts = {
         translate: $('promptTranslate').value,
         summarize: $('promptSummarize').value,
-        ask: $('promptAsk').value
+        ask: $('promptAsk').value,
+        globalTranslate: $('promptGlobalTranslate').value
       };
       chrome.storage.local.set({ clawside_settings: settings });
     }, 500);

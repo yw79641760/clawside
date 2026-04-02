@@ -34,9 +34,9 @@
 
   // === Inline SVG icons for selection bubble buttons ===
   var BUBBLE_ICONS = {
-    translate: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>',
-    summarize: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
-    ask: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    translate: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>',
+    summarize: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+    ask: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
     copy: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
     check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
   };
@@ -72,11 +72,11 @@
 
   function positionBubble(el, rect) {
     var vw = window.innerWidth;
-    var bw = 130;
-    var top = rect.bottom + window.scrollY + 8;
+    var bw = 92;
+    var top = rect.bottom + window.scrollY + 6;
     var left = rect.left + window.scrollX + rect.width / 2 - bw / 2;
-    if (rect.bottom + 60 > window.innerHeight) {
-      top = rect.top + window.scrollY - 46 - 8;
+    if (rect.bottom + 36 > window.innerHeight) {
+      top = rect.top + window.scrollY - 28 - 6;
     }
     left = Math.max(8, Math.min(left, vw - bw - 8));
     el.style.top = top + 'px';
@@ -285,7 +285,7 @@
     title = title || document.title;
 
     var stored = await chrome.storage.local.get(['clawside_settings']);
-    var s = stored.clawside_settings || { gatewayPort: '18789', authToken: '' };
+    var s = stored.clawside_settings || { gatewayPort: '18789', authToken: '', language: 'auto', translateLanguage: 'auto' };
     var port = String(s.gatewayPort || '18789');
     var token = String(s.authToken || '').trim();
 
@@ -299,22 +299,30 @@
 
     try {
       var cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
-      var targetLang = (s.language && s.language !== 'auto')
+      // translateLanguage: translation target, defaults to language setting
+      var browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
+      var defaultLang = (s.language && s.language !== 'auto') ? s.language : browserLang;
+      var translateLang = s.translateLanguage;
+      var targetLang = (translateLang && translateLang !== 'auto')
+        ? translateLang
+        : defaultLang;
+      // Reply language for summarize/ask (same as language setting)
+      var replyLang = (s.language && s.language !== 'auto')
         ? s.language
-        : (window.getBrowserLocale ? window.getBrowserLocale() : 'English');
+        : browserLang;
 
       var prompt;
       if (action === 'translate') {
         prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ' + text;
         await apiCall(prompt, port, token);
       } else if (action === 'summarize') {
-        prompt = 'You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ' + targetLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ' + url;
+        prompt = 'You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ' + url;
         await apiCall(prompt, port, token);
       } else if (action === 'ask') {
         if (text) {
-          prompt = 'You are a helpful assistant. Answer in ' + targetLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
+          prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
         } else {
-          prompt = 'You are a helpful assistant. Answer in ' + targetLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
+          prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
         }
         await apiCall(prompt, port, token);
       }
@@ -400,7 +408,7 @@
     chrome.runtime.onMessage.addListener(function (msg) {
       if (msg.type === 'clawside-stream-chunk') {
         var req = pendingRequests[msg.requestId];
-        if (req && typeof req.onChunk === 'function') req.onChunk(msg.content);
+        if (req && typeof req.onChunk === 'function') req.onChunk(msg.chunk);
         return true;
       }
       if (msg.type === 'clawside-stream-done') {

@@ -71,4 +71,14 @@
   <symbol id="cs-icon-broom" viewBox="0 0 1024 1024">
     <path d="M650.666667 672h-42.666667v-85.333333h-27.733333v85.333333h-57.6v-85.333333h-27.733334v85.333333h-55.466666v-85.333333h-29.866667v85.333333h-36.266667c2.133333-14.933333 4.266667-17.066667 4.266667-38.4v-91.733333h266.666667v91.733333c2.133333 21.333333 4.266667 23.466667 6.4 38.4z m-298.666667-204.8h153.6v-115.2h12.8v115.2h153.6v38.4h-320v-38.4z m219.733333-55.466667V298.666667h-119.466666v113.066666H298.666667v128h27.733333v91.733334c0 38.4-8.533333 70.4-8.533333 70.4 0 4.266667-4.266667 10.666667-8.533334 23.466666h405.333334c-4.266667-10.666667-8.533333-19.2-8.533334-23.466666 0 0-8.533333-32-8.533333-70.4v-91.733334H725.333333v-128h-153.6z"></path>
   </symbol>
+  <symbol id="cs-icon-loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+  </symbol>
+  <symbol id="cs-icon-cancel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <ellipse cx="12" cy="12" rx="4" ry="9"/>
+    <line x1="4" y1="4" x2="20" y2="20" stroke-width="2"/>
+  </symbol>
 </svg>

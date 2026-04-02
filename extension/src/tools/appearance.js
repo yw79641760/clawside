@@ -57,9 +57,9 @@ function injectTheme(vars) {
 const CONTENT_STYLES = `
   .cs-bubble {
     position: fixed; z-index: 2147483647;
-    display: flex; gap: 4px;
+    display: flex; gap: 2px;
     background: var(--cs-bg); border: 1px solid var(--cs-border);
-    border-radius: 8px; padding: 5px 7px;
+    border-radius: 6px; padding: 3px 4px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.45);
     font-family: system-ui, -apple-system, sans-serif;
     animation: cs-bubble-in 150ms ease-out;
@@ -70,8 +70,8 @@ const CONTENT_STYLES = `
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   .cs-btn {
-    width: 34px; height: 34px; border: none; background: transparent;
-    border-radius: 6px; cursor: pointer; font-size: 17px;
+    width: 24px; height: 24px; border: none; background: transparent;
+    border-radius: 4px; cursor: pointer; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     transition: background 100ms ease, transform 80ms ease;
     padding: 0;
@@ -142,6 +142,9 @@ const CONTENT_STYLES = `
     animation: cs-spin 600ms linear infinite;
   }
   @keyframes cs-spin { to { transform: rotate(360deg); } }
+  .cs-spin {
+    animation: cs-spin 1s linear infinite;
+  }
 
   .cs-popup-error {
     padding: 12px; color: var(--cs-error); font-size: 13px;
@@ -255,6 +258,21 @@ const CONTENT_STYLES = `
   }
   .cs-icon-sm {
     width: 14px; height: 14px; flex-shrink: 0;
+  }
+
+  /* Global page translation */
+  .cs-page-translated {
+    /* marker class on body */
+  }
+  .cs-translation {
+    display: block;
+    margin-top: 4px;
+    padding: 8px 12px;
+    background: rgba(88, 166, 255, 0.1);
+    border-left: 3px solid #58a6ff;
+    color: var(--cs-text);
+    font-size: 0.95em;
+    line-height: 1.5;
   }
 `;
 

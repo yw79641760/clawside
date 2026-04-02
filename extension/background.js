@@ -51,9 +51,15 @@ chrome.commands.onCommand.addListener((command) => {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
     const { prompt, port, token, requestId, stream = true, toolName = 'default' } = msg;
+    const senderTabId = _sender.tab ? _sender.tab.id : null;
     if (stream) {
-      apiStream(prompt, port, token, requestId, toolName).catch((err) => {
-        chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
+      apiStream(prompt, port, token, requestId, toolName, senderTabId).catch((err) => {
+        // Send error back to the specific content script
+        if (senderTabId) {
+          chrome.tabs.sendMessage(senderTabId, { type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
+        } else {
+          chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
+        }
       });
     } else {
       apiNonStream(prompt, port, token, requestId, toolName).catch((err) => {
