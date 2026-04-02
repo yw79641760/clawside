@@ -37,7 +37,7 @@ Page title: {title}\nPage URL: {url}\n
 
 {paragraphs}
 
-Output format: Use tag Y from paragraph X(tag:Y) as the outer tag. Example: <h2 idx="0" tag="h2">translation</h2><h3 idx="1" tag="h3">translation</h3>`
+Output format: Use tag Y from X(tag:Y) as the outer tag. Example: <h2 idx="0" tag="h2">translation</h2><h3 idx="1" tag="h3">translation</h3>`
   };
 
   // === Default Settings ===

@@ -300,7 +300,7 @@
   // Build translation prompt
   function buildTranslationPrompt(paragraphs, targetLang, settings) {
     var contentText = paragraphs.map(function(p) {
-      return '[paragraph ' + p.idx + ' (tag:' + p.tag + ')] ' + p.text;
+      return '[' + p.idx + '(tag:' + p.tag + ')] ' + p.text;
     }).join('\n\n');
 
     // Get default/globalTranslate prompt from settings
