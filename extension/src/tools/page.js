@@ -88,6 +88,13 @@
     var para = cachedParagraphs.get(idx);
     if (!para || !para.element) return;
 
+    // Check if there's already a successful translation (normal cs-translation without cs-loading and cs-error)
+    var existingTranslation = para.element.parentNode.querySelector('.cs-translation:not(.cs-loading):not(.cs-error)[data-idx="' + idx + '"]');
+    if (existingTranslation) {
+      // Already has successful translation, skip error placeholder
+      return;
+    }
+
     // Clear any existing placeholder first
     clearPlaceholder(para.element, idx);
 
