@@ -122,6 +122,8 @@
       var key = el.getAttribute('data-i18n-placeholder');
       el.placeholder = chrome.i18n.getMessage(key);
     });
+    // Scan button text
+    $('scanGatewayBtn') && ($('scanGatewayBtn').textContent = chrome.i18n.getMessage('scanGateway') || 'Scan');
     // History empty state
     const historyEmptyText = $('historyEmpty')?.querySelector('.empty-text');
     if (historyEmptyText) historyEmptyText.textContent = chrome.i18n.getMessage('emptyHistory');
@@ -274,9 +276,71 @@
   // ═══════════════════════════════════════════════════════════════════════════════
 
   // === Settings ===
+  // === Auto Scan Gateway ===
+  async function autoScanGateway() {
+    const ports = ['18789', '18790', '18791'];
+    for (const port of ports) {
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'openai/',
+            messages: [{ role: 'user', content: 'hi' }],
+            stream: false
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(tid);
+        if (res.ok) return { port, authRequired: false };
+        if (res.status === 401 || res.status === 403) return { port, authRequired: true };
+      } catch {
+        // Port unreachable or timeout — try next
+      }
+    }
+    return null;
+  }
+
   async function loadSettings() {
     const result = await chrome.storage.local.get(['clawside_settings']);
-    settings = result.clawside_settings || { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
+    const isFirstRun = !result.clawside_settings || !result.clawside_settings.gatewayPort;
+
+    // Auto scan on first run
+    if (isFirstRun) {
+      const scanStatusEl = $('gatewayStatus');
+      const statusBar = $('gatewayStatusBar');
+      if (scanStatusEl) {
+        statusBar.classList.remove('hidden');
+        scanStatusEl.textContent = 'Scanning...';
+        scanStatusEl.style.color = 'var(--text)';
+      }
+      const found = await autoScanGateway();
+      if (found) {
+        settings = {
+          gatewayPort: found.port,
+          authToken: found.authRequired ? '' : '',
+          language: 'auto',
+          translateLanguage: 'auto',
+          appearance: 'system',
+          toolPrompts: {}
+        };
+        if (scanStatusEl) {
+          scanStatusEl.innerHTML = `Found gateway on port ${found.port}${found.authRequired ? ' \u2014 token required' : ' \u2014 no auth needed'}`;
+          scanStatusEl.style.color = 'var(--success)';
+        }
+      } else {
+        settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
+        if (scanStatusEl) {
+          scanStatusEl.textContent = 'No gateway found \u2014 please configure manually';
+          scanStatusEl.style.color = 'var(--error)';
+        }
+      }
+    } else {
+      settings = result.clawside_settings;
+    }
+
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
     settingLanguage.value = settings.language || 'auto';
@@ -285,7 +349,6 @@
     applyLanguage();
     applyAppearance();
     await applyPanelLanguage();
-    // Load tool prompts into textareas
     loadToolPrompts();
   }
 
@@ -1365,6 +1428,41 @@
     toggleTokenBtn.innerHTML = isPassword ? svgIcon('eyeoff') : svgIcon('eye');
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
+
+  const scanBtn = $('scanGatewayBtn');
+  if (scanBtn) {
+    scanBtn.addEventListener('click', async () => {
+      scanBtn.disabled = true;
+      scanBtn.textContent = 'Scanning...';
+      const scanStatusEl = $('gatewayStatus');
+      const statusBar = $('gatewayStatusBar');
+      if (scanStatusEl) {
+        statusBar.classList.remove('hidden');
+        scanStatusEl.textContent = 'Scanning...';
+        scanStatusEl.style.color = 'var(--text)';
+      }
+      const found = await autoScanGateway();
+      scanBtn.disabled = false;
+      scanBtn.textContent = 'Scan';
+      if (found) {
+        settingBridgePort.value = found.port;
+        settings.gatewayPort = found.port;
+        settings.authToken = '';
+        settingAuthToken.value = '';
+        updateTokenStatus();
+        if (scanStatusEl) {
+          scanStatusEl.innerHTML = `Gateway found on port ${found.port}${found.authRequired ? ' \u2014 token required' : ' \u2014 no auth needed'}`;
+          scanStatusEl.style.color = 'var(--success)';
+        }
+        autoSave();
+      } else {
+        if (scanStatusEl) {
+          scanStatusEl.textContent = 'No gateway found on localhost';
+          scanStatusEl.style.color = 'var(--error)';
+        }
+      }
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // SECTION 9: Initialization

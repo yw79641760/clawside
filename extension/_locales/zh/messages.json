@@ -24,6 +24,7 @@
   "gatewayPort": { "message": "OpenClaw Gateway 端口" },
   "authToken": { "message": "Gateway Auth Token" },
   "testConn": { "message": "测试连接" },
+  "scanGateway": { "message": "扫描" },
   "saveSettings": { "message": "保存设置" },
   "loading": { "message": "处理中..." },
   "emptyHistory": { "message": "暂无历史记录，在任意页面选中文本即可开始！" },

@@ -578,6 +578,33 @@ body {
   cursor: not-allowed;
 }
 
+.btn-secondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-danger {
   background: transparent;
   border: 1px solid var(--error);
@@ -866,6 +893,16 @@ body {
 }
 
 .token-row input {
+  flex: 1;
+}
+
+.port-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.port-row input[type="number"] {
   flex: 1;
 }
 

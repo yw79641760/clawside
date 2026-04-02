@@ -24,6 +24,7 @@
   "gatewayPort": { "message": "OpenClaw Gateway Port" },
   "authToken": { "message": "Gateway Auth Token" },
   "testConn": { "message": "Test Connection" },
+  "scanGateway": { "message": "Scan" },
   "saveSettings": { "message": "Save Settings" },
   "loading": { "message": "Processing..." },
   "emptyHistory": { "message": "No history yet. Select text on any page to get started!" },
