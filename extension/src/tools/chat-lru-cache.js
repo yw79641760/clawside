@@ -82,18 +82,14 @@
     async getOrBuild(tabId = null, url = '') {
       const buildTabId = tabId || this.tabId;
       const buildUrl = url || this.url;
-      console.log('[DEBUG ChatLRUCache.getOrBuild] tabId:', buildTabId, 'url:', buildUrl);
       if (!buildTabId) {
-        console.log('[DEBUG ChatLRUCache.getOrBuild] early return - no tabId');
         return [];
       }
 
       const key = this.makeKey(buildTabId, buildUrl);
-      console.log('[DEBUG ChatLRUCache.getOrBuild] key:', key);
 
       // Check memory cache first
       if (this.has(key)) {
-        console.log('[DEBUG ChatLRUCache.getOrBuild] found in memory');
         // Move to end (MRU)
         const value = this.get(key);
         this.delete(key);
@@ -102,11 +98,9 @@
       }
 
       // Load from storage
-      console.log('[DEBUG ChatLRUCache.getOrBuild] loading from storage');
       try {
         const result = await chrome.storage.local.get([key]);
         const messages = result[key] || [];
-        console.log('[DEBUG ChatLRUCache.getOrBuild] loaded from storage:', messages?.length);
 
         // Add to cache
         this.set(key, messages);
@@ -131,13 +125,10 @@
 
       // Only save if there are actual messages
       if (!messages || messages.length === 0) {
-        console.log('[DEBUG ChatLRUCache.save] skipping - no messages');
         return;
       }
 
-      console.log('[DEBUG ChatLRUCache.save] tabId:', saveTabId, 'url:', saveUrl, 'messages:', messages.length);
       if (!saveTabId) {
-        console.log('[DEBUG ChatLRUCache.save] early return - no tabId');
         return;
       }
       const key = this.makeKey(saveTabId, saveUrl);

@@ -128,7 +128,7 @@
       }, 2000);
     });
 
-    var pageTranslated = window.csPageParser.isPageTranslated();
+    var pageTranslated = document.body.classList.contains('cs-page-translated');
 
     TOOLS.forEach(function (tool) {
       var btn = document.createElement('button');
@@ -143,6 +143,8 @@
           label = tool.loadingLabel || tool.label;
           icon = tool.loadingIcon || tool.icon;
         } else if (pageTranslated) {
+          // 只有正在显示翻译时才显示取消 icon
+          // 如果是 hidden 状态（翻译被隐藏），显示默认 icon 让用户可以重新显示
           label = tool.cancelLabel || tool.label;
           icon = tool.cancelIcon || tool.icon;
         }
@@ -296,7 +298,8 @@
         prompt: prompt,
         port: settings.gatewayPort,
         token: settings.authToken,
-        requestId: requestId
+        requestId: requestId,
+        toolName: 'translate'
       });
 
       var listener = function (msg) {
@@ -338,8 +341,15 @@
 
   // === Global translate handler ===
   async function doGlobalTranslate() {
-    if (window.csPageParser.isPageTranslated()) {
-      window.csPageParser.hideTranslation();
+    // 检查页面是否处于隐藏状态（之前翻译过，但被隐藏了）
+    var isHidden = document.body.classList.contains('cs-page-hidden');
+    if (isHidden) {
+      // 之前有翻译结果，只是被隐藏了，重新显示
+      document.querySelectorAll('.cs-translation.hidden').forEach(function(el) {
+        el.classList.remove('hidden');
+      });
+      document.body.classList.remove('cs-page-hidden');
+      document.body.classList.add('cs-page-translated');
       if (radialContainer) buildRadialMenu();
       return;
     }
@@ -377,8 +387,22 @@
       return;
     }
 
-    if (window.csPageParser.isPageTranslated()) {
-      window.csPageParser.hideTranslation();
+    // 检查页面是否已经有翻译结果（包括显示和隐藏状态）
+    var hasTranslation = window.csPageParser.isPageTranslated();
+    if (hasTranslation) {
+      // 已经有翻译，检查是显示还是隐藏状态
+      var isHidden = document.body.classList.contains('cs-page-hidden');
+      if (isHidden) {
+        // 之前有翻译结果，只是被隐藏了，重新显示
+        document.querySelectorAll('.cs-translation.hidden').forEach(function(el) {
+          el.classList.remove('hidden');
+        });
+        document.body.classList.remove('cs-page-hidden');
+        document.body.classList.add('cs-page-translated');
+      } else {
+        // 翻译正在显示，隐藏它
+        window.csPageParser.hideTranslation();
+      }
       buildRadialMenu();
       return;
     }

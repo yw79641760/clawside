@@ -77,7 +77,6 @@
     // Also persist from side panel context (needed for tab switching)
     var proto = typeof window !== 'undefined' ? window.location.protocol : '';
     var isSidePanel = proto === 'chrome-extension:';
-    console.log('[DEBUG TCM persist] isContentScript:', isContentScript, 'isSidePanel:', isSidePanel, 'map size:', map.size, 'activeTabId:', activeTabId);
     if (!isContentScript && !isSidePanel) return;
 
     var version = Date.now(); // monotonic-ish timestamp
@@ -87,11 +86,9 @@
       lruOrder:    map.lruKeys,
       _version:    version,
     };
-    console.log('[DEBUG TCM persist] map.size:', map.size, 'map.lruKeys:', map.lruKeys, 'contexts count:', Object.keys(data.contexts || {}).length);
     chrome.storage.local.set({ _tabCtxData: data, _tabCtxVersion: version })
-      .then(() => console.log('[DEBUG TCM persist] saved OK'))
       .catch(function (e) {
-        console.error('[DEBUG TCM persist] save error:', e);
+        console.error('[TCM persist] save error:', e);
       });
   }
 
@@ -385,7 +382,6 @@
     // - side panel: chrome-extension:
     var proto = typeof window !== 'undefined' ? window.location.protocol : '';
     isContentScript = proto === 'http:' || proto === 'https:';
-    console.log('[DEBUG TCM init] context detection:', { proto, isContentScript });
 
     if (isContentScript) {
       // Content script: wire Chrome tab listeners
@@ -400,7 +396,6 @@
               map.set(key, data.contexts[key]);
             }
           }
-          console.log('[DEBUG TCM init] merged contexts, map.size:', map.size);
           wireContentScriptListeners();
           resolve();
         });

@@ -5,7 +5,7 @@
   'use strict';
 
   // Cache for parsed paragraphs (for lookups during translation)
-  var cachedParagraphs = [];
+  var cachedParagraphs = new Map();
 
   // Target tags for translation
   const TARGET_PARAGRAPH_TAG = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, [data-as="p"], [data-as="h1"], [data-as="h2"], [data-as="h3"], [data-as="h4"], [data-as="h5"], [data-as="h6"], [data-as="li"], [data-as="blockquote"]';
@@ -16,7 +16,7 @@
     // Step 1: 在原文档上打标（在克隆之前！）
     var originalEls = document.querySelectorAll(TARGET_PARAGRAPH_TAG);
 
-    var candidateEls = {};
+    var candidateEls = new Map();
     var result = [];
     originalEls.forEach(function(el, idx) {
       var text = el.textContent.trim();
@@ -24,13 +24,13 @@
         el.setAttribute('data-cs-idx', idx); // ← 先打标，原文档和克隆都会有
         // 获取语义标签类型：优先使用 data-as 属性，否则使用原始标签名
         var semanticTag = el.getAttribute('data-as') || el.tagName.toLowerCase();
-        candidateEls[idx] = {
+        candidateEls.set(idx, {
           idx: idx,
           tag: semanticTag,
           text: text,
           element: el,
           isSemantic: !!el.getAttribute('data-as') // 标记是否为语义等价标签
-        };
+        });
       }
     });
 
@@ -40,8 +40,9 @@
     var article = reader.parse();
 
     if (!article || !article.content) {
-      // candidateEls values for backup
-      return Object.values(candidateEls);
+      // candidateEls for backup
+      cachedParagraphs = candidateEls;
+      return [...cachedParagraphs.values()];
     }
 
     // Step 3: 克隆上读取 data-cs-idx，与 result 合并
@@ -50,14 +51,13 @@
     clonedEls.forEach(function(el) {
       var idx = el.getAttribute('data-cs-idx');
       idx = parseInt(idx);
-      var candidate = candidateEls[idx];
+      var candidate = candidateEls.get(idx);
       if (idx !== null && candidate) {
         result.push(candidate);
       }
     });
 
-    cachedParagraphs = result;
-    console.log('[Page] parseParagraph result:', result);
+    cachedParagraphs = new Map(result.map((el) => [el.idx, el]))
     return result;
   }
 
@@ -69,7 +69,7 @@
 
   // Show loading placeholder after a paragraph
   function showLoadingPlaceholder(idx) {
-    var para = cachedParagraphs[idx];
+    var para = cachedParagraphs.get(idx);
     if (!para || !para.element) return;
 
     // Clear any existing placeholder first
@@ -84,7 +84,7 @@
 
   // Show error placeholder after a paragraph (for timeout)
   function showErrorPlaceholder(idx) {
-    var para = cachedParagraphs[idx];
+    var para = cachedParagraphs.get(idx);
     if (!para || !para.element) return;
 
     // Clear any existing placeholder first
@@ -115,7 +115,7 @@
     if (!parent) return;
 
     // For semantic elements (data-as), append inside
-    var para = cachedParagraphs.find(function(p) { return p.element === originalEl; });
+    var para = [...cachedParagraphs.values()].find(function(p) { return p.element === originalEl; });
     if (para && para.isSemantic) {
       originalEl.appendChild(placeholder);
       return;
@@ -133,20 +133,18 @@
   // Insert translation elements into page
   // translations: {idx: {text, tag}, ...}
   function showTranslation(translations) {
-    // 先清空之前 hidden 的翻译元素和 loading/error 占位符
+    // 先清空之前 hidden 的翻译元素（保留 loading placeholder，稍后复用）
     document.querySelectorAll('.cs-translation.hidden').forEach(function(el) {
       el.remove();
     });
-    document.querySelectorAll('.cs-translation.cs-loading, .cs-translation.cs-error').forEach(function(el) {
-      el.remove();
-    });
+    // 不在这里删除 loading placeholder，留给下面的逻辑复用
+
     // 移除 hidden class
     document.body.classList.remove('cs-page-hidden');
     document.body.classList.add('cs-page-translated');
-
     Object.keys(translations).forEach(function(idx) {
       idx = parseInt(idx);
-      var para = cachedParagraphs[idx];
+      var para = cachedParagraphs.get(idx);
       if (!para) {
         console.log('[Page] showTranslation SKIPPED: idx=', idx, 'no paragraph data');
         return;
@@ -164,12 +162,42 @@
         return;
       }
 
-      console.log('[Page] showTranslation: idx=', idx, 'tag=', transData.tag, 'text=', transData.text);
       var text = transData.text;
       var transTag = transData.tag || 'p';
       var transEl;
 
-      if (transTag === 'li') {
+      // 优先查找已有的 loading placeholder，修改其内容而不是创建新元素
+      var existingPlaceholder = document.querySelector('.cs-translation.cs-loading[data-idx="' + idx + '"]');
+      if (existingPlaceholder) {
+        // 复用 placeholder，将其转换为翻译内容
+        existingPlaceholder.classList.remove('cs-loading');
+        existingPlaceholder.innerHTML = ''; // 清除 loading icon
+        existingPlaceholder.textContent = text;
+        return;
+      }
+
+      // 检查是否已有翻译元素存在（避免重复插入）
+      var existingTranslation = originalEl.querySelector('.cs-translation');
+      if (existingTranslation) {
+        // 已存在翻译，跳过
+        return;
+      }
+
+      // 检查同级的下一个兄弟节点是否是翻译元素
+      var nextEl = originalEl.nextSibling;
+      if (nextEl && nextEl.classList && nextEl.classList.contains('cs-translation')) {
+        // 已存在翻译（作为下一个兄弟节点），跳过
+        return;
+      }
+
+      // 如果没有 placeholder 和翻译，则创建新的翻译元素
+      // 如果原始元素有 data-as 属性（语义等价标签），将翻译插入到元素内部
+      if (para.isSemantic) {
+        transEl = document.createElement('span');
+        transEl.className = 'cs-translation';
+        transEl.textContent = text;
+        originalEl.appendChild(transEl);
+      } else if (transTag === 'li') {
         // List item: inline display via span
         transEl = document.createElement('span');
         transEl.className = 'cs-translation';
@@ -215,7 +243,6 @@
         var idxMatch = match.match(/idx="(\d+)"/);
         if (idxMatch) matchedIndices.push(idxMatch[1]);
       });
-      console.log('[Page] matched indices:', matchedIndices.join(','));
 
       matches.forEach(function(match) {
         var idxMatch = match.match(/idx="(\d+)"/);
@@ -245,7 +272,6 @@
         }
       });
     }
-    console.log('[Page] parseTranslationResponse result keys:', Object.keys(translations));
     return translations;
   }
 

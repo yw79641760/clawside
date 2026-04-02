@@ -274,6 +274,9 @@ const CONTENT_STYLES = `
     font-size: 0.95em;
     line-height: 1.5;
   }
+  .cs-translation.hidden {
+    display: none;
+  }
 `;
 
 /** Inject the content-script CSS bundle into the page. */
