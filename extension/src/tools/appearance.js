@@ -32,12 +32,109 @@ const THEMES = {
   },
 };
 
+/** Page theme CSS variable sets for translation text (adapts to page's light/dark mode). */
+const PAGE_THEMES = {
+  dark: {
+    '--cs-text': '#e6edf3',
+  },
+  light: {
+    '--cs-text': '#1f2328',
+  },
+};
+
 /** Determine effective appearance from setting + system preference. */
 function resolveAppearance(appearanceSetting = 'system') {
   if (appearanceSetting === 'system') {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
   return appearanceSetting;
+}
+
+/** Detect the current page's theme based on computed styles. */
+function detectPageTheme() {
+  // Helper: calculate brightness from RGB
+  function calcBrightness(r, g, b) {
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  }
+
+  // Helper: get brightness from an element
+  function getElementBrightness(el) {
+    if (!el) return null;
+    try {
+      const bg = getComputedStyle(el).backgroundColor;
+      if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') return null;
+      const match = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (match) {
+        const [, r, g, b] = match.map(Number);
+        return calcBrightness(r, g, b);
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  // Helper: detect theme from CSS class names on html/body
+  function detectFromClassName() {
+    const elements = [document.documentElement, document.body];
+    const darkPatterns = ['dark', 'dark-mode', 'dark-theme', 'theme-dark', 'night'];
+    const lightPatterns = ['light', 'light-mode', 'light-theme', 'theme-light', 'day'];
+
+    for (const el of elements) {
+      if (!el) continue;
+      const classList = el.className || '';
+      const classStr = typeof classList === 'string' ? classList : classList.value || '';
+
+      for (const pat of darkPatterns) {
+        if (classStr.includes(pat)) {
+          return 'dark';
+        }
+      }
+      for (const pat of lightPatterns) {
+        if (classStr.includes(pat)) {
+          return 'light';
+        }
+      }
+    }
+    return null;
+  }
+
+  // Try body first
+  let brightness = getElementBrightness(document.body);
+
+  // If body is transparent, try html element
+  if (brightness === null) {
+    brightness = getElementBrightness(document.documentElement);
+  }
+
+  // If still transparent, check common page containers
+  if (brightness === null) {
+    const selectors = ['#app', '#root', 'main', 'article', '.content', '.main', '#content'];
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        brightness = getElementBrightness(el);
+        if (brightness !== null) {
+          break;
+        }
+      }
+    }
+  }
+
+  // If we got a valid brightness, use it
+  if (brightness !== null) {
+    return brightness < 128 ? 'dark' : 'light';
+  }
+
+  // Try detecting from CSS class names
+  const classResult = detectFromClassName();
+  if (classResult) {
+    return classResult;
+  }
+
+  // Fallback: check prefers-color-scheme
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark';
+  }
+  return 'light';
 }
 
 /** Inject CSS custom-property theme variables into the page document root. */
@@ -290,6 +387,8 @@ function injectStyles() {
 
 // Expose globals for non-module scripts (content.js, popup.js, and dock.js are not ES modules)
 window.THEMES = THEMES;
+window.PAGE_THEMES = PAGE_THEMES;
 window.resolveAppearance = resolveAppearance;
+window.detectPageTheme = detectPageTheme;
 window.injectTheme = injectTheme;
 window.injectStyles = injectStyles;

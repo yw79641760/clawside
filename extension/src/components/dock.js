@@ -399,6 +399,10 @@
         });
         document.body.classList.remove('cs-page-hidden');
         document.body.classList.add('cs-page-translated');
+        // 重新注入页面theme，确保翻译颜色适配页面
+        if (window.csPageParser.injectPageTheme) {
+          window.csPageParser.injectPageTheme();
+        }
       } else {
         // 翻译正在显示，隐藏它
         window.csPageParser.hideTranslation();

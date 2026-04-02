@@ -130,6 +130,24 @@
     }
   }
 
+  // Inject page theme CSS variables for translation text color
+  function injectPageTheme() {
+    if (!window.PAGE_THEMES) return;
+    var pageTheme = window.detectPageTheme ? window.detectPageTheme() : 'light';
+    var vars = window.PAGE_THEMES[pageTheme] || window.PAGE_THEMES.light;
+    var existing = document.getElementById('cs-page-theme');
+    if (existing) existing.remove();
+    var s = document.createElement('style');
+    s.id = 'cs-page-theme';
+    var css = '.cs-translation {';
+    for (var k in vars) {
+      css += k + ':' + vars[k] + ' !important;';
+    }
+    css += '}';
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
   // Insert translation elements into page
   // translations: {idx: {text, tag}, ...}
   function showTranslation(translations) {
@@ -142,6 +160,10 @@
     // 移除 hidden class
     document.body.classList.remove('cs-page-hidden');
     document.body.classList.add('cs-page-translated');
+
+    // 注入页面theme，确保翻译文字颜色适配页面
+    injectPageTheme();
+
     Object.keys(translations).forEach(function(idx) {
       idx = parseInt(idx);
       var para = cachedParagraphs.get(idx);
