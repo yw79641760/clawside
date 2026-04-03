@@ -303,18 +303,10 @@
 
       var promptData = window.csPageParser.buildTranslationPrompt(batch, targetLang, settings);
 
-      chrome.runtime.sendMessage({
-        type: 'clawside-api',
-        prompt: promptData.userPrompt,
-        systemPrompt: promptData.systemPrompt,
-        port: settings.gatewayPort,
-        token: settings.authToken,
-        requestId: requestId,
-        toolName: 'translate'
-      });
-
       var listener = function (msg) {
-        if (msg.requestId !== requestId) return;
+        if (msg.requestId !== requestId) {
+          return true; // Continue propagation to other listeners
+        }
         if (msg.type === 'clawside-stream-chunk') {
           fullText += msg.chunk;
         } else if (msg.type === 'clawside-stream-done') {
@@ -335,7 +327,24 @@
           reject(new Error(msg.error));
         }
       };
+
+      // Add listener BEFORE sending the request to avoid race condition
       chrome.runtime.onMessage.addListener(listener);
+
+      // Get current tab ID for response routing
+      var currentTabId = window.tabContextManager?.getActiveTabId();
+
+      // Now send the API request
+      chrome.runtime.sendMessage({
+        type: 'clawside-api',
+        prompt: promptData.userPrompt,
+        systemPrompt: promptData.systemPrompt,
+        port: settings.gatewayPort,
+        token: settings.authToken,
+        requestId: requestId,
+        toolName: 'translate',
+        sourceTabId: currentTabId // Send current tab ID for response routing
+      });
 
       setTimeout(function () {
         chrome.runtime.onMessage.removeListener(listener);

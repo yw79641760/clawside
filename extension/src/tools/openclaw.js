@@ -47,9 +47,10 @@ export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
  * @param {string}   token
  * @param {string}   requestId
  * @param {string}   toolName
+ * @param {number|null} sourceTabId - Tab ID to send response back to (for content scripts)
  * @returns {Promise<void>}
  */
-export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default') {
+export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', sourceTabId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
@@ -72,9 +73,20 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
   let buffer = '';
 
   // Helper to send message back to extension (side panel, popup, etc.)
-  // Always use chrome.runtime.sendMessage - extension pages use runtime channel,
-  // not tabs channel. Tab sendMessage is only for content scripts in web pages.
+  // For content scripts, use chrome.tabs.sendMessage with the tab ID
+  // For extension pages (side panel, popup), use chrome.runtime.sendMessage
+  const targetTabId = sourceTabId;
   const sendMsg = (msg) => {
+    // If we have a target tab ID, try tabs.sendMessage first (for content scripts)
+    if (targetTabId) {
+      return chrome.tabs.sendMessage(targetTabId, msg)
+        .catch((e) => {
+          // Fall back to runtime.sendMessage
+          return chrome.runtime.sendMessage(msg).catch(() => {});
+        });
+    }
+
+    // No tab ID, use runtime.sendMessage
     return chrome.runtime.sendMessage(msg).catch(() => {});
   };
 

@@ -50,9 +50,9 @@ chrome.commands.onCommand.addListener((command) => {
 // === API calls (streaming + non-streaming) ===
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
-    const { prompt, systemPrompt, port, token, requestId, stream = true, toolName = 'default' } = msg;
+    const { prompt, systemPrompt, port, token, requestId, stream = true, toolName = 'default', sourceTabId } = msg;
     if (stream) {
-      apiStream(prompt, systemPrompt, port, token, requestId, toolName).catch((err) => {
+      apiStream(prompt, systemPrompt, port, token, requestId, toolName, sourceTabId).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
       });
     } else {
