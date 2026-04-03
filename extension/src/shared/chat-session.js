@@ -97,25 +97,31 @@
 
     // Build API request prompt (plain text) for better LLM adherence.
     // @param {boolean} includeContext - if true, include page context in system prompt (for first message)
-    buildPrompt(includeContext = true, extraSystemPrompt = '') {
+    // @param {boolean} includeHistory - if true, include full conversation history (default: false)
+    buildPrompt(includeContext = true, extraSystemPrompt = '', includeHistory = false) {
       const systemPrompt = includeContext ? this.buildSystemPrompt(extraSystemPrompt) : '';
 
-      // If the last assistant message is an empty streaming placeholder,
-      // omit it and ask the model to produce the next assistant answer.
+      // Only include the last user message (not full history) to reduce tokens
+      // OpenClaw/Gateway has its own memory
       const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
-      const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
-        ? this.messages.slice(0, -1)
-        : this.messages;
+      let convo = '';
 
-      const convo = msgsToInclude.map((msg) => {
-        const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
-        return `${roleLabel}: ${msg.content}`;
-      }).join('\n\n');
+      if (includeHistory) {
+        // Legacy: include full history for backward compatibility
+        const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
+          ? this.messages.slice(0, -1)
+          : this.messages;
+        convo = msgsToInclude.map((msg) => {
+          const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
+          return `${roleLabel}: ${msg.content}`;
+        }).join('\n\n');
+      } else if (lastMsg && lastMsg.role === 'user') {
+        // Only send the last user question + context
+        convo = `User: ${lastMsg.content}`;
+      }
 
-      // Only add tail if last included message is from assistant (continuing conversation).
-      // If last message is from user (or empty), the model should answer directly.
-      const needsTail = msgsToInclude.length > 0
-        && msgsToInclude[msgsToInclude.length - 1].role === 'assistant';
+      // Only add tail if last message is from assistant
+      const needsTail = lastMsg && lastMsg.role === 'assistant';
       const tail = needsTail ? 'Assistant:' : '';
 
       return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
