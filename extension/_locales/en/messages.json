@@ -61,6 +61,8 @@
   "labelToolAsk": { "message": "Ask" },
   "labelToolGlobalTranslate": { "message": "Global Translate" },
   "labelToolPrompt": { "message": "Prompt" },
+  "labelSystemPrompt": { "message": "System Prompt" },
+  "labelUserPrompt": { "message": "User Prompt" },
   "placeholderTranslateInput": { "message": "Select text on any page, or type here directly..." },
   "placeholderChatInput": { "message": "Type your question here..." },
   "placeholderAuthToken": { "message": "Enter token if gateway requires auth" },

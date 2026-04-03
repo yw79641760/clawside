@@ -60,6 +60,8 @@
   "labelToolAsk": { "message": "質問" },
   "labelToolGlobalTranslate": { "message": "全文翻訳" },
   "labelToolPrompt": { "message": "プロンプト" },
+  "labelSystemPrompt": { "message": "システムプロンプト" },
+  "labelUserPrompt": { "message": "ユーザープロンプト" },
   "placeholderTranslateInput": { "message": "任意のページでテキストを選択するか、ここに直接入力..." },
   "placeholderChatInput": { "message": "質問を入力..." },
   "placeholderAuthToken": { "message": "gateway が認証を必要とする場合はトークンを入力" },

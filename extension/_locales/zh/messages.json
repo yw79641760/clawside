@@ -61,6 +61,8 @@
   "labelToolAsk": { "message": "提问" },
   "labelToolGlobalTranslate": { "message": "全局翻译" },
   "labelToolPrompt": { "message": "Prompt" },
+  "labelSystemPrompt": { "message": "系统 Prompt" },
+  "labelUserPrompt": { "message": "用户 Prompt" },
   "placeholderTranslateInput": { "message": "在页面上选中文本，或直接在此输入..." },
   "placeholderChatInput": { "message": "在此输入问题..." },
   "placeholderAuthToken": { "message": "如果 gateway 需要认证，请输入 token" },

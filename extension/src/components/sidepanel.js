@@ -354,10 +354,16 @@
 
   function loadToolPrompts() {
     const prompts = settings.toolPrompts || {};
-    $('promptTranslate') && ($('promptTranslate').value = prompts.translate || DEFAULT_PROMPTS.translate);
-    $('promptSummarize') && ($('promptSummarize').value = prompts.summarize || DEFAULT_PROMPTS.summarize);
-    $('promptAsk') && ($('promptAsk').value = prompts.ask || DEFAULT_PROMPTS.ask);
-    $('promptGlobalTranslate') && ($('promptGlobalTranslate').value = prompts.globalTranslate || DEFAULT_PROMPTS.globalTranslate);
+    // Load system prompt (optional)
+    $('promptTranslateSystem') && ($('promptTranslateSystem').value = prompts.translate?.system || DEFAULT_PROMPTS.translate?.system || '');
+    $('promptSummarizeSystem') && ($('promptSummarizeSystem').value = prompts.summarize?.system || DEFAULT_PROMPTS.summarize?.system || '');
+    $('promptAskSystem') && ($('promptAskSystem').value = prompts.ask?.system || DEFAULT_PROMPTS.ask?.system || '');
+    $('promptGlobalTranslateSystem') && ($('promptGlobalTranslateSystem').value = prompts.globalTranslate?.system || DEFAULT_PROMPTS.globalTranslate?.system || '');
+    // Load user prompt (required)
+    $('promptTranslateUser') && ($('promptTranslateUser').value = prompts.translate?.user || DEFAULT_PROMPTS.translate?.user || '');
+    $('promptSummarizeUser') && ($('promptSummarizeUser').value = prompts.summarize?.user || DEFAULT_PROMPTS.summarize?.user || '');
+    $('promptAskUser') && ($('promptAskUser').value = prompts.ask?.user || DEFAULT_PROMPTS.ask?.user || '');
+    $('promptGlobalTranslateUser') && ($('promptGlobalTranslateUser').value = prompts.globalTranslate?.user || DEFAULT_PROMPTS.globalTranslate?.user || '');
   }
 
   function applyLanguage() {
@@ -1265,27 +1271,35 @@
 
   // Tool prompt reset buttons
   $('resetPromptTranslate')?.addEventListener('click', () => {
-    $('promptTranslate').value = DEFAULT_PROMPTS.translate;
+    $('promptTranslateSystem').value = DEFAULT_PROMPTS.translate?.system || '';
+    $('promptTranslateUser').value = DEFAULT_PROMPTS.translate?.user || '';
     saveToolPrompts();
   });
   $('resetPromptSummarize')?.addEventListener('click', () => {
-    $('promptSummarize').value = DEFAULT_PROMPTS.summarize;
+    $('promptSummarizeSystem').value = DEFAULT_PROMPTS.summarize?.system || '';
+    $('promptSummarizeUser').value = DEFAULT_PROMPTS.summarize?.user || '';
     saveToolPrompts();
   });
   $('resetPromptAsk')?.addEventListener('click', () => {
-    $('promptAsk').value = DEFAULT_PROMPTS.ask;
+    $('promptAskSystem').value = DEFAULT_PROMPTS.ask?.system || '';
+    $('promptAskUser').value = DEFAULT_PROMPTS.ask?.user || '';
     saveToolPrompts();
   });
   $('resetPromptGlobalTranslate')?.addEventListener('click', () => {
-    $('promptGlobalTranslate').value = DEFAULT_PROMPTS.globalTranslate;
+    $('promptGlobalTranslateSystem').value = DEFAULT_PROMPTS.globalTranslate?.system || '';
+    $('promptGlobalTranslateUser').value = DEFAULT_PROMPTS.globalTranslate?.user || '';
     saveToolPrompts();
   });
 
   // Auto-save tool prompts on input
-  $('promptTranslate')?.addEventListener('input', saveToolPrompts);
-  $('promptSummarize')?.addEventListener('input', saveToolPrompts);
-  $('promptAsk')?.addEventListener('input', saveToolPrompts);
-  $('promptGlobalTranslate')?.addEventListener('input', saveToolPrompts);
+  $('promptTranslateSystem')?.addEventListener('input', saveToolPrompts);
+  $('promptTranslateUser')?.addEventListener('input', saveToolPrompts);
+  $('promptSummarizeSystem')?.addEventListener('input', saveToolPrompts);
+  $('promptSummarizeUser')?.addEventListener('input', saveToolPrompts);
+  $('promptAskSystem')?.addEventListener('input', saveToolPrompts);
+  $('promptAskUser')?.addEventListener('input', saveToolPrompts);
+  $('promptGlobalTranslateSystem')?.addEventListener('input', saveToolPrompts);
+  $('promptGlobalTranslateUser')?.addEventListener('input', saveToolPrompts);
 
   translateBtn.addEventListener('click', doTranslate);
   targetLangSelect.addEventListener('change', () => {
@@ -1402,10 +1416,22 @@
     clearTimeout(toolPromptTimer);
     toolPromptTimer = setTimeout(() => {
       settings.toolPrompts = {
-        translate: $('promptTranslate').value,
-        summarize: $('promptSummarize').value,
-        ask: $('promptAsk').value,
-        globalTranslate: $('promptGlobalTranslate').value
+        translate: {
+          system: $('promptTranslateSystem').value,
+          user: $('promptTranslateUser').value
+        },
+        summarize: {
+          system: $('promptSummarizeSystem').value,
+          user: $('promptSummarizeUser').value
+        },
+        ask: {
+          system: $('promptAskSystem').value,
+          user: $('promptAskUser').value
+        },
+        globalTranslate: {
+          system: $('promptGlobalTranslateSystem').value,
+          user: $('promptGlobalTranslateUser').value
+        }
       };
       chrome.storage.local.set({ clawside_settings: settings });
     }, 500);
