@@ -74,8 +74,9 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
 
   // Helper to send message to either tab or runtime
   const sendMsg = (msg) => {
+    console.log('[ClawSide OpenCLAW] sendMsg to targetTabId:', targetTabId, 'msg:', msg.type, 'requestId:', msg.requestId);
     if (targetTabId) {
-      return chrome.tabs.sendMessage(targetTabId, msg).catch(() => {});
+      return chrome.tabs.sendMessage(targetTabId, msg).catch((e) => { console.log('[ClawSide OpenCLAW] sendMessage error:', e.message); });
     } else {
       return chrome.runtime.sendMessage(msg).catch(() => {});
     }

@@ -51,6 +51,7 @@ chrome.commands.onCommand.addListener((command) => {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
     const { prompt, systemPrompt, port, token, requestId, stream = true, toolName = 'default', sourceTabId } = msg;
+    console.log('[ClawSide BG] clawside-api received, requestId:', requestId, 'sourceTabId:', sourceTabId);
     // Use sourceTabId if provided, otherwise fall back to sender.tab (for backward compatibility)
     const targetTabId = sourceTabId || (_sender.tab ? _sender.tab.id : null);
     if (stream) {

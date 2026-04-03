@@ -938,6 +938,7 @@
       }, 90000);
 
       const handler = (msg) => {
+        console.log('[ClawSide] apiCall received:', msg.type, 'requestId:', msg.requestId, 'expected:', requestId);
         if (msg.requestId !== requestId) return;
 
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
