@@ -107,11 +107,8 @@
       const lastUserMsg = this.getLastUserMessage();
       const question = lastUserMsg ? lastUserMsg.content : '';
 
-      // Only add tail if last message is from assistant (model should continue)
-      const hasMessages = this.messages.length > 0;
-      const lastMsg = this.messages[this.messages.length - 1];
-      const needsTail = hasMessages && lastMsg && lastMsg.role === 'assistant';
-      const tail = needsTail ? 'Assistant:' : '';
+      // No tail needed - model generates naturally without prompt hint
+      const tail = '';
 
       // Combine: system + user (with context + question) + tail
       return [systemPrompt, userPrompt, question, tail].filter(Boolean).join('\n\n');
