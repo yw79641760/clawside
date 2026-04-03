@@ -307,10 +307,28 @@
     var promptTemplate = settings?.toolPrompts?.globalTranslate
       || window.csSettings.DEFAULT_PROMPTS.globalTranslate;
 
-    var template = promptTemplate || 'Translate the following paragraphs to {lang}:\n\n{paragraphs}\n\nOutput format: <p idx="0" tag="p">translation</p>';
-    return template
+    // Support both old string format and new object format
+    var systemPrompt = '';
+    var userTemplate = '';
+
+    if (typeof promptTemplate === 'string') {
+      // Old format: string template
+      userTemplate = promptTemplate;
+    } else if (promptTemplate && typeof promptTemplate === 'object') {
+      // New format: { system, user }
+      systemPrompt = promptTemplate.system || '';
+      userTemplate = promptTemplate.user || '';
+    }
+
+    if (!userTemplate) {
+      userTemplate = 'Translate the following paragraphs to {lang}:\n\n{paragraphs}\n\nOutput format: <p idx="0" tag="p">translation</p>';
+    }
+
+    var userPrompt = userTemplate
       .replace(/{lang}/g, targetLang)
       .replace(/{paragraphs}/g, contentText);
+
+    return { systemPrompt, userPrompt };
   }
 
   // Public API

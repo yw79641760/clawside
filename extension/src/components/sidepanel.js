@@ -894,7 +894,7 @@
   }
 
   // === API via background script (streaming) ===
-  function apiCall(prompt, { onChunk, toolName = 'default' } = {}) {
+  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
@@ -931,6 +931,7 @@
       chrome.runtime.sendMessage({
         type: 'clawside-api',
         prompt,
+        systemPrompt,
         toolName,  // e.g. 'translate', 'summarize', 'ask' — Gateway derives user="clawside:{toolName}" for session复用
         port: settings.gatewayPort || DEFAULT_PORT,
         token: settings.authToken || '',
@@ -962,9 +963,11 @@
         const translateLang = settings.translateLanguage;
         targetLang = (!translateLang || translateLang === 'auto') ? browserLang : (translateLang || browserLang);
       }
-      const template = settings.toolPrompts?.translate || DEFAULT_PROMPTS.translate;
-      const prompt = applyPrompt(template, { text, lang: targetLang });
-      await apiCall(prompt, {
+      const templates = window.csSettings.getPromptTemplates(settings, 'translate');
+      const systemPrompt = templates ? applyPrompt(templates.system, { lang: targetLang }) : '';
+      const userPrompt = templates ? applyPrompt(templates.user, { text, lang: targetLang }) : '';
+      await apiCall(userPrompt, {
+        systemPrompt,
         toolName: 'translate',
         onChunk: (chunk) => {
           translateStreaming.appendChunk(chunk);
@@ -1048,16 +1051,18 @@
     showLoading('Summarizing...');
     try {
       await loadSettings();
-      const template = settings.toolPrompts?.summarize || DEFAULT_PROMPTS.summarize;
+      const templates = window.csSettings.getPromptTemplates(settings, 'summarize');
       const lang = window.resolveLang(settings.language, browserLang);
       const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
-      const prompt = applyPrompt(template, {
+      const systemPrompt = templates ? applyPrompt(templates.system, { lang: langLabel }) : '';
+      const userPrompt = templates ? applyPrompt(templates.user, {
         lang: langLabel,
         title: window.panelContext.getCurrentPageTitle(),
         url: window.panelContext.getCurrentUrl(),
         content: pageContent ? pageContent.slice(0, 8000) : ''
-      });
-      await apiCall(prompt, {
+      }) : '';
+      await apiCall(userPrompt, {
+        systemPrompt,
         toolName: 'summarize',
         onChunk: (chunk) => {
           summarizeStreaming.appendChunk(chunk);

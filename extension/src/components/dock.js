@@ -299,11 +299,12 @@
         }
       });
 
-      var prompt = window.csPageParser.buildTranslationPrompt(batch, targetLang, settings);
+      var promptData = window.csPageParser.buildTranslationPrompt(batch, targetLang, settings);
 
       chrome.runtime.sendMessage({
         type: 'clawside-api',
-        prompt: prompt,
+        prompt: promptData.userPrompt,
+        systemPrompt: promptData.systemPrompt,
         port: settings.gatewayPort,
         token: settings.authToken,
         requestId: requestId,

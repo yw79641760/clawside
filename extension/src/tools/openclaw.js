@@ -21,11 +21,16 @@ export function buildHeaders(token) {
 /**
  * Build the common request body for chat completions.
  */
-export function buildBody(prompt, toolName = 'default') {
+export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: 'system', content: systemPrompt });
+  }
+  messages.push({ role: 'user', content: prompt });
   return {
     model: 'openclaw/main',
     user: 'clawside:' + toolName,
-    messages: [{ role: 'user', content: prompt }]
+    messages
   };
 }
 
@@ -37,6 +42,7 @@ export function buildBody(prompt, toolName = 'default') {
  * On error, 'clawside-stream-error' is sent.
  *
  * @param {string}   prompt
+ * @param {string}   systemPrompt
  * @param {string}   port
  * @param {string}   token
  * @param {string}   requestId
@@ -44,11 +50,11 @@ export function buildBody(prompt, toolName = 'default') {
  * @param {number|null} targetTabId - If provided, send messages to specific tab via chrome.tabs.sendMessage
  * @returns {Promise<void>}
  */
-export async function apiStream(prompt, port, token, requestId, toolName = 'default', targetTabId = null) {
+export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', targetTabId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
-    ...buildBody(prompt, toolName),
+    ...buildBody(prompt, toolName, systemPrompt),
     stream: true
   };
 
@@ -113,11 +119,11 @@ export async function apiStream(prompt, port, token, requestId, toolName = 'defa
  * @param {string}   toolName
  * @returns {Promise<void>}
  */
-export async function apiNonStream(prompt, port, token, requestId, toolName = 'default') {
+export async function apiNonStream(prompt, systemPrompt, port, token, requestId, toolName = 'default') {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
-    ...buildBody(prompt, toolName),
+    ...buildBody(prompt, toolName, systemPrompt),
     stream: false
   };
 
@@ -143,10 +149,10 @@ export async function apiNonStream(prompt, port, token, requestId, toolName = 'd
  * @param {string}   toolName
  * @returns {Promise<string>}
  */
-export async function apiCall(prompt, port, token, toolName = 'default') {
+export async function apiCall(prompt, systemPrompt, port, token, toolName = 'default') {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
-  const body = buildBody(prompt, toolName);
+  const body = buildBody(prompt, toolName, systemPrompt);
 
   const res = await fetch(`${url}/v1/chat/completions`, {
     method: 'POST',
