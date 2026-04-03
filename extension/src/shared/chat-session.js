@@ -96,6 +96,7 @@
     }
 
     // Build API request prompt (plain text) for better LLM adherence.
+    // @param {boolean} includeContext - if true, include page context in system prompt (for first message)
     buildPrompt(includeContext = true, extraSystemPrompt = '') {
       const systemPrompt = includeContext ? this.buildSystemPrompt(extraSystemPrompt) : '';
 

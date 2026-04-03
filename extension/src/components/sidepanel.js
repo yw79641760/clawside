@@ -766,9 +766,11 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
+      // Only include page context on first message (when messages is empty or only has user question)
       await loadSettings();
       const langCode = window.resolveLang(settings.language, browserLang);
       const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
+      const hasMessages = chatSession.messages.length > 0;
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
@@ -776,7 +778,8 @@
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
       const extraSystemPrompt = `Response language: ${langLabel}.`;
-      const promptText = chatSession.buildPrompt(true, extraSystemPrompt);
+      // Only include page context on first message (no prior conversation)
+      const promptText = chatSession.buildPrompt(!hasMessages, extraSystemPrompt);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
