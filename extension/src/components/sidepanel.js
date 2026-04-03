@@ -678,9 +678,12 @@
     div.className = 'chat-message assistant';
     div.dataset.streaming = 'true';
 
+    // Show i18n "thinking" key while waiting
+    const thinkingText = chrome.i18n.getMessage('thinking') || 'Thinking';
+
     div.innerHTML = `
       <div class="message-avatar"><img src="../assets/icons/icon16.png" width="28" height="28" alt="AI"></div>
-      <div class="message-content streaming"></div>
+      <div class="message-content streaming">${thinkingText}</div>
     `;
 
     chatMessages.appendChild(div);
