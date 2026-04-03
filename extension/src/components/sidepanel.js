@@ -200,13 +200,27 @@
   const summarizeStreaming = new StreamingResult({ element: summarizeResultText });
 
   // === Utilities ===
-  function showLoading(text) {
+  function showLoading(text, btnElement = null, btnI18nKey = '') {
     loadingText.textContent = text;
     loadingOverlay.classList.remove('hidden');
+    // Update button state if provided
+    if (btnElement) {
+      btnElement.disabled = true;
+      if (btnI18nKey) {
+        btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
+      }
+    }
   }
 
-  function hideLoading() {
+  function hideLoading(btnElement = null, btnI18nKey = '') {
     loadingOverlay.classList.add('hidden');
+    // Restore button state if provided
+    if (btnElement) {
+      btnElement.disabled = false;
+      if (btnI18nKey) {
+        btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
+      }
+    }
   }
 
   function showStatus(el, message, type = 'error') {
@@ -959,8 +973,7 @@
     }
     translateStreaming.reset();
     translateResult.classList.add('hidden');
-    translateBtn.disabled = true;
-    showLoading('Translating...');
+    showLoading('', translateBtn, 'labelTranslateBtn');
     try {
       await loadSettings();
       let targetLang = targetLangSelect.value;
@@ -990,8 +1003,7 @@
     } catch (err) {
       showStatus(translateStatus, err.message);
     } finally {
-      hideLoading();
-      translateBtn.disabled = false;
+      hideLoading(translateBtn, 'labelTranslateBtn');
     }
   }
 
@@ -1019,14 +1031,13 @@
 
     summarizeStreaming.reset();
     summarizeResult.classList.add('hidden');
-    summarizeBtn.disabled = true;
 
     // Reuse currentPageContent from shared context; re-extract only if stale/empty
     let pageContent = window.panelContext.getCurrentPageContent();
     let extractionFailed = false;
 
     if (!pageContent || pageContent.trim().length < 100) {
-      showLoading('Extracting page content...');
+      showLoading(chrome.i18n.getMessage('loading'));
       try {
         if (tab?.id) {
           const results = await chrome.scripting.executeScript({
@@ -1054,7 +1065,7 @@
       return;
     }
 
-    showLoading('Summarizing...');
+    showLoading('', summarizeBtn, 'labelSummarizeBtn');
     try {
       await loadSettings();
       const templates = window.csSettings.getPromptTemplates(settings, 'summarize');
@@ -1090,8 +1101,7 @@
     } catch (err) {
       showStatus(summarizeStatus, err.message);
     } finally {
-      hideLoading();
-      summarizeBtn.disabled = false;
+      hideLoading(summarizeBtn, 'labelSummarizeBtn');
     }
   }
 
