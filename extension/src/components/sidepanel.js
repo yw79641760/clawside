@@ -206,7 +206,8 @@
     if (btnElement) {
       btnElement.disabled = true;
       if (btnI18nKey) {
-        btnElement.innerHTML = svgIcon('loading') + ' ' + chrome.i18n.getMessage(btnI18nKey);
+        // Icon after text: "Translating ◌"
+        btnElement.innerHTML = chrome.i18n.getMessage(btnI18nKey) + ' ' + svgIcon('loading');
       }
       return;
     }
