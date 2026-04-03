@@ -775,16 +775,13 @@
       // Build prompt with conversation history
       // Use firstAsk flag to include page context only on first message
       await loadSettings();
-      const langCode = window.resolveLang(settings.language, browserLang);
-      const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const extraSystemPrompt = `Response language: ${langLabel}.`;
-      const promptText = chatSession.buildPrompt(firstAsk, extraSystemPrompt);
+      const promptText = chatSession.buildPrompt(firstAsk);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
