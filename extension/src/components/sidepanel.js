@@ -918,12 +918,11 @@
   }
 
   // === API via background script (streaming) ===
-  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '', loadingBtn = null, loadingBtnKey = '' } = {}) {
+  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
       let settled = false;
-      let chunkShown = false; // true after first chunk received → hide loading
 
       const cleanup = () => {
         clearTimeout(timeout);
@@ -940,8 +939,6 @@
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
           fullText += msg.chunk;
           onChunk(msg.chunk, fullText);
-          // First chunk → restore button state (if loading button was set)
-          if (!chunkShown) { chunkShown = true; hideLoading(loadingBtn, loadingBtnKey); }
         }
         if (msg.type === 'clawside-stream-done') {
           if (!settled) { settled = true; cleanup(); resolve(fullText); }
@@ -992,8 +989,6 @@
       await apiCall(userPrompt, {
         systemPrompt,
         toolName: 'translate',
-        loadingBtn: translateBtn,
-        loadingBtnKey: 'translating',
         onChunk: (chunk) => {
           translateStreaming.appendChunk(chunk);
           translateResult.classList.remove('hidden');
@@ -1087,8 +1082,6 @@
       await apiCall(userPrompt, {
         systemPrompt,
         toolName: 'summarize',
-        loadingBtn: summarizeBtn,
-        loadingBtnKey: 'summarizing',
         onChunk: (chunk) => {
           summarizeStreaming.appendChunk(chunk);
           summarizeResult.classList.remove('hidden');
