@@ -96,85 +96,87 @@
     }
 
     // Build API request prompt (plain text) for better LLM adherence.
-    // @param {boolean} includeContext - if true, include page context in system prompt (for first message)
+    // @param {boolean} includeContext - if true, include page context in user prompt (for first message)
     // @param {boolean} includeHistory - if true, include full conversation history (default: false)
     buildPrompt(includeContext = true, extraSystemPrompt = '', includeHistory = false) {
-      const systemPrompt = includeContext ? this.buildSystemPrompt(extraSystemPrompt) : '';
+      // System prompt: tool definition only (role, capabilities, boundaries)
+      const systemPrompt = this.buildSystemPrompt(extraSystemPrompt);
 
-      // Only include the last user message (not full history) to reduce tokens
-      // OpenClaw/Gateway has its own memory
-      let convo = '';
+      // Build user prompt with page context (if first message)
+      const userPrompt = includeContext ? this.buildUserPrompt() : '';
+      const lastUserMsg = this.getLastUserMessage();
+      const question = lastUserMsg ? lastUserMsg.content : '';
 
-      if (includeHistory) {
-        // Legacy: include full history for backward compatibility
-        // Filter out messages with empty content
-        const msgsToInclude = this.messages.filter((msg) => String(msg.content || '').trim());
-        convo = msgsToInclude.map((msg) => {
-          const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
-          return `${roleLabel}: ${msg.content}`;
-        }).join('\n\n');
-      } else {
-        // Find the last user message with non-empty content
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          const msg = this.messages[i];
-          if (msg.role === 'user' && String(msg.content || '').trim()) {
-            convo = `User: ${msg.content}`;
-            break;
-          }
-        }
-      }
-
-      // Only add tail if there are messages and last is from assistant (model should continue)
+      // Only add tail if last message is from assistant (model should continue)
       const hasMessages = this.messages.length > 0;
       const lastMsg = this.messages[this.messages.length - 1];
       const needsTail = hasMessages && lastMsg && lastMsg.role === 'assistant';
       const tail = needsTail ? 'Assistant:' : '';
 
-      return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
+      // Combine: system + user (with context + question) + tail
+      return [systemPrompt, userPrompt, question, tail].filter(Boolean).join('\n\n');
     }
 
-    // Build system prompt with page context
+    // Build system prompt - tool definition only (no page context)
     buildSystemPrompt(extraSystemPrompt = '') {
-      const parts = [];
-
-      parts.push([
+      const parts = [
         'You are a helpful assistant for webpage Q&A.',
-        'Follow the user question and use the provided page context.',
-        'If selected text is present, prefer it over the full content.',
-        'If the answer cannot be found in the provided context, say so explicitly and explain what is missing.',
+        'Use the provided page context to answer the user question.',
+        'If selected text is present, prioritize it over full content.',
+        'If the answer cannot be found in the provided context, say so explicitly.',
         'Respond in Markdown.',
         'Be concise: prefer 3-8 bullet points or short paragraphs.'
-      ].join('\n'));
+      ];
 
+      if (extraSystemPrompt) {
+        parts.push(extraSystemPrompt);
+      }
+
+      return parts.join('\n');
+    }
+
+    // Build user prompt - includes page context and user question
+    buildUserPrompt() {
+      const parts = [];
+
+      // Page basic info
       if (this.context.title || this.context.url) {
-        const contextInfo = [
-          'Current page:',
-          this.context.title ? `- Title: ${this.context.title}` : null,
-          this.context.url ? `- URL: ${this.context.url}` : null
+        const pageInfo = [
+          'Page context:',
+          this.context.title ? `Title: ${this.context.title}` : null,
+          this.context.url ? `URL: ${this.context.url}` : null
         ].filter(Boolean).join('\n');
-        parts.push(contextInfo);
+        parts.push(pageInfo);
       }
 
+      // Selected text
       if (this.context.selectedText && String(this.context.selectedText).trim()) {
-        parts.push('User-selected text from the page (prioritize this when relevant):\n'
-          + `"${String(this.context.selectedText).trim()}"`);
+        parts.push('User-selected text:\n' + `"${String(this.context.selectedText).trim()}"`);
       }
 
-      var body = this.context.content && String(this.context.content).trim()
+      // Page content
+      const body = this.context.content && String(this.context.content).trim()
         ? String(this.context.content).trim()
         : '';
       if (body) {
-        var truncated = body.length > ASK_PAGE_CONTENT_MAX
+        const truncated = body.length > ASK_PAGE_CONTENT_MAX
           ? body.slice(0, ASK_PAGE_CONTENT_MAX)
           : body;
-        parts.push('Page main content (excerpt for this tab; may be partial):\n' + truncated
-          + (body.length > ASK_PAGE_CONTENT_MAX
-            ? '\n\n[Truncated — refresh context in the panel if you need more.]'
-            : ''));
+        parts.push('Page content' + (body.length > ASK_PAGE_CONTENT_MAX ? ' (truncated)' : '') + ':\n' + truncated);
       }
 
-      const base = parts.join('\n\n');
-      return extraSystemPrompt ? `${base}\n\n${extraSystemPrompt}` : base;
+      return parts.join('\n\n');
+    }
+
+    // Get last user message with non-empty content
+    getLastUserMessage() {
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        const msg = this.messages[i];
+        if (msg.role === 'user' && String(msg.content || '').trim()) {
+          return msg;
+        }
+      }
+      return null;
     }
 
     // Save to storage (via LRU cache)
