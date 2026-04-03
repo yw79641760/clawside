@@ -103,11 +103,11 @@
 
       // Only include the last user message (not full history) to reduce tokens
       // OpenClaw/Gateway has its own memory
-      const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
       let convo = '';
 
       if (includeHistory) {
         // Legacy: include full history for backward compatibility
+        const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
         const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
           ? this.messages.slice(0, -1)
           : this.messages;
@@ -115,13 +115,21 @@
           const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
           return `${roleLabel}: ${msg.content}`;
         }).join('\n\n');
-      } else if (lastMsg && lastMsg.role === 'user') {
-        // Only send the last user question + context
-        convo = `User: ${lastMsg.content}`;
+      } else {
+        // Find the last user message (not assistant)
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          const msg = this.messages[i];
+          if (msg.role === 'user' && String(msg.content || '').trim()) {
+            convo = `User: ${msg.content}`;
+            break;
+          }
+        }
       }
 
-      // Only add tail if last message is from assistant
-      const needsTail = lastMsg && lastMsg.role === 'assistant';
+      // Only add tail if there are messages and last is from assistant (model should continue)
+      const hasMessages = this.messages.length > 0;
+      const lastMsg = this.messages[this.messages.length - 1];
+      const needsTail = hasMessages && lastMsg && lastMsg.role === 'assistant';
       const tail = needsTail ? 'Assistant:' : '';
 
       return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
