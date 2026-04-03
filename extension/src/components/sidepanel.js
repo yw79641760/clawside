@@ -205,7 +205,7 @@
     if (btnElement) {
       btnElement.disabled = true;
       if (btnI18nKey) {
-        btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
+        btnElement.innerHTML = svgIcon('loading') + ' ' + chrome.i18n.getMessage(btnI18nKey);
       }
       return;
     }
