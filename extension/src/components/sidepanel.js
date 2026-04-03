@@ -918,7 +918,11 @@
   }
 
   // === API via background script (streaming) ===
-  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
+  async function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
+    // Get current tab ID at request time to ensure we send response to correct tab
+    const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const sourceTabId = currentTab?.id || null;
+
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
@@ -953,7 +957,8 @@
         type: 'clawside-api',
         prompt,
         systemPrompt,
-        toolName,  // e.g. 'translate', 'summarize', 'ask' — Gateway derives user="clawside:{toolName}" for session复用
+        toolName,
+        sourceTabId,
         port: settings.gatewayPort || DEFAULT_PORT,
         token: settings.authToken || '',
         requestId
