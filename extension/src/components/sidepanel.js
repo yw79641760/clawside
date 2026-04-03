@@ -264,6 +264,23 @@
     settingsBtn.classList.toggle('active', tab === 'settings');
     window.panelContext.updateVisibility(tab);
 
+    // When entering summarize tab, check if there's a pending result from another tab
+    if (tab === 'summarize') {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const currentTabId = activeTab?.id || null;
+      if (currentTabId && pendingResults.has(currentTabId)) {
+        const pending = pendingResults.get(currentTabId);
+        if (pending?.fullText) {
+          summarizeStreaming.reset();
+          summarizeStreaming.appendChunk(pending.fullText);
+          summarizeStreaming.flush();
+          summarizeResult.classList.remove('hidden');
+          // Clear the pending result after showing
+          pendingResults.delete(currentTabId);
+        }
+      }
+    }
+
     if (tab === 'history') renderHistory();
     if (tab === 'settings') {
       updateTokenStatus();
@@ -918,8 +935,11 @@
   }
 
   // === API via background script (streaming) ===
+  // Store pending results per source tab so they can be restored when user switches back
+  const pendingResults = new Map(); // requestTabId -> { fullText, toolName }
+
   async function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
-    // Get current tab ID at request time to ensure we send response to correct tab
+    // Get current tab ID at request time - this is where response should go
     const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const sourceTabId = currentTab?.id || null;
 
@@ -927,22 +947,47 @@
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
       let settled = false;
+      // Capture sourceTabId at closure for response validation
+      const requestTabId = sourceTabId;
 
       const cleanup = () => {
         clearTimeout(timeout);
         chrome.runtime.onMessage.removeListener(handler);
+        // Clean up pending result for this request
+        pendingResults.delete(requestTabId);
       };
 
       const timeout = setTimeout(() => {
         if (!settled) { settled = true; cleanup(); reject(new Error('Request timeout')); }
       }, 90000);
 
-      const handler = (msg) => {
-        console.log('[ClawSide] apiCall received:', msg.type, 'requestId:', msg.requestId, 'expected:', requestId);
+      const handler = async (msg) => {
         if (msg.requestId !== requestId) return;
 
-        if (msg.type === 'clawside-stream-chunk' && onChunk) {
+        // Before processing chunk, verify current tab matches source tab
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const currentTabId = activeTab?.id || null;
+
+        // Track result for later restoration
+        if (msg.type === 'clawside-stream-chunk') {
           fullText += msg.chunk;
+          // Store accumulated result
+          if (requestTabId) {
+            pendingResults.set(requestTabId, { fullText, toolName });
+          }
+        }
+
+        // If user switched to different tab, don't update UI but keep accumulating text
+        if (requestTabId && currentTabId !== requestTabId) {
+          if (msg.type === 'clawside-stream-done') {
+            if (!settled) { settled = true; cleanup(); resolve(fullText); }
+          } else if (msg.type === 'clawside-stream-error') {
+            if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
+          }
+          return;
+        }
+
+        if (msg.type === 'clawside-stream-chunk' && onChunk) {
           onChunk(msg.chunk, fullText);
         }
         if (msg.type === 'clawside-stream-done') {
@@ -1599,6 +1644,19 @@
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {
       await window.panelContext.updatePageContext();
       await refreshChatContext();
+      // Check if there's a pending summarize result for this browser tab
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const currentTabId = activeTab?.id || null;
+      if (currentTabId && pendingResults.has(currentTabId)) {
+        const pending = pendingResults.get(currentTabId);
+        if (pending?.fullText) {
+          summarizeStreaming.reset();
+          summarizeStreaming.appendChunk(pending.fullText);
+          summarizeStreaming.flush();
+          summarizeResult.classList.remove('hidden');
+          pendingResults.delete(currentTabId);
+        }
+      }
     });
 
     // Listen for same-tab URL changes (including SPA client-side navigation)

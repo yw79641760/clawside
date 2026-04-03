@@ -47,10 +47,9 @@ export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
  * @param {string}   token
  * @param {string}   requestId
  * @param {string}   toolName
- * @param {number|null} targetTabId - If provided, send messages to specific tab via chrome.tabs.sendMessage
  * @returns {Promise<void>}
  */
-export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', targetTabId = null) {
+export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default') {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
@@ -72,14 +71,11 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
   const decoder = new TextDecoder();
   let buffer = '';
 
-  // Helper to send message to either tab or runtime
+  // Helper to send message back to extension (side panel, popup, etc.)
+  // Always use chrome.runtime.sendMessage - extension pages use runtime channel,
+  // not tabs channel. Tab sendMessage is only for content scripts in web pages.
   const sendMsg = (msg) => {
-    console.log('[ClawSide OpenCLAW] sendMsg to targetTabId:', targetTabId, 'msg:', msg.type, 'requestId:', msg.requestId);
-    if (targetTabId) {
-      return chrome.tabs.sendMessage(targetTabId, msg).catch((e) => { console.log('[ClawSide OpenCLAW] sendMessage error:', e.message); });
-    } else {
-      return chrome.runtime.sendMessage(msg).catch(() => {});
-    }
+    return chrome.runtime.sendMessage(msg).catch(() => {});
   };
 
   while (true) {
