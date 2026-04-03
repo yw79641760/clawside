@@ -201,26 +201,30 @@
 
   // === Utilities ===
   function showLoading(text, btnElement = null, btnI18nKey = '') {
-    loadingText.textContent = text;
-    loadingOverlay.classList.remove('hidden');
-    // Update button state if provided
+    // If button element is provided, only update button state (no overlay)
     if (btnElement) {
       btnElement.disabled = true;
       if (btnI18nKey) {
         btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
       }
+      return;
     }
+    // Otherwise show the overlay
+    loadingText.textContent = text;
+    loadingOverlay.classList.remove('hidden');
   }
 
   function hideLoading(btnElement = null, btnI18nKey = '') {
-    loadingOverlay.classList.add('hidden');
-    // Restore button state if provided
+    // If button element is provided, only restore button state (no overlay)
     if (btnElement) {
       btnElement.disabled = false;
       if (btnI18nKey) {
         btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
       }
+      return;
     }
+    // Otherwise hide the overlay
+    loadingOverlay.classList.add('hidden');
   }
 
   function showStatus(el, message, type = 'error') {
@@ -914,7 +918,7 @@
   }
 
   // === API via background script (streaming) ===
-  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
+  function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '', loadingBtn = null, loadingBtnKey = '' } = {}) {
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       let fullText = '';
@@ -936,8 +940,8 @@
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
           fullText += msg.chunk;
           onChunk(msg.chunk, fullText);
-          // First chunk → hide loading overlay immediately
-          if (!chunkShown) { chunkShown = true; hideLoading(); }
+          // First chunk → restore button state (if loading button was set)
+          if (!chunkShown) { chunkShown = true; hideLoading(loadingBtn, loadingBtnKey); }
         }
         if (msg.type === 'clawside-stream-done') {
           if (!settled) { settled = true; cleanup(); resolve(fullText); }
@@ -988,6 +992,8 @@
       await apiCall(userPrompt, {
         systemPrompt,
         toolName: 'translate',
+        loadingBtn: translateBtn,
+        loadingBtnKey: 'labelTranslateBtn',
         onChunk: (chunk) => {
           translateStreaming.appendChunk(chunk);
           translateResult.classList.remove('hidden');
@@ -1081,6 +1087,8 @@
       await apiCall(userPrompt, {
         systemPrompt,
         toolName: 'summarize',
+        loadingBtn: summarizeBtn,
+        loadingBtnKey: 'labelSummarizeBtn',
         onChunk: (chunk) => {
           summarizeStreaming.appendChunk(chunk);
           summarizeResult.classList.remove('hidden');
