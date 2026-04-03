@@ -20,6 +20,7 @@
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
+  let firstAsk = true; // flag to include page context on first message
 
   // === Apply Prompt with special variables (hasSelection, hasContent) ===
   var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
@@ -732,6 +733,8 @@
       if (chatSession) {
         chatSession.updateLastAssistantMessage(content);
         chatSession.save();
+        // First message sent, subsequent messages don't need page context
+        firstAsk = false;
       }
     }
   }
@@ -766,11 +769,10 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Only include page context on first message (when messages is empty or only has user question)
+      // Use firstAsk flag to include page context only on first message
       await loadSettings();
       const langCode = window.resolveLang(settings.language, browserLang);
       const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
-      const hasMessages = chatSession.messages.length > 0;
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
@@ -778,8 +780,7 @@
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
       const extraSystemPrompt = `Response language: ${langLabel}.`;
-      // Only include page context on first message (no prior conversation)
-      const promptText = chatSession.buildPrompt(!hasMessages, extraSystemPrompt);
+      const promptText = chatSession.buildPrompt(firstAsk, extraSystemPrompt);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
