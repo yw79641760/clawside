@@ -200,8 +200,10 @@
     buildRadialMenu();
     positionRadialMenu();
     backdrop.classList.add('visible');
-    document.querySelectorAll('.cs-radial-btn').forEach(function (btn, i) {
-      setTimeout(function () { btn.classList.add('expanded'); }, i * 60);
+    var btns = document.querySelectorAll('.cs-radial-btn');
+    // Staggered animation with longer delay for first button to ensure it's fully rendered
+    btns.forEach(function (btn, i) {
+      setTimeout(function () { btn.classList.add('expanded'); }, i * 80 + 50);
     });
     dock.classList.add('menu-open');
   }
