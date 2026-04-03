@@ -977,7 +977,7 @@
     }
     translateStreaming.reset();
     translateResult.classList.add('hidden');
-    showLoading('', translateBtn, 'labelTranslateBtn');
+    showLoading('', translateBtn, 'translating');
     try {
       await loadSettings();
       let targetLang = targetLangSelect.value;
@@ -993,7 +993,7 @@
         systemPrompt,
         toolName: 'translate',
         loadingBtn: translateBtn,
-        loadingBtnKey: 'labelTranslateBtn',
+        loadingBtnKey: 'translating',
         onChunk: (chunk) => {
           translateStreaming.appendChunk(chunk);
           translateResult.classList.remove('hidden');
@@ -1009,7 +1009,7 @@
     } catch (err) {
       showStatus(translateStatus, err.message);
     } finally {
-      hideLoading(translateBtn, 'labelTranslateBtn');
+      hideLoading(translateBtn, 'tabTranslate');
     }
   }
 
@@ -1071,7 +1071,7 @@
       return;
     }
 
-    showLoading('', summarizeBtn, 'labelSummarizeBtn');
+    showLoading('', summarizeBtn, 'summarizing');
     try {
       await loadSettings();
       const templates = window.csSettings.getPromptTemplates(settings, 'summarize');
@@ -1088,7 +1088,7 @@
         systemPrompt,
         toolName: 'summarize',
         loadingBtn: summarizeBtn,
-        loadingBtnKey: 'labelSummarizeBtn',
+        loadingBtnKey: 'summarizing',
         onChunk: (chunk) => {
           summarizeStreaming.appendChunk(chunk);
           summarizeResult.classList.remove('hidden');
@@ -1109,7 +1109,7 @@
     } catch (err) {
       showStatus(summarizeStatus, err.message);
     } finally {
-      hideLoading(summarizeBtn, 'labelSummarizeBtn');
+      hideLoading(summarizeBtn, 'tabSummarize');
     }
   }
 
