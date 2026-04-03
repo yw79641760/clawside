@@ -542,6 +542,9 @@ body {
   border-collapse: collapse;
   margin: 0 0 8px;
   font-size: 13px;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .result-body th,
@@ -549,11 +552,40 @@ body {
   border: 1px solid var(--border);
   padding: 6px 10px;
   text-align: left;
+  min-width: 60px;
 }
 
 .result-body th {
   background: rgba(255, 255, 255, 0.04);
   font-weight: 600;
+}
+
+/* Table alignment */
+.result-body th[align="center"],
+.result-body td[align="center"] {
+  text-align: center;
+}
+
+.result-body th[align="right"],
+.result-body td[align="right"] {
+  text-align: right;
+}
+
+/* Zebra striping */
+.result-body tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Hover effect */
+.result-body tr:hover td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Table header sticky */
+.result-body thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 /* === Buttons === */
@@ -1300,6 +1332,34 @@ textarea#translateInput::placeholder {
   word-wrap: break-word;
   overflow-wrap: break-word;
   position: relative;
+}
+
+/* Markdown table in chat messages */
+.message-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.message-content th,
+.message-content td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  text-align: left;
+  min-width: 50px;
+}
+
+.message-content th {
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+}
+
+.message-content tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .chat-message.user .message-content {
