@@ -818,7 +818,7 @@
           token,
           requestId,
           stream: true,
-          toolName: 'chat'
+          toolName: 'ask'
         });
       });
       
