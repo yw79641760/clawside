@@ -1149,7 +1149,7 @@
     check: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-check"></use></svg>',
     eye: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-eye"></use></svg>',
     eyeoff: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-eye-off"></use></svg>',
-    loading: '<svg class="cs-icon cs-spin" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-loading"></use></svg>',
+    loading: '<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
   };
 
   function svgIcon(name) {
