@@ -107,16 +107,14 @@
 
       if (includeHistory) {
         // Legacy: include full history for backward compatibility
-        const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
-        const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
-          ? this.messages.slice(0, -1)
-          : this.messages;
+        // Filter out messages with empty content
+        const msgsToInclude = this.messages.filter((msg) => String(msg.content || '').trim());
         convo = msgsToInclude.map((msg) => {
           const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
           return `${roleLabel}: ${msg.content}`;
         }).join('\n\n');
       } else {
-        // Find the last user message (not assistant)
+        // Find the last user message with non-empty content
         for (let i = this.messages.length - 1; i >= 0; i--) {
           const msg = this.messages[i];
           if (msg.role === 'user' && String(msg.content || '').trim()) {
