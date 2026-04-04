@@ -20,7 +20,6 @@
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
-  let firstAsk = true; // flag to include page context on first message
 
   // === Apply Prompt with special variables (hasSelection, hasContent) ===
   var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
@@ -737,8 +736,6 @@
       if (chatSession) {
         chatSession.updateLastAssistantMessage(content);
         chatSession.save();
-        // First message sent, subsequent messages don't need page context
-        firstAsk = false;
       }
     }
   }
@@ -773,15 +770,15 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Use firstAsk flag to include page context only on first message
-      await loadSettings();
+      // Check if session has any user messages (first question gets tab context)
+      const hasUserMessages = chatSession.messages.some(m => m.role === 'user');
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const promptText = chatSession.buildPrompt(firstAsk);
+      const promptText = chatSession.buildPrompt(!hasUserMessages);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
