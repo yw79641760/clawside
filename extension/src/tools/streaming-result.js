@@ -32,10 +32,9 @@ class StreamingResult {
 
   /** Force a synchronous final render. Call when stream ends. */
   flush() {
-    if (this._pending) {
-      this._pending = false;
-      this.element.innerHTML = marked.parse(this._raw);
-    }
+    // Always render - cancel any pending RAF and render immediately
+    this._pending = false;
+    this.element.innerHTML = marked.parse(this._raw);
   }
 
   /** Plain markdown text for history storage and copy. */

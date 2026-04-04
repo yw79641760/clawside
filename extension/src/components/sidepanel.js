@@ -277,9 +277,10 @@
           summarizeStreaming.appendChunk(pending.fullText);
           summarizeStreaming.flush();
           summarizeResult.classList.remove('hidden');
-          // Clear the pending result after showing
           pendingResults.delete(currentTabId);
         }
+      } else {
+        await loadSummarizeToUi(currentTabId, window.panelContext.getCurrentUrl());
       }
     }
 
@@ -966,34 +967,19 @@
         if (!settled) { settled = true; cleanup(); reject(new Error('Request timeout')); }
       }, 90000);
 
-      const handler = async (msg) => {
+      const handler = (msg) => {
         if (msg.requestId !== requestId) return;
 
-        // Before processing chunk, verify current tab matches source tab
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const currentTabId = activeTab?.id || null;
-
-        // Track result for later restoration
         if (msg.type === 'clawside-stream-chunk') {
           fullText += msg.chunk;
           // Store accumulated result
           if (requestTabId) {
             pendingResults.set(requestTabId, { fullText, toolName });
           }
-        }
-
-        // If user switched to different tab, don't update UI but keep accumulating text
-        if (requestTabId && currentTabId !== requestTabId) {
-          if (msg.type === 'clawside-stream-done') {
-            if (!settled) { settled = true; cleanup(); resolve(fullText); }
-          } else if (msg.type === 'clawside-stream-error') {
-            if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
+          // Always call onChunk for summarize to update UI
+          if (onChunk) {
+            onChunk(msg.chunk, fullText);
           }
-          return;
-        }
-
-        if (msg.type === 'clawside-stream-chunk' && onChunk) {
-          onChunk(msg.chunk, fullText);
         }
         if (msg.type === 'clawside-stream-done') {
           if (!settled) { settled = true; cleanup(); resolve(fullText); }
