@@ -22,6 +22,7 @@ class StreamingResult {
   /** Append a streaming chunk. RAF-throttled: renders ~once per frame. */
   appendChunk(text) {
     this._raw += text;
+    console.log('[StreamingResult] appendChunk called, accumulated:', this._raw.length, 'chars');
     this._schedule();
   }
 
@@ -32,8 +33,9 @@ class StreamingResult {
 
   /** Force a synchronous final render. Call when stream ends. */
   flush() {
-    // Always render on flush - ensures final content is shown
+    // Cancel any pending RAF and render immediately
     this._pending = false;
+    console.log('[StreamingResult] flush called, rendering', this._raw.length, 'chars');
     this.element.innerHTML = marked.parse(this._raw);
   }
 

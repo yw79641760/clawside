@@ -988,11 +988,12 @@
           return;
         }
 
-        if (msg.type === 'clawside-stream-chunk' && onChunk) {
-          onChunk(msg.chunk, fullText);
-        }
         if (msg.type === 'clawside-stream-done') {
           if (!settled) { settled = true; cleanup(); resolve(fullText); }
+          return; // Stop processing after done - ignore any late chunks
+        }
+        if (msg.type === 'clawside-stream-chunk' && onChunk) {
+          onChunk(msg.chunk, fullText);
         }
         if (msg.type === 'clawside-stream-error') {
           if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
