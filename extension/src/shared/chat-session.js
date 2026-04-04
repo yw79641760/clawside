@@ -58,25 +58,32 @@
     }
 
     // Add user message
-    addUserMessage(content, timestamp = null) {
+    addUserMessage(content, timestamp = null, from = 'ask') {
       const msg = {
         role: 'user',
         content,
-        timestamp: timestamp || Date.now()
+        timestamp: timestamp || Date.now(),
+        from
       };
       this.messages.push(msg);
       return msg;
     }
 
     // Add assistant message (initially empty for streaming)
-    addAssistantMessage(content = '', timestamp = null) {
+    addAssistantMessage(content = '', timestamp = null, from = 'ask') {
       const msg = {
         role: 'assistant',
         content,
-        timestamp: timestamp || Date.now()
+        timestamp: timestamp || Date.now(),
+        from
       };
       this.messages.push(msg);
       return msg;
+    }
+
+    // Check if this is the first ask question (no previous ask assistant messages)
+    isFirstAsk() {
+      return !this.messages.some(m => m.from === 'ask' && m.role === 'assistant');
     }
 
     // Update last assistant message (for streaming)

@@ -770,15 +770,14 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Check if session has any user messages (first question gets tab context)
-      const hasUserMessages = chatSession.messages.some(m => m.role === 'user');
+      // Check if this is first ask question (no previous ask assistant messages)
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const promptText = chatSession.buildPrompt(!hasUserMessages);
+      const promptText = chatSession.buildPrompt(chatSession.isFirstAsk());
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
@@ -1426,9 +1425,9 @@
           }
         }
         // Add user message asking about the summary
-        chatSession.addUserMessage('Here is the summary of the current page:', timestamp);
+        chatSession.addUserMessage('Here is the summary of the current page:', timestamp, 'summarize');
         // Add assistant message with the summarize result
-        chatSession.addAssistantMessage(summary, timestamp);
+        chatSession.addAssistantMessage(summary, timestamp, 'summarize');
         chatSession.save();
         renderChatMessages();
 
