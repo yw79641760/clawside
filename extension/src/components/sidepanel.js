@@ -972,11 +972,9 @@
 
         if (msg.type === 'clawside-stream-chunk') {
           fullText += msg.chunk;
-          // Store accumulated result
           if (requestTabId) {
             pendingResults.set(requestTabId, { fullText, toolName });
           }
-          // Always call onChunk for summarize to update UI
           if (onChunk) {
             onChunk(msg.chunk, fullText);
           }
@@ -987,7 +985,7 @@
         if (msg.type === 'clawside-stream-error') {
           if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
         }
-        return true; // Allow message propagation
+        return true;
       };
 
       chrome.runtime.onMessage.addListener(handler);
@@ -1033,11 +1031,10 @@
         systemPrompt,
         toolName: 'translate',
         onChunk: (chunk) => {
-          translateStreaming.appendChunk(chunk);
+          translateStreaming.appendChunkAndFlush(chunk);
           translateResult.classList.remove('hidden');
         }
       });
-      translateStreaming.flush();
       const result = translateStreaming.getRawText();
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
@@ -1126,11 +1123,10 @@
         systemPrompt,
         toolName: 'summarize',
         onChunk: (chunk) => {
-          summarizeStreaming.appendChunk(chunk);
+          summarizeStreaming.appendChunkAndFlush(chunk);
           summarizeResult.classList.remove('hidden');
         }
       });
-      summarizeStreaming.flush();
       const summary = summarizeStreaming.getRawText();
       const title = window.panelContext.getCurrentPageTitle();
       const url = window.panelContext.getCurrentUrl();

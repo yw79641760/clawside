@@ -1,56 +1,51 @@
 // ClawSide - StreamingResult Component
-// Encapsulates raw-text buffer + RAF-throttled innerHTML rendering for markdown result areas.
-// Used by sidepanel.js. Depends on `marked` (loaded via sidepanel.html <script src="marked.min.js">).
+// Accumulates chunks, renders incrementally via RAF for typing effect.
 
 class StreamingResult {
-  /**
-   * @param {{ element: HTMLElement }} options
-   */
   constructor({ element }) {
-    this.element = element;   // the .result-body div
-    this._raw = '';           // accumulated raw markdown
-    this._pending = false;   // RAF already scheduled flag
+    this.element = element;
+    this._raw = '';
+    this._rafId = null;
   }
 
-  /** Clear buffer and DOM before a new run. */
   reset() {
     this._raw = '';
-    this._pending = false;
     this.element.textContent = '';
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
   }
 
-  /** Append a streaming chunk. RAF-throttled: renders ~once per frame. */
   appendChunk(text) {
     this._raw += text;
-    this._schedule();
   }
 
-  /** Show the result card. Call after first chunk. */
+  // Append chunk and schedule render via requestAnimationFrame
+  appendChunkAndFlush(text) {
+    this._raw += text;
+    this._scheduleRender();
+  }
+
+  _scheduleRender() {
+    if (this._rafId) return;
+    this._rafId = requestAnimationFrame(() => {
+      this._rafId = null;
+      this.flush();
+    });
+  }
+
   showCard() {
     this.element.closest('.result-card')?.classList.remove('hidden');
   }
 
-  /** Force a synchronous final render. Call when stream ends. */
   flush() {
-    // Always render - cancel any pending RAF and render immediately
-    this._pending = false;
     this.element.innerHTML = marked.parse(this._raw);
   }
 
-  /** Plain markdown text for history storage and copy. */
   getRawText() {
     return this._raw;
   }
-
-  _schedule() {
-    if (this._pending) return;
-    this._pending = true;
-    requestAnimationFrame(() => {
-      this._pending = false;
-      this.element.innerHTML = marked.parse(this._raw);
-    });
-  }
 }
 
-// Expose globally for non-module scripts (sidepanel.html uses <script> not type="module")
 window.StreamingResult = StreamingResult;
