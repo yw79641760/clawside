@@ -987,6 +987,7 @@
         if (msg.type === 'clawside-stream-error') {
           if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
         }
+        return true; // Allow message propagation
       };
 
       chrome.runtime.onMessage.addListener(handler);
@@ -1309,7 +1310,7 @@
     if (msg.type === 'OPEN_TAB_IN_PANEL' && msg.tab) {
       handlePendingTab(msg.tab, msg.url || '', msg.title || '', msg.text || '');
     }
-    return false; // fire-and-forget; no sendResponse needed
+    return true;
   });
 
   // === Event Listeners ===
