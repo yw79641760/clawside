@@ -20,6 +20,7 @@
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
+  let firstAsk = true; // flag to include page context on first message
 
   // === Apply Prompt with special variables (hasSelection, hasContent) ===
   var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
@@ -677,12 +678,9 @@
     div.className = 'chat-message assistant';
     div.dataset.streaming = 'true';
 
-    // Show i18n "thinking" key while waiting
-    const thinkingText = chrome.i18n.getMessage('thinking') || 'Thinking';
-
     div.innerHTML = `
       <div class="message-avatar"><img src="../assets/icons/icon16.png" width="28" height="28" alt="AI"></div>
-      <div class="message-content streaming">${thinkingText}</div>
+      <div class="message-content streaming"></div>
     `;
 
     chatMessages.appendChild(div);
@@ -736,6 +734,8 @@
       if (chatSession) {
         chatSession.updateLastAssistantMessage(content);
         chatSession.save();
+        // First message sent, subsequent messages don't need page context
+        firstAsk = false;
       }
     }
   }
@@ -770,14 +770,18 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Check if this is first ask question (no previous ask assistant messages)
+      // Use firstAsk flag to include page context only on first message
+      await loadSettings();
+      const langCode = window.resolveLang(settings.language, browserLang);
+      const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const promptText = chatSession.buildPrompt(chatSession.isFirstAsk());
+      const extraSystemPrompt = `Response language: ${langLabel}.`;
+      const promptText = chatSession.buildPrompt(firstAsk, extraSystemPrompt);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
@@ -988,12 +992,11 @@
           return;
         }
 
-        if (msg.type === 'clawside-stream-done') {
-          if (!settled) { settled = true; cleanup(); resolve(fullText); }
-          return; // Stop processing after done - ignore any late chunks
-        }
         if (msg.type === 'clawside-stream-chunk' && onChunk) {
           onChunk(msg.chunk, fullText);
+        }
+        if (msg.type === 'clawside-stream-done') {
+          if (!settled) { settled = true; cleanup(); resolve(fullText); }
         }
         if (msg.type === 'clawside-stream-error') {
           if (!settled) { settled = true; cleanup(); reject(new Error(msg.error)); }
@@ -1426,9 +1429,9 @@
           }
         }
         // Add user message asking about the summary
-        chatSession.addUserMessage('Here is the summary of the current page:', timestamp, 'summarize');
+        chatSession.addUserMessage('Here is the summary of the current page:', timestamp);
         // Add assistant message with the summarize result
-        chatSession.addAssistantMessage(summary, timestamp, 'summarize');
+        chatSession.addAssistantMessage(summary, timestamp);
         chatSession.save();
         renderChatMessages();
 
