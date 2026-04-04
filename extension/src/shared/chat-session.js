@@ -54,7 +54,13 @@
 
     // Set page context for the conversation
     setContext({ url, title, content, selectedText }) {
-      this.context = { url, title, content, selectedText };
+      // Preserve existing context if new values are empty
+      this.context = {
+        url: url || this.context.url || '',
+        title: title || this.context.title || '',
+        content: content || this.context.content || '',
+        selectedText: selectedText || this.context.selectedText || ''
+      };
     }
 
     // Add user message
