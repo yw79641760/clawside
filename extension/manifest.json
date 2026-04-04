@@ -4,7 +4,6 @@
   "name": "ClawSide",
   "version": "0.1.0",
   "description": "Connect your browser to local OpenClaw for translation, summarization, and memory",
-  "privacy_policy": "https://github.com/yw79641760/clawside/blob/main/extension/privacy_policy.md",
   "icons": {
     "16": "assets/icons/icon16.png",
     "32": "assets/icons/icon32.png",
@@ -79,6 +78,5 @@
       "48": "assets/icons/icon48.png"
     },
     "default_title": "ClawSide"
-  },
-  "uninstall_url": "https://tally.so/r/RGYvGj"
+  }
 }
