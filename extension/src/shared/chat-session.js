@@ -96,10 +96,11 @@
     }
 
     // Build API request prompt (plain text) for better LLM adherence.
-    // @param {boolean} includeContext - if true, include page context in system prompt (for first message)
+    // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
+    //                                       if false, include only title + url (for follow-up questions)
     // @param {boolean} includeHistory - if true, include full conversation history (default: false)
-    buildPrompt(includeContext = true, extraSystemPrompt = '', includeHistory = false) {
-      const systemPrompt = includeContext ? this.buildSystemPrompt(extraSystemPrompt) : '';
+    buildPrompt(includeFullContext = true, extraSystemPrompt = '', includeHistory = false) {
+      const systemPrompt = this.buildSystemPrompt(includeFullContext, extraSystemPrompt);
 
       // Only include the last user message (not full history) to reduce tokens
       // OpenClaw/Gateway has its own memory
@@ -128,7 +129,8 @@
     }
 
     // Build system prompt with page context
-    buildSystemPrompt(extraSystemPrompt = '') {
+    // @param {boolean} includeFullContext - if true, include title + url + content; if false, only title + url
+    buildSystemPrompt(includeFullContext = true, extraSystemPrompt = '') {
       const parts = [];
 
       parts.push([
@@ -154,17 +156,21 @@
           + `"${String(this.context.selectedText).trim()}"`);
       }
 
-      var body = this.context.content && String(this.context.content).trim()
-        ? String(this.context.content).trim()
-        : '';
-      if (body) {
-        var truncated = body.length > ASK_PAGE_CONTENT_MAX
-          ? body.slice(0, ASK_PAGE_CONTENT_MAX)
-          : body;
-        parts.push('Page main content (excerpt for this tab; may be partial):\n' + truncated
-          + (body.length > ASK_PAGE_CONTENT_MAX
-            ? '\n\n[Truncated — refresh context in the panel if you need more.]'
-            : ''));
+      // Only include page content for first ask (includeFullContext=true)
+      // Skip for follow-up questions to save tokens
+      if (includeFullContext) {
+        var body = this.context.content && String(this.context.content).trim()
+          ? String(this.context.content).trim()
+          : '';
+        if (body) {
+          var truncated = body.length > ASK_PAGE_CONTENT_MAX
+            ? body.slice(0, ASK_PAGE_CONTENT_MAX)
+            : body;
+          parts.push('Page main content (excerpt for this tab; may be partial):\n' + truncated
+            + (body.length > ASK_PAGE_CONTENT_MAX
+              ? '\n\n[Truncated — refresh context in the panel if you need more.]'
+              : ''));
+        }
       }
 
       const base = parts.join('\n\n');

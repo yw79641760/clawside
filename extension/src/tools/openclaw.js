@@ -72,10 +72,19 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
   const decoder = new TextDecoder();
   let buffer = '';
 
-  // Helper to send message back to extension (side panel, popup, etc.)
-  // For extension pages (side panel, popup), use chrome.runtime.sendMessage
-  // Note: tabs.sendMessage only works for content scripts, not extension pages like sidepanel
+  // Helper to send message back to extension
+  // For content scripts (dock.js): use chrome.tabs.sendMessage with tab ID
+  // For extension pages (sidepanel): use chrome.runtime.sendMessage
   const sendMsg = (msg) => {
+    // If we have a sourceTabId, use tabs.sendMessage for content scripts
+    if (sourceTabId) {
+      return chrome.tabs.sendMessage(sourceTabId, msg)
+        .catch(() => {
+          // Fall back to runtime.sendMessage
+          return chrome.runtime.sendMessage(msg).catch(() => {});
+        });
+    }
+    // No sourceTabId (sidepanel): use runtime.sendMessage
     return chrome.runtime.sendMessage(msg).catch(() => {});
   };
 

@@ -945,9 +945,10 @@
   const pendingResults = new Map(); // requestTabId -> { fullText, toolName }
 
   async function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
-    // Get current tab ID at request time - this is where response should go
-    const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const sourceTabId = currentTab?.id || null;
+    // Get current tab ID at request time
+    // Note: sidepanel is an extension page, not a content script.
+    // We pass null for sourceTabId so openclaw.js uses runtime.sendMessage.
+    const sourceTabId = null;
 
     return new Promise((resolve, reject) => {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
