@@ -183,6 +183,7 @@
   const chatEmptyHint = $('chatEmptyHint');
   const chatStatus = $('chatStatus');
   const clearChatBtn = $('clearChatBtn');
+  const exportChatBtn = $('exportChatBtn');
 
   // History
   const historyList = $('historyList');
@@ -1506,6 +1507,25 @@
     }
   });
   clearChatBtn.addEventListener('click', clearChat);
+
+  // Export chat session
+  if (exportChatBtn) {
+    exportChatBtn.addEventListener('click', async () => {
+      if (!chatSession || chatSession.messages.length === 0) return;
+      const url = window.panelContext.getCurrentUrl() || '';
+      const title = window.panelContext.getCurrentPageTitle() || '';
+      const item = {
+        type: 'ask',
+        url,
+        title,
+        messages: chatSession.messages,
+        timestamp: Date.now()
+      };
+      const filename = `clawside_ask_${new Date().toLocaleString('sv-SE', { hour12: false }).replace(/[-: ]/g, '').replace(',', '')}.md`;
+      const exportContent = buildExportContent(item);
+      downloadMarkdown(filename, exportContent);
+    });
+  }
 
   translateInput.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
