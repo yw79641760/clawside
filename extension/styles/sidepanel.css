@@ -409,7 +409,7 @@ body {
 
 .btn-copy {
   background: transparent;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 12px;
@@ -420,12 +420,10 @@ body {
 
 .btn-copy:hover {
   color: var(--text);
-  border-color: var(--text-muted);
 }
 
 .btn-copy.copied {
   color: var(--success);
-  border-color: var(--success);
 }
 
 .result-body {
@@ -1226,33 +1224,6 @@ textarea#translateInput::placeholder {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.btn-export-chat,
-.btn-export-chat,
-.btn-clear-chat {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--transition);
-  color: var(--text-muted);
-}
-
-.btn-export-chat:hover,
-.btn-clear-chat:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-}
-}
-
-.btn-clear-chat:hover {
-  background: var(--surface-hover);
-  color: var(--text);
 }
 
 /* Chat Messages Container */
