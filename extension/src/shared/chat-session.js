@@ -102,9 +102,10 @@
     buildPrompt(includeFullContext = true, extraSystemPrompt = '', includeHistory = false) {
       const systemPrompt = this.buildSystemPrompt(includeFullContext, extraSystemPrompt);
 
-      // Only include the last user message (not full history) to reduce tokens
-      // OpenClaw/Gateway has its own memory
+      // Find the last user message (skip empty assistant placeholder if any)
       const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
+      const lastUserMsg = lastMsg?.role === 'user' ? lastMsg : this.messages.slice().reverse().find(m => m.role === 'user');
+
       let convo = '';
 
       if (includeHistory) {
@@ -116,13 +117,13 @@
           const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
           return `${roleLabel}: ${msg.content}`;
         }).join('\n\n');
-      } else if (lastMsg && lastMsg.role === 'user') {
+      } else if (lastUserMsg) {
         // Only send the last user question + context
-        convo = `User: ${lastMsg.content}`;
+        convo = `User: ${lastUserMsg.content}`;
       }
 
-      // Only add tail if last message is from assistant
-      const needsTail = lastMsg && lastMsg.role === 'assistant';
+      // Only add tail if last message is from assistant (and not empty)
+      const needsTail = lastMsg && lastMsg.role === 'assistant' && String(lastMsg.content || '').trim();
       const tail = needsTail ? 'Assistant:' : '';
 
       return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
