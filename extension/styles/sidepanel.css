@@ -751,7 +751,8 @@ body {
 }
 
 .history-copy-btn,
-.history-delete-btn {
+.history-delete-btn,
+.history-export-btn {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -761,9 +762,13 @@ body {
   opacity: 0.6;
   transition: opacity 100ms, background 100ms, color 100ms;
   color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .history-copy-btn:hover,
-.history-delete-btn:hover {
+.history-delete-btn:hover,
+.history-export-btn:hover {
   opacity: 1;
   background: var(--surface-hover);
   color: var(--primary);
