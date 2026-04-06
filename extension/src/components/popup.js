@@ -382,7 +382,14 @@
       var currentCtx = window.tabContextManager.getCurrent();
       var text = currentCtx ? currentCtx.selectedText : '';
 
-      // Open side panel with the action tab, then auto-trigger if summarize
+      // For translate: do it directly in popup (no need to open side panel)
+      if (action === 'translate' && text) {
+        hideBubble();
+        doAction(action, text, window.location.href, document.title, null);
+        return;
+      }
+
+      // For summarize/ask: open side panel with the action tab
       chrome.storage.local.set({
         _pendingTab: currentCtx?.tabId || null,
         _pendingUrl: window.location.href,
