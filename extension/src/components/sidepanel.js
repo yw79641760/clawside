@@ -184,6 +184,7 @@
   const chatStatus = $('chatStatus');
   const clearChatBtn = $('clearChatBtn');
   const exportChatBtn = $('exportChatBtn');
+  const copyChatBtn = $('copyChatBtn');
 
   // History
   const historyList = $('historyList');
@@ -1524,6 +1525,18 @@
       const filename = `clawside_ask_${new Date().toLocaleString('sv-SE', { hour12: false }).replace(/[-: ]/g, '').replace(',', '')}.md`;
       const exportContent = buildExportContent(item);
       downloadMarkdown(filename, exportContent);
+    });
+  }
+
+  // Copy chat session to clipboard
+  if (copyChatBtn) {
+    copyChatBtn.addEventListener('click', async () => {
+      if (!chatSession || chatSession.messages.length === 0) return;
+      const text = chatSession.messages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n');
+      if (window.copyToClipboard) await window.copyToClipboard(text);
+      const originalHtml = copyChatBtn.innerHTML;
+      copyChatBtn.innerHTML = svgIcon('check');
+      setTimeout(() => { copyChatBtn.innerHTML = originalHtml; }, 1000);
     });
   }
 
