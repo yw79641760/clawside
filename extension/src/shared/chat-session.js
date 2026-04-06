@@ -96,42 +96,57 @@
     }
 
     // Build API request prompt (plain text) for better LLM adherence.
+    // Structure:
+    //   System: [tool definition and capabilities - no page content]
+    //   User: [page context: title + url + (content if first ask)] + [user question]
+    //   Assistant:
     // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
     //                                       if false, include only title + url (for follow-up questions)
-    // @param {boolean} includeHistory - if true, include full conversation history (default: false)
-    buildPrompt(includeFullContext = true, extraSystemPrompt = '', includeHistory = false) {
-      const systemPrompt = this.buildSystemPrompt(includeFullContext, extraSystemPrompt);
+    buildPrompt(includeFullContext = true, extraSystemPrompt = '') {
+      // System prompt: tool definition only (no page content)
+      const systemPrompt = this.buildSystemPrompt(extraSystemPrompt);
+
+      // Build page context for user prompt
+      let pageContext = '';
+      if (this.context.title || this.context.url) {
+        const parts = [];
+        if (this.context.title) parts.push(`Title: ${this.context.title}`);
+        if (this.context.url) parts.push(`URL: ${this.context.url}`);
+        pageContext = parts.join('\n');
+      }
+
+      // Add page content for first ask (to save tokens on follow-ups)
+      if (includeFullContext && this.context.content && String(this.context.content).trim()) {
+        var body = String(this.context.content).trim();
+        var truncated = body.length > ASK_PAGE_CONTENT_MAX
+          ? body.slice(0, ASK_PAGE_CONTENT_MAX)
+          : body;
+        pageContext += '\n\nPage content (excerpt):\n' + truncated
+          + (body.length > ASK_PAGE_CONTENT_MAX ? '\n[Truncated]' : '');
+      }
 
       // Find the last user message (skip empty assistant placeholder if any)
       const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
       const lastUserMsg = lastMsg?.role === 'user' ? lastMsg : this.messages.slice().reverse().find(m => m.role === 'user');
 
-      let convo = '';
-
-      if (includeHistory) {
-        // Legacy: include full history for backward compatibility
-        const msgsToInclude = (lastMsg && lastMsg.role === 'assistant' && !String(lastMsg.content || '').trim())
-          ? this.messages.slice(0, -1)
-          : this.messages;
-        convo = msgsToInclude.map((msg) => {
-          const roleLabel = msg.role === 'user' ? 'User' : 'Assistant';
-          return `${roleLabel}: ${msg.content}`;
-        }).join('\n\n');
-      } else if (lastUserMsg) {
-        // Only send the last user question + context
-        convo = `User: ${lastUserMsg.content}`;
+      // User prompt: [page context] + [user question]
+      let userContent = '';
+      if (pageContext) {
+        userContent = pageContext + '\n\n';
+      }
+      if (lastUserMsg) {
+        userContent += 'User question: ' + lastUserMsg.content;
       }
 
       // Only add tail if last message is from assistant (and not empty)
       const needsTail = lastMsg && lastMsg.role === 'assistant' && String(lastMsg.content || '').trim();
       const tail = needsTail ? 'Assistant:' : '';
 
-      return [systemPrompt, convo, tail].filter(Boolean).join('\n\n');
+      return [systemPrompt, userContent, tail].filter(Boolean).join('\n\n');
     }
 
-    // Build system prompt with page context
-    // @param {boolean} includeFullContext - if true, include title + url + content; if false, only title + url
-    buildSystemPrompt(includeFullContext = true, extraSystemPrompt = '') {
+    // Build system prompt - tool definition only (no page context)
+    buildSystemPrompt(extraSystemPrompt = '') {
       const parts = [];
 
       parts.push([
@@ -142,37 +157,6 @@
         'Respond in Markdown.',
         'Be concise: prefer 3-8 bullet points or short paragraphs.'
       ].join('\n'));
-
-      if (this.context.title || this.context.url) {
-        const contextInfo = [
-          'Current page:',
-          this.context.title ? `- Title: ${this.context.title}` : null,
-          this.context.url ? `- URL: ${this.context.url}` : null
-        ].filter(Boolean).join('\n');
-        parts.push(contextInfo);
-      }
-
-      if (this.context.selectedText && String(this.context.selectedText).trim()) {
-        parts.push('User-selected text from the page (prioritize this when relevant):\n'
-          + `"${String(this.context.selectedText).trim()}"`);
-      }
-
-      // Only include page content for first ask (includeFullContext=true)
-      // Skip for follow-up questions to save tokens
-      if (includeFullContext) {
-        var body = this.context.content && String(this.context.content).trim()
-          ? String(this.context.content).trim()
-          : '';
-        if (body) {
-          var truncated = body.length > ASK_PAGE_CONTENT_MAX
-            ? body.slice(0, ASK_PAGE_CONTENT_MAX)
-            : body;
-          parts.push('Page main content (excerpt for this tab; may be partial):\n' + truncated
-            + (body.length > ASK_PAGE_CONTENT_MAX
-              ? '\n\n[Truncated — refresh context in the panel if you need more.]'
-              : ''));
-        }
-      }
 
       const base = parts.join('\n\n');
       return extraSystemPrompt ? `${base}\n\n${extraSystemPrompt}` : base;
