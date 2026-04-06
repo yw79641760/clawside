@@ -19,6 +19,13 @@
     chrome.runtime.sendMessage({ type: 'sidepanel-closed' }).catch(() => {});
   });
 
+  // Also save when page visibility changes (e.g., user switches tabs)
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') {
+      await saveAskSessionToHistory();
+    }
+  });
+
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
@@ -164,6 +171,7 @@
   const summarizeResult = $('summarizeResult');
   const summarizeResultText = $('summarizeResultText');
   const copySummarizeResult = $('copySummarizeResult');
+  const exportSummarizeResult = $('exportSummarizeResult');
   const summarizeStatus = $('summarizeStatus');
 
   // Ask - Chat Interface
@@ -944,15 +952,19 @@
 
   // Save ask session to history (called when user switches tab or closes panel)
   async function saveAskSessionToHistory() {
+    console.log('[ClawSide] saveAskSessionToHistory called, chatSession:', !!chatSession);
     if (!chatSession) return;
 
     const messages = chatSession.messages;
+    console.log('[ClawSide] messages count:', messages?.length);
     // Only save if there's at least one user message
-    const hasUserMsg = messages.some(m => m.role === 'user');
+    const hasUserMsg = messages?.some(m => m.role === 'user');
+    console.log('[ClawSide] hasUserMsg:', hasUserMsg);
     if (!hasUserMsg) return;
 
     const url = window.panelContext.getCurrentUrl();
     const title = window.panelContext.getCurrentPageTitle();
+    console.log('[ClawSide] saving ask history, url:', url, 'title:', title);
 
     await addHistoryItem({
       id: crypto.randomUUID(),
@@ -962,6 +974,7 @@
       messages: messages,
       timestamp: Date.now()
     });
+    console.log('[ClawSide] ask history saved');
   }
 
   // === API via background script (streaming) ===
@@ -1508,6 +1521,20 @@
 
   copyTranslateResult.addEventListener('click', () => doCopy(translateStreaming.getRawText(), copyTranslateResult));
   copySummarizeResult.addEventListener('click', () => doCopy(summarizeStreaming.getRawText(), copySummarizeResult));
+
+  // Export summarize result
+  if (exportSummarizeResult) {
+    exportSummarizeResult.addEventListener('click', () => {
+      const content = summarizeStreaming.getRawText();
+      if (!content) return;
+      const url = window.panelContext.getCurrentUrl() || '';
+      const title = window.panelContext.getCurrentPageTitle() || '';
+      const item = { type: 'summarize', url, title, summary: content, timestamp: Date.now() };
+      const filename = `clawside_summarize_${new Date().toLocaleString('sv-SE', { hour12: false }).replace(/[-: ]/g, '').replace(',', '')}.md`;
+      const exportContent = buildExportContent(item);
+      downloadMarkdown(filename, exportContent);
+    });
+  }
 
   // Ask from summarize - switch to Ask tab and load summarize as context
   const askFromSummarize = $('askFromSummarize');
