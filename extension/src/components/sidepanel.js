@@ -1359,7 +1359,7 @@
     } else if (exportBtn) {
       const item = items[idx];
       const toolName = item.type;
-      const datetime = new Date(item.timestamp).toISOString().slice(0,19).replace(/[-T:]/g, '');
+      const datetime = new Date(item.timestamp).toLocaleString('sv-SE', { hour12: false }).replace(/[-: ]/g, '').replace(',', '');
       const filename = `clawside_${toolName}_${datetime}.md`;
       const content = buildExportContent(item);
       downloadMarkdown(filename, content);
