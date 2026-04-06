@@ -1040,7 +1040,9 @@
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
         original: text, result, lang: targetLang,
-        url: window.panelContext.getCurrentUrl(), timestamp: Date.now()
+        url: window.panelContext.getCurrentUrl(),
+        title: window.panelContext.getCurrentPageTitle(),
+        timestamp: Date.now()
       });
     } catch (err) {
       showStatus(translateStatus, err.message);
@@ -1218,6 +1220,9 @@
     lines.push(`# ClawSide ${item.type}`);
     lines.push('');
     lines.push(`**Time:** ${time}`);
+    if (item.title) {
+      lines.push(`**Title:** ${item.title}`);
+    }
     if (item.url) {
       lines.push(`**URL:** ${item.url}`);
     }
