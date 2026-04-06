@@ -1222,6 +1222,14 @@ textarea#translateInput::placeholder {
   font-weight: 600;
 }
 
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-export-chat,
+.btn-export-chat,
 .btn-clear-chat {
   background: transparent;
   border: none;
@@ -1233,6 +1241,13 @@ textarea#translateInput::placeholder {
   justify-content: center;
   transition: background var(--transition);
   color: var(--text-muted);
+}
+
+.btn-export-chat:hover,
+.btn-clear-chat:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 }
 
 .btn-clear-chat:hover {
