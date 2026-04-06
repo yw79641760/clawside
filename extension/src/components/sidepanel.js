@@ -13,7 +13,9 @@
   'use strict';
 
   // === Notify background when panel is closed (ESC, click outside, etc.) ===
-  window.addEventListener('unload', () => {
+  window.addEventListener('unload', async () => {
+    // Save ask session to history before closing
+    await saveAskSessionToHistory();
     chrome.runtime.sendMessage({ type: 'sidepanel-closed' }).catch(() => {});
   });
 
@@ -940,6 +942,28 @@
     await saveHistory(items);
   }
 
+  // Save ask session to history (called when user switches tab or closes panel)
+  async function saveAskSessionToHistory() {
+    if (!chatSession) return;
+
+    const messages = chatSession.messages;
+    // Only save if there's at least one user message
+    const hasUserMsg = messages.some(m => m.role === 'user');
+    if (!hasUserMsg) return;
+
+    const url = window.panelContext.getCurrentUrl();
+    const title = window.panelContext.getCurrentPageTitle();
+
+    await addHistoryItem({
+      id: crypto.randomUUID(),
+      type: 'ask',
+      url: url || '',
+      title: title || '',
+      messages: messages,
+      timestamp: Date.now()
+    });
+  }
+
   // === API via background script (streaming) ===
   // Store pending results per source tab so they can be restored when user switches back
   const pendingResults = new Map(); // requestTabId -> { fullText, toolName }
@@ -1243,14 +1267,21 @@
       lines.push('');
       lines.push(item.summary || '');
     } else if (item.type === 'ask') {
-      lines.push('## Question');
-      lines.push('');
-      lines.push(item.question || '');
-      if (item.answer) {
-        lines.push('');
-        lines.push('## Answer');
-        lines.push('');
-        lines.push(item.answer);
+      // Multi-turn conversation
+      if (item.messages && item.messages.length > 0) {
+        let qnaIndex = 0;
+        item.messages.forEach((msg) => {
+          if (msg.role === 'user') {
+            qnaIndex++;
+            lines.push(`## Q${qnaIndex}`);
+            lines.push('');
+            lines.push('**User:** ' + (msg.content || ''));
+            lines.push('');
+          } else if (msg.role === 'assistant' && msg.content) {
+            lines.push('**Assistant:** ' + msg.content);
+            lines.push('');
+          }
+        });
       }
     }
 
@@ -1296,6 +1327,10 @@
           preview = `<em>"${truncate(item.original, 60)}"</em> → ${item.result}`;
         } else if (item.type === 'summarize') {
           preview = truncate(item.summary || item.url, 80);
+        } else if (item.type === 'ask' && item.messages) {
+          // Show first question from messages
+          const firstUserMsg = item.messages.find(m => m.role === 'user');
+          preview = firstUserMsg ? `<em>Q:</em> ${truncate(firstUserMsg.content, 60)}` : '(No question)';
         } else {
           preview = `<em>Q:</em> ${truncate(item.question, 60)}`;
         }
@@ -1318,6 +1353,8 @@
               <div class="history-item-detail-row"><span class="history-item-detail-label">Result:</span><span class="history-item-detail-value">${escapeHtml(item.result)}</span></div>
             ` : item.type === 'summarize' ? `
               <div class="history-item-detail-row"><span class="history-item-detail-label">Summary:</span><span class="history-item-detail-value">${escapeHtml(item.summary)}</span></div>
+            ` : item.type === 'ask' && item.messages ? `
+              ${item.messages.map(m => `<div class="history-item-detail-row"><span class="history-item-detail-label">${m.role === 'user' ? 'Q' : 'A'}:</span><span class="history-item-detail-value">${escapeHtml(m.content || '')}</span></div>`).join('')}
             ` : `
               <div class="history-item-detail-row"><span class="history-item-detail-label">Q:</span><span class="history-item-detail-value">${escapeHtml(item.question)}</span></div>
               <div class="history-item-detail-row"><span class="history-item-detail-label">A:</span><span class="history-item-detail-value">${escapeHtml(item.answer)}</span></div>
@@ -1354,9 +1391,17 @@
       renderHistory();
     } else if (copyBtn) {
       const item = items[idx];
-      const text = item.type === 'translate' ? item.result
-        : item.type === 'summarize' ? item.summary
-        : item.answer || item.question;
+      let text = '';
+      if (item.type === 'translate') {
+        text = item.result;
+      } else if (item.type === 'summarize') {
+        text = item.summary;
+      } else if (item.type === 'ask' && item.messages) {
+        // Combine all messages for copy
+        text = item.messages.map(m => `${m.role === 'user' ? 'Q' : 'A'}: ${m.content}`).join('\n\n');
+      } else {
+        text = item.answer || item.question;
+      }
       if (window.copyToClipboard) await window.copyToClipboard(text || '');
       const originalText = copyBtn.textContent;
       copyBtn.innerHTML = svgIcon('check');
