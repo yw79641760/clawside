@@ -1254,17 +1254,19 @@
 
   // Download markdown file
   function downloadMarkdown(filename, content) {
+    // Create an anchor element and trigger click download
+    // This preserves filename for data URLs
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
-    chrome.downloads.download({
-      url: url,
-      filename: filename,
-      saveAs: false
-    }).then((downloadId) => {
-      console.log('[ClawSide] Export downloadId:', downloadId);
-    }).catch((err) => {
-      console.error('[ClawSide] Export failed:', err);
-    });
+
+    // Create temporary anchor to download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
