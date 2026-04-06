@@ -1354,7 +1354,9 @@
       setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
     } else if (exportBtn) {
       const item = items[idx];
-      const filename = `clawside_${item.type}_${new Date(item.timestamp).toISOString().slice(0,19).replace(/[-T:]/g, '')}.md`;
+      const toolName = item.type;
+      const datetime = new Date(item.timestamp).toISOString().slice(0,19).replace(/[-T:]/g, '');
+      const filename = `clawside_${toolName}_${datetime}.md`;
       const content = buildExportContent(item);
       downloadMarkdown(filename, content);
       const originalHtml = exportBtn.innerHTML;
