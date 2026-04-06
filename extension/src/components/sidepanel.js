@@ -1177,6 +1177,7 @@
     translate: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
     summarize: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
     ask: '<svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>',
+    export: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg>',
     copy: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>',
     delete: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-delete"></use></svg>',
     check: '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-check"></use></svg>',
