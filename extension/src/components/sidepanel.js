@@ -1254,20 +1254,17 @@
 
   // Download markdown file
   function downloadMarkdown(filename, content) {
-    // Use data URL to preserve filename
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const reader = new FileReader();
-    reader.onload = function() {
-      const dataUrl = reader.result;
-      chrome.downloads.download({
-        url: dataUrl,
-        filename: filename,
-        saveAs: true
-      }).catch((err) => {
-        console.error('[ClawSide] Export failed:', err);
-      });
-    };
-    reader.readAsDataURL(blob);
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    chrome.downloads.download({
+      url: url,
+      filename: filename,
+      saveAs: false
+    }).then((downloadId) => {
+      console.log('[ClawSide] Export downloadId:', downloadId);
+    }).catch((err) => {
+      console.error('[ClawSide] Export failed:', err);
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
