@@ -14,15 +14,43 @@
 
   // === Init ===
   async function init() {
-    // Wire Chrome tab/navigation listeners and start tracking context.
-    window.tabContextManager.init();
+    try {
+      // Get current tab and set active tab ID first - with timeout fallback
+      var tabInfo = null;
+      try {
+        tabInfo = await new Promise(function(resolve, reject) {
+          var timeout = setTimeout(function() { reject(new Error('timeout')); }, 2000);
+          chrome.runtime.sendMessage({ type: 'get_current_tab' }, function(resp) {
+            clearTimeout(timeout);
+            resolve(resp);
+          });
+        });
+      } catch(e) {}
 
-    var appearance = window.resolveAppearance
-      ? window.resolveAppearance('system')
-      : 'dark';
-    window.injectTheme(window.THEMES[appearance] || window.THEMES.dark);
-    window.injectStyles();
-    window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(function () {});
+      // Wire Chrome tab/navigation listeners and start tracking context.
+      window.tabContextManager.init();
+
+      // Set active tab after init so TCM knows which tab is active
+      if (tabInfo && tabInfo.id) {
+        // Use setActiveTabId to set directly without triggering content extraction
+        if (window.tabContextManager.setActiveTabId) {
+          window.tabContextManager.setActiveTabId(tabInfo.id);
+        }
+      }
+    } catch(e) {}
+
+    try {
+      var appearance = window.resolveAppearance
+        ? window.resolveAppearance('system')
+        : 'dark';
+      window.injectTheme(window.THEMES[appearance] || window.THEMES.dark);
+      window.injectStyles();
+    } catch(e) {}
+
+    try {
+      window.injectSprite(chrome.runtime.getURL('assets/icons/icons.svg')).catch(function () {});
+    } catch(e) {}
+
     setupSelection();
     setupStreamingListeners();
     chrome.runtime.sendMessage({
@@ -39,6 +67,9 @@
     ask: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
     copy: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
     check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+    pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>',
+    pinFilled: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>',
+    edit: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
   };
 
   // === i18n helpers ===
@@ -73,10 +104,10 @@
   function positionBubble(el, rect) {
     var vw = window.innerWidth;
     var bw = 92;
-    var top = rect.bottom + window.scrollY + 6;
-    var left = rect.left + window.scrollX + rect.width / 2 - bw / 2;
+    var top = rect.bottom + 6;
+    var left = rect.left + rect.width / 2 - bw / 2;
     if (rect.bottom + 36 > window.innerHeight) {
-      top = rect.top + window.scrollY - 28 - 6;
+      top = rect.top - 28 - 6;
     }
     left = Math.max(8, Math.min(left, vw - bw - 8));
     el.style.top = top + 'px';
@@ -84,8 +115,13 @@
   }
 
   function showBubble(text, rect) {
-    if (!text || !rect) { hideBubble(); return; }
-    if (!bubble) bubble = createBubble();
+    if (!text || !rect) {
+      if (bubble) bubble.style.display = 'none';
+      return;
+    }
+    if (!bubble) {
+      bubble = createBubble();
+    }
     positionBubble(bubble, rect);
     bubble.style.display = 'flex';
   }
@@ -101,26 +137,37 @@
     var el = document.createElement('div');
     el.className = 'cs-popup';
     el.innerHTML =
+      '<div class="cs-popup-drag">' +
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 5.625a.625.625 0 1 0 0 1.25h12a.625.625 0 1 0 0-1.25H2Zm0 3.5a.625.625 0 1 0 0 1.25h12a.625.625 0 1 0 0-1.25H2Z" fill="currentColor"/></svg>' +
+      '</div>' +
       '<div class="cs-popup-header">' +
         '<span class="cs-popup-icon" id="cs-popup-icon"></span>' +
         '<span class="cs-popup-title" id="cs-popup-title">Translation</span>' +
+        '<button class="cs-popup-pin" id="cs-popup-pin" title="Pin">' + BUBBLE_ICONS.pin + '</button>' +
         '<button class="cs-popup-close" id="cs-popup-close">&#10005;</button>' +
+      '</div>' +
+      '<div class="cs-popup-selected">' +
+        '<span class="cs-popup-selected-text" id="cs-popup-selected-text"></span>' +
+        '<button class="cs-popup-edit" id="cs-popup-edit" title="Edit">' + BUBBLE_ICONS.edit + '</button>' +
+        '<button class="cs-popup-copy" id="cs-popup-copy">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>' +
       '<div class="cs-popup-body" id="cs-popup-body">' +
         '<div class="cs-popup-loading">' +
-          '<div class="cs-spinner"></div>' +
-          '<span id="cs-popup-loading-text">Translating...</span>' +
+          '<span id="cs-popup-loading-text">Translating</span>' +
+          '<div class="cs-spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
         '</div>' +
       '</div>' +
-      '<div class="cs-popup-footer" id="cs-popup-footer" style="display:none">' +
-        '<span class="cs-popup-cite" id="cs-popup-cite"></span>' +
-        '<button class="cs-popup-copy" id="cs-popup-copy"></button>' +
+      '<div class="cs-popup-actions">' +
+        '<button class="cs-popup-action-btn" id="cs-popup-copy-result" title="Copy">' + BUBBLE_ICONS.copy + '</button>' +
+        '<button class="cs-popup-action-btn" id="cs-popup-summarize" title="Summarize">' + BUBBLE_ICONS.summarize + '</button>' +
+        '<button class="cs-popup-action-btn" id="cs-popup-ask" title="Ask">' + BUBBLE_ICONS.ask + '</button>' +
       '</div>';
     document.body.appendChild(el);
     return el;
   }
 
   function positionPopup(el, refRect) {
+    el.style.position = 'fixed';
     var vw = window.innerWidth;
     var pw = 320;
     var top;
@@ -140,19 +187,38 @@
     }
   }
 
-  async function showPopup(action, _text, rect, onStreamChunk) {
+  async function showPopup(action, text, rect, onStreamChunk) {
     if (!popup) popup = createPopup();
     var refRect = rect || (bubble ? bubble.getBoundingClientRect() : null);
     positionPopup(popup, refRect);
 
+    // Set selected text - ensure it's a text node, not an input
+    var selectedEl = popup.querySelector('#cs-popup-selected-text');
+    if (selectedEl) {
+      if (selectedEl.querySelector('input')) {
+        selectedEl.innerHTML = '';
+      }
+      selectedEl.textContent = text || '';
+    }
+
     var strings = getPopupStrings(action);
-    popup.querySelector('.cs-popup-icon').innerHTML = strings.icon;
-    popup.querySelector('.cs-popup-title').textContent = strings.title;
-    popup.querySelector('#cs-popup-loading-text').textContent = strings.loading;
+    var iconEl = popup.querySelector('.cs-popup-icon');
+    var titleEl = popup.querySelector('.cs-popup-title');
+    if (iconEl) iconEl.innerHTML = strings.icon;
+    if (titleEl) titleEl.textContent = strings.title;
+
+    // Set loading text only if the loading element still exists
+    var loadingTextEl = popup.querySelector('#cs-popup-loading-text');
+    if (loadingTextEl) {
+      loadingTextEl.textContent = strings.loading;
+    }
 
     if (onStreamChunk) {
       popup.querySelector('.cs-popup-body').innerHTML =
-        '<span id="cs-stream-text"></span><span class="cs-cursor">&#x25BF;</span>';
+        '<div class="cs-popup-loading">' +
+          '<span id="cs-popup-loading-text">Translating</span>' +
+          '<div class="cs-spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
+        '</div>';
       var bodyEl = popup.querySelector('.cs-popup-body');
       bodyEl.style.whiteSpace = 'pre-wrap';
       bodyEl.style.maxHeight = '220px';
@@ -160,14 +226,102 @@
       startCursorBlink();
     }
 
-    popup.querySelector('#cs-popup-footer').style.display = 'none';
     popup.style.display = 'flex';
+
+    // Pin button toggle
+    var pinBtn = popup.querySelector('#cs-popup-pin');
+    var pinned = false;
+    pinBtn.innerHTML = BUBBLE_ICONS.pin;
+    pinBtn.onclick = function(e) {
+      e.stopPropagation();
+      pinned = !pinned;
+      pinBtn.classList.toggle('pinned', pinned);
+      pinBtn.innerHTML = pinned ? BUBBLE_ICONS.pinFilled : BUBBLE_ICONS.pin;
+    };
+
+    // Drag functionality
+    var dragEl = popup.querySelector('.cs-popup-drag');
+    var isDragging = false;
+    var dragOffsetX = 0;
+    var dragOffsetY = 0;
+
+    dragEl.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      dragOffsetX = e.clientX - popup.offsetLeft;
+      dragOffsetY = e.clientY - popup.offsetTop;
+      dragEl.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      popup.style.left = (e.clientX - dragOffsetX) + 'px';
+      popup.style.top = (e.clientY - dragOffsetY) + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isDragging) {
+        isDragging = false;
+        dragEl.style.cursor = 'grab';
+      }
+    });
 
     popup.querySelector('#cs-popup-close').onclick = hidePopup;
     popup.querySelector('#cs-popup-copy').onclick = function () {
-      var bodyText = popup.querySelector('#cs-popup-body').textContent;
-      copyText(bodyText, popup.querySelector('#cs-popup-copy'));
+      var selectedText = popup.querySelector('#cs-popup-selected-text').textContent;
+      copyText(selectedText, popup.querySelector('#cs-popup-copy'));
     };
+    popup.querySelector('#cs-popup-edit').onclick = function() {
+      var selectedEl = popup.querySelector('#cs-popup-selected-text');
+      var currentText = selectedEl.textContent;
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentText;
+      input.className = 'cs-popup-edit-input';
+      selectedEl.innerHTML = '';
+      selectedEl.appendChild(input);
+      input.focus();
+      input.select();
+
+      var finishEdit = function() {
+        var newText = input.value.trim();
+        selectedEl.textContent = newText;
+        if (newText && newText !== currentText) {
+          doAction('translate', newText, window.location.href, document.title, null);
+        }
+      };
+
+      input.addEventListener('blur', finishEdit);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          input.blur();
+        } else if (e.key === 'Escape') {
+          selectedEl.textContent = currentText;
+        }
+      });
+    };
+    // Copy result button
+    popup.querySelector('#cs-popup-copy-result').onclick = function() {
+      var bodyText = popup.querySelector('.cs-popup-body').textContent;
+      copyText(bodyText, popup.querySelector('#cs-popup-copy-result'));
+    };
+    // Action buttons (summarize, ask) - placeholder for now
+    popup.querySelector('#cs-popup-summarize').onclick = function() {
+      // TODO: implement summarize
+    };
+    popup.querySelector('#cs-popup-ask').onclick = function() {
+      // TODO: implement ask
+    };
+
+    // Focus out: hide popup when clicking outside (unless pinned)
+    var focusOutHandler = function(e) {
+      if (pinned) return;
+      if (popup && !popup.contains(e.target)) {
+        hidePopup();
+      }
+    };
+    setTimeout(function() {
+      document.addEventListener('click', focusOutHandler);
+    }, 100);
   }
 
   var cursorInterval = null;
@@ -189,7 +343,7 @@
     if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
-  function finalizeStream(text, cite) {
+  function finalizeStream(text) {
     stopCursorBlink();
     var cursor = popup && popup.querySelector('.cs-cursor');
     if (cursor) cursor.remove();
@@ -197,17 +351,6 @@
     if (bodyEl) {
       bodyEl.textContent = text;
       bodyEl.style.whiteSpace = 'pre-wrap';
-    }
-    var footer = popup && popup.querySelector('#cs-popup-footer');
-    if (footer) {
-      footer.style.display = 'flex';
-      var citeEl = popup && popup.querySelector('#cs-popup-cite');
-      if (cite && citeEl) {
-        citeEl.textContent = cite;
-        citeEl.style.display = '';
-      } else if (citeEl) {
-        citeEl.style.display = 'none';
-      }
     }
   }
 
@@ -226,10 +369,10 @@
     if (window.copyToClipboard) {
       var ok = await window.copyToClipboard(text);
       if (ok) {
-        btn.innerHTML = BUBBLE_ICONS.check + ' Copied';
+        btn.innerHTML = BUBBLE_ICONS.check;
         btn.classList.add('copied');
         setTimeout(function () {
-          btn.innerHTML = BUBBLE_ICONS.copy + ' Copy';
+          btn.innerHTML = BUBBLE_ICONS.copy;
           btn.classList.remove('copied');
         }, 1500);
         return;
@@ -250,7 +393,7 @@
   }
 
   // === API Call (streaming via background script) ===
-  function apiCall(prompt, port, token) {
+  function apiCall(prompt, port, token, onChunk) {
     return new Promise(function (resolve, reject) {
       var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       var fullText = '';
@@ -259,14 +402,20 @@
         reject(new Error('Request timeout'));
       }, 90000);
 
+      // Get source tab ID for sending streaming responses back to this content script
+      var sourceTabId = window.tabContextManager ? window.tabContextManager.getActiveTabId() : null;
+
+      // Use provided onChunk callback or create default that updates fullText
+      var chunkCallback = onChunk || function (chunk) {
+        fullText += chunk;
+        pendingRequests[requestId].fullText = fullText;
+      };
+
       pendingRequests[requestId] = {
         resolve: resolve,
         reject: reject,
         fullText: fullText,
-        onChunk: function (chunk) {
-          fullText += chunk;
-          pendingRequests[requestId].fullText = fullText;
-        }
+        onChunk: chunkCallback
       };
       pendingTimeouts[requestId] = timer;
 
@@ -275,7 +424,8 @@
         prompt: prompt,
         port: String(port || '18789'),
         token: String(token || '').trim(),
-        requestId: requestId
+        requestId: requestId,
+        sourceTabId: sourceTabId
       });
     });
   }
@@ -298,7 +448,6 @@
     await showPopup(action, text, null, onStreamChunk);
 
     try {
-      var cite = url.length > 40 ? url.slice(0, 3) + '...' + url.slice(-37) : url;
       // translateLanguage: translation target, defaults to language setting
       var browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
       var defaultLang = (s.language && s.language !== 'auto') ? s.language : browserLang;
@@ -314,19 +463,19 @@
       var prompt;
       if (action === 'translate') {
         prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ' + text;
-        await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token, onStreamChunk);
       } else if (action === 'summarize') {
         prompt = 'You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ' + url;
-        await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token, onStreamChunk);
       } else if (action === 'ask') {
         if (text) {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
         } else {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
         }
-        await apiCall(prompt, port, token);
+        await apiCall(prompt, port, token, onStreamChunk);
       }
-      finalizeStream(fullText, cite);
+      finalizeStream(fullText);
     } catch (err) {
       setPopupError(err.message);
     }
@@ -336,22 +485,42 @@
   function handleSelection() {
     var sel = window.getSelection();
     var text = sel ? sel.toString().trim() : '';
-    if (!text) return;
+    if (!text) {
+      hideBubble();
+      return;
+    }
 
-    // Sync selection to tabContextManager (tabId auto-detected from active tab)
-    var ctx = window.tabContextManager.getCurrent();
-    if (ctx && text === ctx.selectedText) return; // no change
-    window.tabContextManager.setSelectedText(text);
+    // Try to sync selection to tabContextManager (ignore errors if context invalidated)
+    try {
+      var ctx = window.tabContextManager.getCurrent();
+      if (ctx && text === ctx.selectedText) return; // no change
+      window.tabContextManager.setSelectedText(text);
+    } catch (e) {}
 
     var range = sel && sel.getRangeAt(0);
-    if (!range) return;
+    if (!range) {
+      hideBubble();
+      return;
+    }
     var rect = range.getBoundingClientRect();
-    if (rect.width < 10) { hideBubble(); return; }
+
+    // Show bubble for any valid selection
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(function () { showBubble(text, rect); }, 250);
+    hideTimer = setTimeout(function () {
+      if (!text || !rect) {
+        hideBubble();
+        return;
+      }
+      if (!bubble) {
+        bubble = createBubble();
+      }
+      positionBubble(bubble, rect);
+      bubble.style.display = 'flex';
+    }, 100);
   }
 
   function setupSelection() {
+    // Hide bubble on mousedown (but not if clicking on bubble itself)
     document.addEventListener('mousedown', function (e) {
       if (popup && popup.contains(e.target)) return;
       if (bubble && bubble.contains(e.target)) return;
@@ -360,10 +529,13 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { hideBubble(); hidePopup(); }
     });
-    document.addEventListener('mouseup', function () { setTimeout(handleSelection, 10); });
+    // Listen to both mouseup and selectionchange for better coverage
+    document.addEventListener('mouseup', function () {
+      setTimeout(handleSelection, 50);
+    });
     document.addEventListener('selectionchange', function () {
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(handleSelection, 250);
+      hideTimer = setTimeout(handleSelection, 100);
     });
 
     document.addEventListener('click', function (e) {
@@ -415,7 +587,9 @@
     chrome.runtime.onMessage.addListener(function (msg) {
       if (msg.type === 'clawside-stream-chunk') {
         var req = pendingRequests[msg.requestId];
-        if (req && typeof req.onChunk === 'function') req.onChunk(msg.chunk);
+        if (req && typeof req.onChunk === 'function') {
+          req.onChunk(msg.chunk);
+        }
         return true;
       }
       if (msg.type === 'clawside-stream-done') {
@@ -447,6 +621,6 @@
   }
 
   // === Public API ===
-  window.csPopup = { init: init };
+  window.csPopup = { init: init, doAction: doAction };
 
 })();

@@ -171,7 +171,7 @@ const CONTENT_STYLES = `
     border-radius: 4px; cursor: pointer; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     transition: background 100ms ease, transform 80ms ease;
-    padding: 0;
+    padding: 0; color: inherit;
   }
   .cs-btn:hover { background: var(--cs-btn-hover); }
   .cs-btn:active { background: var(--cs-btn-active); transform: scale(0.92); }
@@ -191,13 +191,84 @@ const CONTENT_STYLES = `
     from { opacity: 0; transform: scale(0.9) translateY(-6px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
+  .cs-popup-drag {
+    display: flex; justify-content: center; align-items: center;
+    padding: 4px 0; cursor: grab; color: var(--cs-muted);
+    flex-shrink: 0;
+  }
+  .cs-popup-drag svg {
+    width: 16px; height: 12px;
+  }
+  .cs-popup-drag:active { cursor: grabbing; }
   .cs-popup-header {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; border-bottom: 1px solid var(--cs-border);
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 12px; border-bottom: 1px solid var(--cs-border);
     background: var(--cs-header-bg);
   }
-  .cs-popup-icon { font-size: 14px; }
-  .cs-popup-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--cs-text); }
+  .cs-popup-icon { font-size: 14px; margin-right: 2px; }
+  .cs-popup-title { font-size: 13px; font-weight: 600; color: var(--cs-text); margin-right: auto; }
+  .cs-popup-pin { margin-left: 4px; }
+  .cs-popup-close { margin-left: 4px; }
+  .cs-popup-selected {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-bottom: 1px solid var(--cs-border);
+    background: var(--cs-header-bg);
+  }
+  .cs-popup-selected-text {
+    flex: 1; font-size: 12px; color: var(--cs-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cs-popup-edit-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 2px 4px;
+    border: 1px solid var(--cs-border);
+    border-radius: 3px;
+    background: var(--cs-bg);
+    color: var(--cs-text);
+    outline: none;
+  }
+  .cs-popup-edit-input:focus {
+    border-color: var(--cs-primary);
+  }
+  .cs-popup-selected .cs-popup-edit {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0.6;
+    transition: opacity 100ms, background 100ms, color 100ms;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cs-popup-selected .cs-popup-edit:hover {
+    opacity: 1;
+    background: var(--cs-btn-hover);
+    color: var(--cs-primary);
+  }
+  .cs-popup-selected .cs-popup-copy {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0.6;
+    transition: opacity 100ms, background 100ms, color 100ms;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cs-popup-selected .cs-popup-copy:hover {
+    opacity: 1;
+    background: var(--cs-btn-hover);
+    color: var(--cs-primary);
+  }
   .cs-popup-close {
     width: 26px; height: 26px; border: none; background: transparent;
     border-radius: 4px; cursor: pointer; font-size: 14px;
@@ -205,18 +276,45 @@ const CONTENT_STYLES = `
     transition: background 100ms;
   }
   .cs-popup-close:hover { background: var(--cs-btn-hover); color: var(--cs-text); }
+  .cs-popup-pin {
+    width: 26px; height: 26px; border: none; background: transparent;
+    border-radius: 4px; cursor: pointer; font-size: 14px;
+    color: var(--cs-muted); display: flex; align-items: center; justify-content: center;
+    transition: background 100ms, color 100ms;
+  }
+  .cs-popup-pin:hover { background: var(--cs-btn-hover); color: var(--cs-text); }
+  .cs-popup-pin.pinned { color: var(--cs-primary); }
+  .cs-popup-pin.pinned:hover { color: var(--cs-primary); }
   .cs-popup-body {
     flex: 1; padding: 12px; overflow-y: auto;
     font-size: 13px; line-height: 1.6; color: var(--cs-text);
-    word-break: break-word;
+    word-break: break-word; text-align: left;
   }
   .cs-popup-body::-webkit-scrollbar { width: 5px; }
   .cs-popup-body::-webkit-scrollbar-thumb { background: var(--cs-scrollbar); border-radius: 3px; }
-  .cs-popup-footer {
-    display: flex; align-items: center; gap: 8px;
+  .cs-popup-actions {
+    display: flex; justify-content: flex-end; gap: 4px;
     padding: 8px 12px; border-top: 1px solid var(--cs-border);
   }
-  .cs-popup-cite {
+  .cs-popup-action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    opacity: 0.6;
+    transition: opacity 100ms, background 100ms, color 100ms;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cs-popup-action-btn:hover {
+    opacity: 1;
+    background: var(--cs-btn-hover);
+    color: var(--cs-primary);
+  }
     flex: 1; font-size: 11px; color: var(--cs-primary);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -229,18 +327,28 @@ const CONTENT_STYLES = `
   .cs-popup-copy.copied { border-color: var(--cs-success); color: var(--cs-success); }
 
   .cs-popup-loading {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 10px; padding: 28px 16px; color: var(--cs-muted);
+    display: flex; flex-direction: row; align-items: center;
+    justify-content: center; gap: 8px; padding: 28px 16px; color: var(--cs-muted);
     font-size: 13px;
   }
   .cs-spinner {
-    width: 22px; height: 22px; border: 2px solid var(--cs-border);
-    border-top-color: var(--cs-primary); border-radius: 50%;
-    animation: cs-spin 600ms linear infinite;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
   }
-  @keyframes cs-spin { to { transform: rotate(360deg); } }
-  .cs-spin {
-    animation: cs-spin 1s linear infinite;
+  .cs-spinner .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+    animation: cs-loading-dot 1.4s infinite ease-in-out both;
+  }
+  .cs-spinner .dot:nth-child(1) { animation-delay: -0.32s; }
+  .cs-spinner .dot:nth-child(2) { animation-delay: -0.16s; }
+  .cs-spinner .dot:nth-child(3) { animation-delay: 0s; }
+  @keyframes cs-loading-dot {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
   }
 
   .cs-popup-error {

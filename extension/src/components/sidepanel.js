@@ -1189,9 +1189,9 @@
 
   async function doCopy(text, btn) {
     if (window.copyToClipboard) await window.copyToClipboard(text);
-    btn.innerHTML = svgIcon('check') + ' Copied';
+    btn.innerHTML = svgIcon('check');
     btn.classList.add('copied');
-    setTimeout(() => { btn.innerHTML = svgIcon('copy') + ' Copy'; btn.classList.remove('copied'); }, 1500);
+    setTimeout(() => { btn.innerHTML = svgIcon('copy'); btn.classList.remove('copied'); }, 1500);
   }
 
   // ── Context state delegated to src/shared/panel-context.js ──────
