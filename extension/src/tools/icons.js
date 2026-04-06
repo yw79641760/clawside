@@ -3,13 +3,14 @@
 // All icons reference the inline <symbol> sprite defined in sidepanel.html.
 // For content scripts: ensure the sprite is injected into the page first (see tools/appearance.js).
 
-const ICON_NAMES = ['translate', 'summarize', 'ask', 'copy', 'check', 'delete', 'eye', 'eyeoff', 'history', 'settings', 'loading', 'error', 'cancel'];
+const ICON_NAMES = ['translate', 'summarize', 'ask', 'export', 'copy', 'check', 'delete', 'eye', 'eyeoff', 'history', 'settings', 'loading', 'error', 'cancel'];
 
 /** SVG markup map: iconName → <svg> string for use in innerHTML. */
 const SVG = {
   translate:  '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
   summarize:  '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
   ask:        '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>',
+  export:     '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg>',
   copy:       '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>',
   check:      '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-check"></use></svg>',
   delete:     '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-delete"></use></svg>',

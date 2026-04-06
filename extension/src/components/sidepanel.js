@@ -1209,6 +1209,61 @@
       .replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/\n/g,'<br>');
   }
 
+  // Build markdown content for export
+  function buildExportContent(item) {
+    const lines = [];
+    const time = new Date(item.timestamp).toLocaleString();
+
+    lines.push(`# ClawSide ${item.type}`);
+    lines.push('');
+    lines.push(`**Time:** ${time}`);
+    if (item.url) {
+      lines.push(`**URL:** ${item.url}`);
+    }
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+
+    if (item.type === 'translate') {
+      lines.push('## Original');
+      lines.push('');
+      lines.push(item.original || '');
+      lines.push('');
+      lines.push('## Translation');
+      lines.push('');
+      lines.push(item.result || '');
+    } else if (item.type === 'summarize') {
+      lines.push('## Summary');
+      lines.push('');
+      lines.push(item.summary || '');
+    } else if (item.type === 'ask') {
+      lines.push('## Question');
+      lines.push('');
+      lines.push(item.question || '');
+      if (item.answer) {
+        lines.push('');
+        lines.push('## Answer');
+        lines.push('');
+        lines.push(item.answer);
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  // Download markdown file
+  function downloadMarkdown(filename, content) {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    chrome.downloads.download({
+      url: url,
+      filename: filename,
+      saveAs: true
+    }).catch((err) => {
+      console.error('[ClawSide] Export failed:', err);
+    });
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════════
   // SECTION 8: History
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -1240,6 +1295,7 @@
             <span class="history-item-icon">${itemIcon}</span>
             <span class="history-item-type">${typeLabel}</span>
             <span class="history-item-actions">
+              <button class="history-export-btn" data-index="${idx}" title="Export">${svgIcon("export")}</button>
               <button class="history-copy-btn" data-index="${idx}" title="Copy">${svgIcon("copy")}</button>
               <button class="history-delete-btn" data-index="${idx}" title="Delete">${svgIcon("delete")}</button>
             </span>
@@ -1271,13 +1327,14 @@
     renderHistory();
   }
 
-  // Event delegation for history copy/delete buttons
+  // Event delegation for history copy/delete/export buttons
   historyList.addEventListener('click', async (e) => {
     const copyBtn = e.target.closest('.history-copy-btn');
     const deleteBtn = e.target.closest('.history-delete-btn');
-    if (!copyBtn && !deleteBtn) return;
+    const exportBtn = e.target.closest('.history-export-btn');
+    if (!copyBtn && !deleteBtn && !exportBtn) return;
 
-    const idx = parseInt(copyBtn?.dataset.index || deleteBtn?.dataset.index, 10);
+    const idx = parseInt(copyBtn?.dataset.index || deleteBtn?.dataset.index || exportBtn?.dataset.index, 10);
     const items = await loadHistory();
     if (isNaN(idx) || idx < 0 || idx >= items.length) return;
 
@@ -1294,6 +1351,14 @@
       const originalText = copyBtn.textContent;
       copyBtn.innerHTML = svgIcon('check');
       setTimeout(() => { copyBtn.textContent = originalText; }, 1000);
+    } else if (exportBtn) {
+      const item = items[idx];
+      const filename = `clawside_${item.type}_${new Date(item.timestamp).toISOString().slice(0,19).replace(/[-T:]/g, '')}.md`;
+      const content = buildExportContent(item);
+      downloadMarkdown(filename, content);
+      const originalHtml = exportBtn.innerHTML;
+      exportBtn.innerHTML = svgIcon('check');
+      setTimeout(() => { exportBtn.innerHTML = originalHtml; }, 1000);
     }
   });
 
