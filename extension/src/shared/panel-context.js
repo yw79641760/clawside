@@ -50,8 +50,10 @@
 
     // Refresh button: re-extracts page content and updates ALL context box fields
     _el.ctxRefreshBtn?.addEventListener('click', async () => {
+      console.log('[panel-context] Refresh button clicked');
       // Add spinning class for animation
       _el.ctxRefreshBtn.classList.add('spinning');
+      console.log('[panel-context] spinning class added, element:', _el.ctxRefreshBtn);
       try {
         await updatePageContext(_el.translateInput);
       } finally {
