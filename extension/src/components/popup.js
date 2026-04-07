@@ -437,7 +437,9 @@
       var copyResultBtn = popup.querySelector('#cs-popup-copy-result');
       if (copyResultBtn) {
         copyResultBtn.onclick = function() {
-          var bodyText = popup.querySelector('.cs-popup-body').textContent;
+          // Use raw markdown content if available, otherwise fall back to textContent
+          var rawContent = popup.dataset.rawContent;
+          var bodyText = rawContent || popup.querySelector('.cs-popup-body').textContent;
           copyText(bodyText, copyResultBtn);
         };
       }
@@ -518,6 +520,8 @@
     // For basic popup (translate/summarize)
     var bodyEl = popup && popup.querySelector('.cs-popup-body');
     if (bodyEl) {
+      // Store raw markdown text for copy functionality
+      popup.dataset.rawContent = text;
       // Parse markdown if marked is available
       if (window.marked && typeof window.marked.parse === 'function') {
         bodyEl.innerHTML = window.marked.parse(text);
