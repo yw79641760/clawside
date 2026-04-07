@@ -304,7 +304,7 @@ body {
   color: var(--text);
   background: var(--btn-hover);
 }
-.page-info-refresh:hover svg {
+.page-info-refresh:active svg {
   animation: spin 400ms ease-in-out;
 }
 @keyframes spin {
