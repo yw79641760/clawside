@@ -105,6 +105,16 @@
     buildPrompt(includeFullContext = true, extraSystemPrompt = '') {
       // Get ask prompt template from settings
       var templates = window.csSettings ? window.csSettings.getPromptTemplates(window.csSettings.getDefaultSettings(), 'ask') : null;
+      if (!templates) {
+        console.error('[ChatSession] No ask prompt template found');
+        return '';
+      }
+
+      var applyFn = window.csSettings ? window.csSettings.applyPrompt : null;
+      if (!applyFn) {
+        console.error('[ChatSession] No applyPrompt function found');
+        return '';
+      }
 
       // Build page context variables
       var pageContent = '';
@@ -131,37 +141,9 @@
         lang: 'English'
       };
 
-      var systemPrompt = '';
-      var userPrompt = '';
-
-      if (templates) {
-        // Use settings prompt template
-        var applyFn = window.csSettings ? window.csSettings.applyPrompt : null;
-        if (applyFn) {
-          systemPrompt = applyFn(templates.system, promptVars);
-          userPrompt = applyFn(templates.user, promptVars);
-        }
-      }
-
-      // Fallback if no templates or applyFn
-      if (!systemPrompt) {
-        systemPrompt = [
-          'You are ClawSide\'s webpage Q&A assistant.',
-          '- Answer based ONLY on the provided context; do not fabricate information',
-          '- If the answer cannot be found in context, say so explicitly',
-          '- Respond in Markdown; keep it concise (3-6 bullet points or short paragraphs)'
-        ].join('\n');
-      }
-
-      if (!userPrompt) {
-        userPrompt = [
-          'Title: ' + (this.context.title || ''),
-          'URL: ' + (this.context.url || ''),
-          this.context.selectedText ? 'Selected text (prefer over page content if provided):\n' + this.context.selectedText : '',
-          pageContent ? 'Page content (excerpt):\n' + pageContent : '',
-          question ? 'User question: ' + question : ''
-        ].filter(Boolean).join('\n\n');
-      }
+      // Use settings prompt template
+      var systemPrompt = applyFn(templates.system, promptVars);
+      var userPrompt = applyFn(templates.user, promptVars);
 
       // Add extra system prompt if provided
       if (extraSystemPrompt) {
