@@ -304,8 +304,7 @@ body {
   color: var(--text);
   background: var(--btn-hover);
 }
-.page-info-refresh.spinning svg,
-.page-info-refresh:hover svg {
+.page-info-refresh.spinning svg {
   animation: spin 600ms linear infinite;
 }
 @keyframes spin {
