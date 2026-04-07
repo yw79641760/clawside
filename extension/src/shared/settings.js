@@ -29,6 +29,8 @@
         '- Keep code snippets, URLs, and technical terms unchanged\n' +
         '- Short phrases (<20 chars): translate directly without parenthetical notes\n' +
         '- If text is empty or meaningless, output "—"\n\n' +
+        'Page title: {title}\n' +
+        'Page URL: {url}\n\n' +
         'Text: {text}'
     },
 
