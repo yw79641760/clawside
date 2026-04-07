@@ -490,6 +490,16 @@
         }
         var templates = window.csSettings.getPromptTemplates(s, 'translate');
         console.log('[popup] templates:', templates);
+        systemPrompt = applyPrompt(templates.system, { lang: targetLang });
+        console.log('[popup] systemPrompt:', systemPrompt);
+        prompt = applyPrompt(templates.user, {
+          text: text,
+          lang: targetLang,
+          title: pageTitle,
+          url: pageUrl,
+          content: pageContent
+        });
+        console.log('[popup] final prompt:', prompt);
         var templates = window.csSettings.getPromptTemplates(s, 'translate');
         if (!templates) {
           console.error('[popup] translate templates not found');
@@ -504,7 +514,9 @@
           url: pageUrl,
           content: pageContent
         });
+        console.log('[popup] calling apiCall with translate');
         await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
+        console.log('[popup] apiCall returned');
       } else if (action === 'summarize') {
         var templates = window.csSettings.getPromptTemplates(s, 'summarize');
         prompt = applyPrompt(templates.user, {
