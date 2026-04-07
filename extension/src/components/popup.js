@@ -479,8 +479,10 @@
 
       var prompt;
       var systemPrompt = '';
+      console.log('[popup] action:', action);
       if (action === 'translate') {
         // Use custom prompts from settings
+        console.log('[popup] checking csSettings');
         if (!window.csSettings) {
           console.error('[popup] window.csSettings not available');
           setPopupError('Settings not loaded');
