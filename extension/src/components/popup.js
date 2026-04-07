@@ -351,12 +351,15 @@
         e.stopPropagation();
         var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
         var text = currentCtx ? currentCtx.selectedText : '';
+        // Determine action based on popup type
+        var popupType = popup.dataset.popupType || 'basic';
+        var action = (popupType === 'ask') ? 'ask' : 'translate';
         chrome.storage.local.set({
           _pendingTab: currentCtx?.tabId || null,
           _pendingUrl: window.location.href,
           _pendingTitle: document.title,
           _pendingText: text,
-          _pendingAction: isAskPopup ? 'ask' : (currentCtx?.lastAction || 'translate')
+          _pendingAction: action
         }).catch(function () {});
         chrome.runtime.sendMessage({
           type: 'panel-open-with-tab',
@@ -364,7 +367,7 @@
           url: window.location.href,
           title: document.title,
           text: text,
-          action: isAskPopup ? 'ask' : (currentCtx?.lastAction || 'translate')
+          action: action
         }).catch(function () {});
         hidePopup();
       };
