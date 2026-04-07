@@ -55,7 +55,7 @@
   "clearChat": { "message": "清空聊天记录" },
   "chatInputPlaceholder": { "message": "在此输入问题..." },
   "labelSettingsBasic": { "message": "基本" },
-  "labelSettingsTools": { "message": "工具" },
+  "labelSettingsPrompts": { "message": "提示词" },
   "labelToolTranslate": { "message": "翻译" },
   "labelToolSummarize": { "message": "总结" },
   "labelToolAsk": { "message": "提问" },

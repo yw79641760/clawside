@@ -55,7 +55,7 @@
   "clearChat": { "message": "Clear chat history" },
   "chatInputPlaceholder": { "message": "Type your question here..." },
   "labelSettingsBasic": { "message": "General" },
-  "labelSettingsTools": { "message": "Tools" },
+  "labelSettingsPrompts": { "message": "Prompts" },
   "labelToolTranslate": { "message": "Translate" },
   "labelToolSummarize": { "message": "Summarize" },
   "labelToolAsk": { "message": "Ask" },

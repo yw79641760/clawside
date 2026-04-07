@@ -317,9 +317,9 @@
 
   function showSettingsSubTab(subtab) {
     $('settingsBasic')?.classList.toggle('hidden', subtab !== 'basic');
-    $('settingsTools')?.classList.toggle('hidden', subtab !== 'tools');
+    $('settingsPrompts')?.classList.toggle('hidden', subtab !== 'prompts');
     $('settingsTabBasic')?.classList.toggle('active', subtab === 'basic');
-    $('settingsTabTools')?.classList.toggle('active', subtab === 'tools');
+    $('settingsTabPrompts')?.classList.toggle('active', subtab === 'prompts');
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -1469,7 +1469,7 @@
 
   // Settings sub-tabs
   $('settingsTabBasic')?.addEventListener('click', () => showSettingsSubTab('basic'));
-  $('settingsTabTools')?.addEventListener('click', () => showSettingsSubTab('tools'));
+  $('settingsTabPrompts')?.addEventListener('click', () => showSettingsSubTab('prompts'));
 
   // Tool prompt reset buttons
   $('resetPromptTranslate')?.addEventListener('click', () => {

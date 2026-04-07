@@ -54,7 +54,7 @@
   "clearChat": { "message": "チャット履歴をクリア" },
   "chatInputPlaceholder": { "message": "質問を入力..." },
   "labelSettingsBasic": { "message": "一般" },
-  "labelSettingsTools": { "message": "ツール" },
+  "labelSettingsPrompts": { "message": "プロンプト" },
   "labelToolTranslate": { "message": "翻訳" },
   "labelToolSummarize": { "message": "要約" },
   "labelToolAsk": { "message": "質問" },
