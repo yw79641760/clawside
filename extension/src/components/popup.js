@@ -85,6 +85,19 @@
     };
   }
 
+  // === Prompt template substitution ===
+  function applyPrompt(template, vars) {
+    if (!template) return '';
+    return template
+      .replace(/\{text\}/g, vars.text || '')
+      .replace(/\{lang\}/g, vars.lang || 'English')
+      .replace(/\{title\}/g, vars.title || '')
+      .replace(/\{url\}/g, vars.url || '')
+      .replace(/\{content\}/g, vars.content || '')
+      .replace(/\{question\}/g, vars.question || '')
+      .replace(/\{selectedText\}/g, vars.selectedText || '');
+  }
+
   // === Selection Bubble ===
   function createBubble() {
     if (bubble) bubble.remove();
@@ -389,7 +402,7 @@
   }
 
   // === API Call (streaming via background script) ===
-  function apiCall(prompt, port, token, onChunk) {
+  function apiCall(prompt, port, token, systemPrompt, onChunk) {
     return new Promise(function (resolve, reject) {
       var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       var fullText = '';
@@ -402,7 +415,7 @@
       var sourceTabId = window.tabContextManager ? window.tabContextManager.getActiveTabId() : null;
 
       // Use provided onChunk callback or create default that updates fullText
-      var chunkCallback = onChunk || function (chunk) {
+      var chunkCallback = onChunk || systemPrompt || function (chunk) {
         fullText += chunk;
         pendingRequests[requestId].fullText = fullText;
       };
@@ -418,6 +431,7 @@
       chrome.runtime.sendMessage({
         type: 'clawside-api',
         prompt: prompt,
+        systemPrompt: systemPrompt || '',
         port: String(port || '18789'),
         token: String(token || '').trim(),
         requestId: requestId,
@@ -456,20 +470,40 @@
         ? s.language
         : browserLang;
 
+      // Get page context from tabContextManager
+      var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
+      var pageUrl = currentCtx ? currentCtx.url : url;
+      var pageTitle = currentCtx ? currentCtx.title : title;
+      var pageContent = currentCtx ? (currentCtx.content || '').slice(0, 8000) : '';
+
       var prompt;
+      var systemPrompt = '';
       if (action === 'translate') {
-        prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ' + text;
-        await apiCall(prompt, port, token, onStreamChunk);
+        // Use custom prompts from settings if available
+        var templates = window.csSettings ? window.csSettings.getPromptTemplates(s, 'translate') : null;
+        if (templates) {
+          systemPrompt = applyPrompt(templates.system, { lang: targetLang });
+          prompt = applyPrompt(templates.user, {
+            text: text,
+            lang: targetLang,
+            title: pageTitle,
+            url: pageUrl,
+            content: pageContent
+          });
+        } else {
+          prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nPage title: ' + pageTitle + '\nPage URL: ' + pageUrl + '\n\nPage content:\n' + pageContent + '\n\nText: ' + text;
+        }
+        await apiCall(prompt, port, token, systemPrompt, onStreamChunk);
       } else if (action === 'summarize') {
         prompt = 'You are a text summarizer. Summarize the following content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nText: ' + text;
-        await apiCall(prompt, port, token, onStreamChunk);
+        await apiCall(prompt, port, token, '', onStreamChunk);
       } else if (action === 'ask') {
         if (text) {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
         } else {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
         }
-        await apiCall(prompt, port, token, onStreamChunk);
+        await apiCall(prompt, port, token, '', onStreamChunk);
       }
       finalizeStream(fullText);
     } catch (err) {
