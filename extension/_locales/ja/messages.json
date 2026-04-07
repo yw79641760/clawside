@@ -55,6 +55,8 @@
   "chatInputPlaceholder": { "message": "質問を入力..." },
   "labelSettingsBasic": { "message": "一般" },
   "labelSettingsPrompts": { "message": "プロンプト" },
+  "labelFeedback": { "message": "フィードバック" },
+  "feedbackText": { "message": "問題が発生したり提案がありますか？" },
   "labelToolTranslate": { "message": "翻訳" },
   "labelToolSummarize": { "message": "要約" },
   "labelToolAsk": { "message": "質問" },

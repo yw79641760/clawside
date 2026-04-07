@@ -56,6 +56,8 @@
   "chatInputPlaceholder": { "message": "Type your question here..." },
   "labelSettingsBasic": { "message": "General" },
   "labelSettingsPrompts": { "message": "Prompts" },
+  "labelFeedback": { "message": "Feedback" },
+  "feedbackText": { "message": "Have questions or suggestions?" },
   "labelToolTranslate": { "message": "Translate" },
   "labelToolSummarize": { "message": "Summarize" },
   "labelToolAsk": { "message": "Ask" },
