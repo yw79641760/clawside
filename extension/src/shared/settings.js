@@ -31,7 +31,8 @@
         '- If text is empty or meaningless, output "—"\n\n' +
         'Page title: {title}\n' +
         'Page URL: {url}\n\n' +
-        'Text: {text}'
+        'Context:\n{content}\n\n' +
+        'Text to translate: {text}'
     },
 
     summarize: {
