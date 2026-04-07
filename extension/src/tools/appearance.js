@@ -192,14 +192,14 @@ const CONTENT_STYLES = `
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
   .cs-popup-header {
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; flex-direction: column;
     padding: 6px 12px 4px;
     border-bottom: 1px solid var(--cs-border);
     background: var(--cs-header-bg);
   }
   .cs-popup-drag-handle {
-    display: flex; justify-content: center; align-items: center;
-    width: 100%; padding: 2px 0 4px; cursor: grab;
+    display: flex; justify-content: center; align-items: flex-start;
+    width: 100%; height: 8px; cursor: grab;
     color: var(--cs-muted); flex-shrink: 0;
   }
   .cs-popup-drag-handle:active { cursor: grabbing; }
@@ -207,7 +207,6 @@ const CONTENT_STYLES = `
   .cs-popup-header-main {
     display: flex; align-items: center; gap: 4px;
     width: 100%;
-  }
   }
   .cs-popup-icon { font-size: 14px; margin-right: 2px; }
   .cs-popup-title { font-size: 13px; font-weight: 600; color: var(--cs-text); margin-right: auto; }
