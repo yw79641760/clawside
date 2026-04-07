@@ -79,7 +79,7 @@
     var msgKey = msgKeyMap[action] || action;
     var loadingKey = loadingKeyMap[action] || 'loading';
     return {
-      icon: BUBBLE_ICONS[action] || '',
+      icon: window.svgIcon ? window.svgIcon(action) : (BUBBLE_ICONS[action] || ''),
       title: chrome.i18n.getMessage(msgKey) || msgKey,
       loading: chrome.i18n.getMessage(loadingKey) || loadingKey
     };
@@ -148,7 +148,6 @@
       '</div>' +
       '<div class="cs-popup-selected">' +
         '<span class="cs-popup-selected-text" id="cs-popup-selected-text"></span>' +
-        '<button class="cs-popup-edit" id="cs-popup-edit" title="Edit">' + BUBBLE_ICONS.edit + '</button>' +
         '<button class="cs-popup-copy" id="cs-popup-copy">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>' +
       '<div class="cs-popup-body" id="cs-popup-body">' +
@@ -159,7 +158,6 @@
       '</div>' +
       '<div class="cs-popup-actions">' +
         '<button class="cs-popup-action-btn" id="cs-popup-copy-result" title="Copy">' + BUBBLE_ICONS.copy + '</button>' +
-        '<button class="cs-popup-action-btn" id="cs-popup-summarize" title="Summarize">' + BUBBLE_ICONS.summarize + '</button>' +
         '<button class="cs-popup-action-btn" id="cs-popup-ask" title="Ask">' + BUBBLE_ICONS.ask + '</button>' +
       '</div>';
     document.body.appendChild(el);
@@ -198,7 +196,9 @@
       if (selectedEl.querySelector('input')) {
         selectedEl.innerHTML = '';
       }
-      selectedEl.textContent = text || '';
+      // Truncate to 30 chars with ellipsis
+      var truncated = text ? (text.length > 30 ? text.substring(0, 30) + '...' : text) : '';
+      selectedEl.textContent = truncated;
     }
 
     var strings = getPopupStrings(action);
@@ -270,46 +270,32 @@
       var selectedText = popup.querySelector('#cs-popup-selected-text').textContent;
       copyText(selectedText, popup.querySelector('#cs-popup-copy'));
     };
-    popup.querySelector('#cs-popup-edit').onclick = function() {
-      var selectedEl = popup.querySelector('#cs-popup-selected-text');
-      var currentText = selectedEl.textContent;
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.value = currentText;
-      input.className = 'cs-popup-edit-input';
-      selectedEl.innerHTML = '';
-      selectedEl.appendChild(input);
-      input.focus();
-      input.select();
 
-      var finishEdit = function() {
-        var newText = input.value.trim();
-        selectedEl.textContent = newText;
-        if (newText && newText !== currentText) {
-          doAction('translate', newText, window.location.href, document.title, null);
-        }
-      };
-
-      input.addEventListener('blur', finishEdit);
-      input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          input.blur();
-        } else if (e.key === 'Escape') {
-          selectedEl.textContent = currentText;
-        }
-      });
-    };
     // Copy result button
     popup.querySelector('#cs-popup-copy-result').onclick = function() {
       var bodyText = popup.querySelector('.cs-popup-body').textContent;
       copyText(bodyText, popup.querySelector('#cs-popup-copy-result'));
     };
-    // Action buttons (summarize, ask) - placeholder for now
-    popup.querySelector('#cs-popup-summarize').onclick = function() {
-      // TODO: implement summarize
-    };
+    // Ask button - opens side panel with ask tab
     popup.querySelector('#cs-popup-ask').onclick = function() {
-      // TODO: implement ask
+      var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
+      var text = currentCtx ? currentCtx.selectedText : '';
+      chrome.storage.local.set({
+        _pendingTab: currentCtx?.tabId || null,
+        _pendingUrl: window.location.href,
+        _pendingTitle: document.title,
+        _pendingText: text,
+        _pendingAction: 'ask'
+      }).catch(function () {});
+      chrome.runtime.sendMessage({
+        type: 'panel-open-with-tab',
+        tab: currentCtx?.tabId || null,
+        url: window.location.href,
+        title: document.title,
+        text: text,
+        action: 'ask'
+      }).catch(function () {});
+      hidePopup();
     };
 
     // Focus out: hide popup when clicking outside (unless pinned)
@@ -465,7 +451,7 @@
         prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nText: ' + text;
         await apiCall(prompt, port, token, onStreamChunk);
       } else if (action === 'summarize') {
-        prompt = 'You are a page summarizer. Summarize the following webpage content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nPage URL: ' + url;
+        prompt = 'You are a text summarizer. Summarize the following content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nText: ' + text;
         await apiCall(prompt, port, token, onStreamChunk);
       } else if (action === 'ask') {
         if (text) {
@@ -554,8 +540,8 @@
       var currentCtx = window.tabContextManager.getCurrent();
       var text = currentCtx ? currentCtx.selectedText : '';
 
-      // For translate: do it directly in popup (no need to open side panel)
-      if (action === 'translate' && text) {
+      // For translate/summarize: do it directly in popup (no need to open side panel)
+      if ((action === 'translate' || action === 'summarize') && text) {
         hideBubble();
         doAction(action, text, window.location.href, document.title, null);
         return;

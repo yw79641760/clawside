@@ -218,38 +218,6 @@ const CONTENT_STYLES = `
     flex: 1; font-size: 12px; color: var(--cs-muted);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .cs-popup-edit-input {
-    width: 100%;
-    font-size: 12px;
-    padding: 2px 4px;
-    border: 1px solid var(--cs-border);
-    border-radius: 3px;
-    background: var(--cs-bg);
-    color: var(--cs-text);
-    outline: none;
-  }
-  .cs-popup-edit-input:focus {
-    border-color: var(--cs-primary);
-  }
-  .cs-popup-selected .cs-popup-edit {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    padding: 2px 4px;
-    border-radius: 3px;
-    opacity: 0.6;
-    transition: opacity 100ms, background 100ms, color 100ms;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .cs-popup-selected .cs-popup-edit:hover {
-    opacity: 1;
-    background: var(--cs-btn-hover);
-    color: var(--cs-primary);
-  }
   .cs-popup-selected .cs-popup-copy {
     background: transparent;
     border: none;
