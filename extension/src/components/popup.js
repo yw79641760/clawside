@@ -11,6 +11,7 @@
   var hideTimer = null;
   var pendingRequests = {};
   var pendingTimeouts = {};
+  var popupMessages = []; // Store chat messages in popup ask
 
   // === Init ===
   async function init() {
@@ -80,10 +81,16 @@
     var loadingKeyMap = { translate: 'translating', summarize: 'summarizing', ask: 'thinking' };
     var msgKey = msgKeyMap[action] || action;
     var loadingKey = loadingKeyMap[action] || 'loading';
+    var title = msgKey;
+    var loading = loadingKey;
+    try {
+      title = chrome.i18n.getMessage(msgKey) || msgKey;
+      loading = chrome.i18n.getMessage(loadingKey) || loadingKey;
+    } catch(e) {}
     return {
       icon: window.svgIcon ? window.svgIcon(action) : (BUBBLE_ICONS[action] || ''),
-      title: chrome.i18n.getMessage(msgKey) || msgKey,
-      loading: chrome.i18n.getMessage(loadingKey) || loadingKey
+      title: title,
+      loading: loading
     };
   }
 
@@ -105,9 +112,14 @@
     if (bubble) bubble.remove();
     var el = document.createElement('div');
     el.className = 'cs-bubble';
-    var translateTooltip = chrome.i18n.getMessage('tabTranslate') || 'Translate';
-    var summarizeTooltip = chrome.i18n.getMessage('tabSummarize') || 'Summarize';
-    var askTooltip = chrome.i18n.getMessage('tabAsk') || 'Ask';
+    var translateTooltip = 'Translate';
+    var summarizeTooltip = 'Summarize';
+    var askTooltip = 'Ask';
+    try {
+      translateTooltip = chrome.i18n.getMessage('tabTranslate') || 'Translate';
+      summarizeTooltip = chrome.i18n.getMessage('tabSummarize') || 'Summarize';
+      askTooltip = chrome.i18n.getMessage('tabAsk') || 'Ask';
+    } catch(e) {}
     el.innerHTML =
       '<button class="cs-btn" id="cs-btn-translate" title="' + translateTooltip + '">' + BUBBLE_ICONS.translate + '</button>' +
       '<button class="cs-btn" id="cs-btn-summarize" title="' + summarizeTooltip + '">' + BUBBLE_ICONS.summarize + '</button>' +
@@ -354,12 +366,16 @@
         // Determine action based on popup type
         var popupType = popup.dataset.popupType || 'translate';
         var action = (popupType === 'ask') ? 'ask' : 'translate';
+        // Pass chat messages to side panel if this is an ask popup
+        var pendingMessages = (popupType === 'ask' && popupMessages.length > 0) ? popupMessages : null;
+        console.log('[popup] openExternal popupMessages:', popupMessages.length, 'pendingMessages:', pendingMessages ? pendingMessages.length : 0);
         chrome.storage.local.set({
           _pendingTab: currentCtx?.tabId || null,
           _pendingUrl: window.location.href,
           _pendingTitle: document.title,
           _pendingText: text,
-          _pendingAction: action
+          _pendingAction: action,
+          _pendingMessages: pendingMessages
         }).catch(function () {});
         chrome.runtime.sendMessage({
           type: 'panel-open-with-tab',
@@ -367,7 +383,8 @@
           url: window.location.href,
           title: document.title,
           text: text,
-          action: action
+          action: action,
+          messages: pendingMessages
         }).catch(function () {});
         hidePopup();
       };
@@ -533,6 +550,9 @@
       '</div>';
     chatMessages.appendChild(userMsg);
 
+    // Store user message
+    popupMessages.push({ role: 'user', content: question });
+
     // Wire up user message action buttons
     userMsg.querySelector('.cs-popup-chat-copy').onclick = function() {
       copyText(question, userMsg.querySelector('.cs-popup-chat-copy'));
@@ -574,7 +594,10 @@
       var token = String(s.authToken || '').trim();
 
       // Get loading text from i18n
-      var loadingText = chrome.i18n.getMessage('thinking') || 'Thinking';
+      var loadingText = 'Thinking';
+      try {
+        loadingText = chrome.i18n.getMessage('thinking') || 'Thinking';
+      } catch(e) {}
 
       // Create assistant message element for streaming with loading state
       var assistantMsg = document.createElement('div');
@@ -615,6 +638,8 @@
       // Use the existing apiCall function with streaming
       apiCall(prompt, port, token, systemPrompt, onChunk, 'ask').then(function() {
         // Done - streaming completed
+        // Store assistant message
+        popupMessages.push({ role: 'assistant', content: fullText });
         // Add copy button to finished response
         var actionsEl = assistantMsg.querySelector('.cs-popup-chat-message-actions');
         if (actionsEl) {

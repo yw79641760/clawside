@@ -79,13 +79,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // pending data via its storage.onChanged listener (handlePendingTab).
   // No direct chrome.tabs.sendMessage, which fails when the panel refreshes.
   if (msg.type === 'panel-open-with-tab') {
-    const { tab, url, title, text, action } = msg;
+    const { tab, url, title, text, action, messages } = msg;
     chrome.storage.local.set({
       _pendingTab:   tab,
       _pendingUrl:   url   || '',
       _pendingTitle: title || '',
       _pendingText:  text  || '',
       _pendingAction: action || null,
+      _pendingMessages: messages || null,
     });
 
     chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT }).catch((err) => {

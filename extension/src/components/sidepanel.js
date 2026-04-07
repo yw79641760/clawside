@@ -567,10 +567,15 @@
 
   // Render all chat messages
   function renderChatMessages() {
+    console.log('[sidepanel] renderChatMessages called');
+    console.log('[sidepanel] - chatSession:', !!chatSession);
+    console.log('[sidepanel] - chatMessages:', !!chatMessages);
+    console.log('[sidepanel] - panelAsk.hidden:', panelAsk.classList.contains('hidden'));
     if (!chatSession) return;
     if (!chatMessages) return;
 
     const messages = chatSession.getMessages();
+    console.log('[sidepanel] renderChatMessages messages count:', messages.length);
     chatMessages.innerHTML = '';
 
     if (messages.length === 0) {
@@ -1455,7 +1460,7 @@
     // storage.onChanged listener below handles it. The direct message is a
     // fallback only when the panel is already open and stable.
     if (msg.type === 'OPEN_TAB_IN_PANEL' && msg.tab) {
-      handlePendingTab(msg.tab, msg.url || '', msg.title || '', msg.text || '');
+      handlePendingTab(null, msg.url || '', msg.title || '', msg.text || '', msg.tab);
     }
     return true;
   });
@@ -1805,8 +1810,8 @@
       if (!tab) return;
       // Guard is module-scoped — set synchronously before the async storage.get call.
       _pendingReadGuard = true;
-      chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], (stored) => {
-        handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
+      chrome.storage.local.get(['_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages'], (stored) => {
+        handlePendingTab(tab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction, stored._pendingMessages);
       });
     });
 
@@ -1829,16 +1834,74 @@
     //  d) Panel opened without floating ball (no pending tab):
     //       onChanged never fires, guard=false, _pendingTab=null
     //       → storage read → showTab('translate') ← CORRECT
+    console.log('[sidepanel] initial read _pendingReadGuard:', _pendingReadGuard);
     const stored = await new Promise((resolve) =>
-      chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction'], resolve)
+      chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages'], resolve)
     );
     if (stored._pendingTab) {
       if (!_pendingReadGuard) {
         _pendingReadGuard = true;
-        // NOTE: handlePendingTab runs AFTER panelContext.init() completes
-        // (see below — chained via .then) so TCM storage is already loaded.
-        handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction);
+        handlePendingTab(stored._pendingTab, stored._pendingUrl || '', stored._pendingTitle || '', stored._pendingText || '', stored._pendingAction, stored._pendingMessages);
       }
+    } else if (stored._pendingAction) {
+      // Has action but no tab - use action to determine which tab to show
+      // Also need to load context and chat messages
+      console.log('[sidepanel] _pendingAction branch, action:', stored._pendingAction, 'messages:', stored._pendingMessages ? stored._pendingMessages.length : 0);
+      const action = stored._pendingAction;
+      const messages = stored._pendingMessages;
+      const url = stored._pendingUrl || '';
+      const title = stored._pendingTitle || '';
+      const text = stored._pendingText || '';
+
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        const activeTab = tabs && tabs[0];
+        if (!activeTab || !activeTab.id) {
+          showTab(action);
+          return;
+        }
+
+        const actualUrl = url || activeTab.url || '';
+        const actualTitle = title || activeTab.title || '';
+        const actualFavicon = activeTab.favIconUrl || '';
+
+        const existingCtx = window.tabContextManager.get(activeTab.id);
+        const existingContent = existingCtx && existingCtx.content ? existingCtx.content : '';
+        const selectedTxt = text || (existingCtx ? existingCtx.selectedText : '');
+
+        const ctx = { url: actualUrl, title: actualTitle, favicon: actualFavicon, content: existingContent, selectedText: selectedTxt };
+        window.tabContextManager.set(activeTab.id, ctx);
+        window.tabContextManager.setActiveTabId(activeTab.id);
+
+        showTab(action);
+        if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
+
+        // Load chat messages if action is 'ask' and there are pending messages
+        if (action === 'ask' && messages && messages.length > 0) {
+          console.log('[sidepanel] loading chat messages, count:', messages.length);
+          const session = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
+          // Set page context
+          session.setContext({
+            url: actualUrl,
+            title: actualTitle,
+            content: existingContent,
+            selectedText: selectedTxt
+          });
+          messages.forEach(msg => {
+            if (msg.role === 'user') {
+              session.addUserMessage(msg.content);
+            } else if (msg.role === 'assistant') {
+              session.addAssistantMessage(msg.content);
+            }
+          });
+          await session.save();
+          // Update global chatSession so renderChatMessages uses the right one
+          chatSession = session;
+          console.log('[sidepanel] messages saved, calling renderChatMessages');
+          renderChatMessages();
+        }
+
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages']);
+      });
     } else {
       showTab('translate');
     }
@@ -1906,7 +1969,7 @@
   // Called by: (1) storage.onChanged when floating ball is clicked (panel already open),
   //            (2) initial storage read when panel first opens.
   // No guard needed here — callers are responsible for avoiding double-calls.
-  function handlePendingTab(tab, url, title, text, action) {
+  function handlePendingTab(tab, url, title, text, action, messages) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs && tabs[0];
       if (!activeTab || !activeTab.id) return;
@@ -1926,9 +1989,9 @@
         const ctx = { url: actualUrl, title: actualTitle, favicon: actualFavicon, content: finalContent, selectedText: selectedTxt };
         window.tabContextManager.set(activeTab.id, ctx);
         window.tabContextManager.setActiveTabId(activeTab.id);
-        showTab(tab);
+        showTab(action || 'translate');
         if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
-        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction']);
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages']);
 
         // Auto-trigger summarize if action is 'summarize' and no existing result
         if (action === 'summarize') {
@@ -1936,6 +1999,22 @@
           if (!existing?.summary) {
             setTimeout(() => doSummarize(), 100);
           }
+        }
+
+        // Load chat messages if action is 'ask' and there are pending messages
+        if (action === 'ask' && messages && messages.length > 0) {
+          const session = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
+          // Add messages to session (skip the first one if it's being displayed in popup already)
+          messages.forEach(msg => {
+            if (msg.role === 'user') {
+              session.addUserMessage(msg.content);
+            } else if (msg.role === 'assistant') {
+              session.addAssistantMessage(msg.content);
+            }
+          });
+          await session.save();
+          // Refresh chat display
+          renderChatMessages();
         }
       }
 
@@ -1965,8 +2044,8 @@
         });
       } else {
         // Extension page or no tab — just show the tab
-        showTab(tab);
-        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction']);
+        showTab(action || 'translate');
+        chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages']);
       }
     });
   }
