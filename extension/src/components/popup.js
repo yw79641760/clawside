@@ -480,30 +480,36 @@
       var prompt;
       var systemPrompt = '';
       if (action === 'translate') {
-        // Use custom prompts from settings if available
-        var templates = window.csSettings ? window.csSettings.getPromptTemplates(s, 'translate') : null;
-        if (templates) {
-          systemPrompt = applyPrompt(templates.system, { lang: targetLang });
-          prompt = applyPrompt(templates.user, {
-            text: text,
-            lang: targetLang,
-            title: pageTitle,
-            url: pageUrl,
-            content: pageContent
-          });
-        } else {
-          prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nPage title: ' + pageTitle + '\nPage URL: ' + pageUrl + '\n\nPage content:\n' + pageContent + '\n\nText: ' + text;
-        }
+        // Use custom prompts from settings
+        var templates = window.csSettings.getPromptTemplates(s, 'translate');
+        systemPrompt = applyPrompt(templates.system, { lang: targetLang });
+        prompt = applyPrompt(templates.user, {
+          text: text,
+          lang: targetLang,
+          title: pageTitle,
+          url: pageUrl,
+          content: pageContent
+        });
         await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
       } else if (action === 'summarize') {
-        prompt = 'You are a text summarizer. Summarize the following content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nText: ' + text;
+        var templates = window.csSettings.getPromptTemplates(s, 'summarize');
+        prompt = applyPrompt(templates.user, {
+          text: text,
+          lang: replyLang,
+          title: pageTitle,
+          url: pageUrl,
+          content: pageContent
+        });
         await apiCall(prompt, port, token, '', onStreamChunk, 'summarize');
       } else if (action === 'ask') {
-        if (text) {
-          prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
-        } else {
-          prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
-        }
+        var templates = window.csSettings.getPromptTemplates(s, 'ask');
+        prompt = applyPrompt(templates.user, {
+          selectedText: text,
+          question: question || '',
+          lang: replyLang,
+          title: pageTitle,
+          url: pageUrl
+        });
         await apiCall(prompt, port, token, '', onStreamChunk, 'ask');
       }
       finalizeStream(fullText);
