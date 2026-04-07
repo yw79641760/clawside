@@ -402,7 +402,7 @@
   }
 
   // === API Call (streaming via background script) ===
-  function apiCall(prompt, port, token, systemPrompt, onChunk) {
+  function apiCall(prompt, port, token, systemPrompt, onChunk, toolName) {
     return new Promise(function (resolve, reject) {
       var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       var fullText = '';
@@ -435,7 +435,8 @@
         port: String(port || '18789'),
         token: String(token || '').trim(),
         requestId: requestId,
-        sourceTabId: sourceTabId
+        sourceTabId: sourceTabId,
+        toolName: toolName || 'default'
       });
     });
   }
@@ -493,17 +494,17 @@
         } else {
           prompt = 'You are a professional translator. Translate the following text to ' + targetLang + '. Only output the translated text, nothing else. Be accurate and natural.\n\nPage title: ' + pageTitle + '\nPage URL: ' + pageUrl + '\n\nPage content:\n' + pageContent + '\n\nText: ' + text;
         }
-        await apiCall(prompt, port, token, systemPrompt, onStreamChunk);
+        await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
       } else if (action === 'summarize') {
         prompt = 'You are a text summarizer. Summarize the following content in 3-5 clear sentences in ' + replyLang + '. Focus on the main points and key information. Only output the summary, nothing else.\n\nText: ' + text;
-        await apiCall(prompt, port, token, '', onStreamChunk);
+        await apiCall(prompt, port, token, '', onStreamChunk, 'summarize');
       } else if (action === 'ask') {
         if (text) {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user selected this text from a webpage:\n\n"' + text + '"\n\nPage: ' + url + '\n\nUser question: ' + (question || 'Please analyze and explain the selected text.');
         } else {
           prompt = 'You are a helpful assistant. Answer in ' + replyLang + '. The user is viewing this page: ' + url + '\n\nUser question: ' + (question || 'Please summarize this page.');
         }
-        await apiCall(prompt, port, token, '', onStreamChunk);
+        await apiCall(prompt, port, token, '', onStreamChunk, 'ask');
       }
       finalizeStream(fullText);
     } catch (err) {
