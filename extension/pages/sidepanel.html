@@ -82,18 +82,24 @@
       <!-- Panel Context (shared for translate + summarize + ask) -->
       <div id="panelContext">
         <div class="page-info">
-          <h3 class="page-info-heading hidden" id="ctxHeadingTranslate">当前页面</h3>
-          <h3 class="page-info-heading" id="ctxHeadingSummarize">当前页面</h3>
-          <h3 class="page-info-heading hidden" id="ctxHeadingAsk">当前页面</h3>
+          <div class="page-info-heading-row">
+            <h3 class="page-info-heading hidden" id="ctxHeadingTranslate">当前页面</h3>
+            <h3 class="page-info-heading" id="ctxHeadingSummarize">当前页面</h3>
+            <h3 class="page-info-heading hidden" id="ctxHeadingAsk">当前页面</h3>
+            <button class="page-info-refresh" id="ctxRefreshBtn" title="Refresh context">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
           <div class="page-info-header">
-            <img class="page-favicon" id="ctxFavicon" src="" alt="">
+            <img class="page-favicon" id="ctxFavicon" src="" alt="" width="14" height="14">
             <span class="page-title" id="ctxTitle">Loading...</span>
           </div>
           <div class="page-url" id="ctxUrl"></div>
           <div class="page-content-preview" id="ctxContentPreview"></div>
-          <button class="page-info-refresh" id="ctxRefreshBtn" title="Refresh context">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-          </button>
+          <div class="page-selected-text hidden" id="ctxSelectedText">
+            <span class="page-selected-text-label" data-i18n="labelSelectedText">Selected Text:</span>
+            <span class="page-selected-text-content"></span>
+          </div>
         </div>
       </div>
 

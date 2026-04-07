@@ -1758,6 +1758,7 @@
       ctxFavicon: $('ctxFavicon'),
       ctxTitle: $('ctxTitle'),
       ctxUrl: $('ctxUrl'),
+      ctxSelectedText: $('ctxSelectedText'),
       ctxContentPreview: $('ctxContentPreview'),
       ctxHeadingTranslate: $('ctxHeadingTranslate'),
       ctxHeadingSummarize: $('ctxHeadingSummarize'),

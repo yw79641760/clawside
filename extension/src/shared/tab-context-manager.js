@@ -264,7 +264,8 @@
     if (ctx) {
       ctx.selectedText = text || '';
     } else {
-      map.set(activeTabId, new TabContext('', '', '', text || '', ''));
+      // Preserve existing context values - don't create empty context
+      return;
     }
     persist();
   }
@@ -308,14 +309,15 @@
         return true;
       }
 
-      // text_selected — only updates selectedText, does NOT overwrite content/url/title.
+      // text_selected — only updates selectedText, does NOT overwrite content/url/title/favicon.
       if (msg.type === 'text_selected' && tabId) {
         var ctx2 = map.get(tabId);
         if (ctx2) {
           ctx2.selectedText = msg.text || '';
           map.set(tabId, ctx2);
         } else {
-          map.set(tabId, new TabContext(msg.url || '', msg.title || '', '', msg.text || '', ''));
+          // Don't create empty context - preserve existing data
+          return true;
         }
         persist();
         return true;

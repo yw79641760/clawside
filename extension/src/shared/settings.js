@@ -60,9 +60,8 @@
       user: 'Answer the user\'s question based on the provided page context.\n\n' +
         'Page title: {title}\n' +
         'Page URL: {url}\n\n' +
-        'Selected text: {selectedText}\n\n' +
-        'Page content:\n' +
-        '{content}\n\n' +
+        'Selected text (prefer over page content if provided):\n{selectedText}\n\n' +
+        'Page content:\n{content}\n\n' +
         'User question: {question}\n\n' +
         'Guidelines:\n' +
         '- Answer in {lang} using Markdown\n' +
@@ -160,7 +159,7 @@
     getPromptTemplate: getPromptTemplate,
     getPromptTemplates: getPromptTemplates,
     getGlobalTranslatePrompt: getGlobalTranslatePrompt,
-    applyPromptVariables: applyPromptVariables
+    applyPrompt: applyPromptVariables
   };
 
 })();

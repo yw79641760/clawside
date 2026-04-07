@@ -212,6 +212,8 @@ const CONTENT_STYLES = `
   }
   .cs-popup-icon { font-size: 14px; margin-right: 2px; }
   .cs-popup-title { font-size: 13px; font-weight: 600; color: var(--cs-text); margin-right: auto; }
+  .cs-popup-open-external { margin-left: 4px; width: 26px; height: 26px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 14px; color: var(--cs-muted); display: flex; align-items: center; justify-content: center; transition: background 100ms; }
+  .cs-popup-open-external:hover { background: var(--cs-btn-hover); color: var(--cs-text); }
   .cs-popup-pin { margin-left: 4px; }
   .cs-popup-close { margin-left: 4px; }
   .cs-popup-selected {
@@ -304,6 +306,104 @@ const CONTENT_STYLES = `
     justify-content: center; gap: 8px; padding: 28px 16px; color: var(--cs-muted);
     font-size: 13px;
   }
+
+  /* Ask popup chat interface */
+  .cs-popup-ask .cs-popup-body { display: none; }
+  .cs-popup-ask .cs-popup-actions { display: none; }
+  .cs-popup-chat-messages {
+    flex: 1; overflow-y: auto; padding: 8px;
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 150px;
+    align-items: flex-start;
+  }
+  .cs-popup-chat-message {
+    padding: 6px 8px; border-radius: 6px; font-size: 12px; line-height: 1.4;
+    word-wrap: break-word; position: relative;
+    width: auto; max-width: 90%; text-align: left;
+  }
+  .cs-popup-chat-message-content {
+    display: block;
+  }
+  /* Actions always visible */
+  .cs-popup-chat-message-actions {
+    display: flex; gap: 4px; position: absolute;
+  }
+  .cs-popup-chat-message.assistant .cs-popup-chat-message-actions {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .cs-popup-chat-message.assistant:hover .cs-popup-chat-message-actions {
+    opacity: 1;
+  }
+  /* User message - right aligned */
+  .cs-popup-chat-message.user {
+    background: var(--cs-primary); color: var(--cs-bg);
+    margin-left: auto; width: auto; max-width: 90%;
+  }
+  /* User message actions - left side of bubble, show on hover */
+  .cs-popup-chat-message.user .cs-popup-chat-message-actions {
+    left: -44px; top: 0; flex-direction: row-reverse;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .cs-popup-chat-message.user:hover .cs-popup-chat-message-actions {
+    opacity: 1;
+  }
+  /* Assistant message - left aligned */
+  .cs-popup-chat-message.assistant {
+    background: var(--cs-header-bg); color: var(--cs-text);
+    width: auto; max-width: 90%; text-align: left;
+  }
+  /* Assistant message actions - below, right aligned */
+  .cs-popup-chat-message.assistant .cs-popup-chat-message-actions {
+    left: auto; right: 0; top: 100%; margin-top: 2px;
+  }
+  .cs-popup-chat-action-btn {
+    background: transparent; border: none; cursor: pointer;
+    padding: 2px; border-radius: 4px; color: var(--cs-text);
+    opacity: 0.5; display: flex; align-items: center;
+  }
+  .cs-popup-chat-action-btn:hover { opacity: 1; }
+  /* Loading state for ask popup */
+  .cs-popup-chat-message.cs-popup-loading {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; color: var(--cs-muted);
+  }
+  .cs-popup-chat-message.cs-popup-loading .loading-text {
+    font-size: 12px;
+  }
+  .cs-popup-chat-message.cs-popup-loading .loading-dots {
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .cs-popup-chat-message.cs-popup-loading .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+    animation: cs-loading-dot 1.4s infinite ease-in-out both;
+  }
+  .cs-popup-chat-input-area {
+    display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--cs-border);
+    align-items: flex-end;
+  }
+  .cs-popup-chat-input {
+    flex: 1; padding: 6px 8px; border: 1px solid var(--cs-border);
+    border-radius: 6px; background: var(--cs-bg); color: var(--cs-text);
+    font-size: 12px; resize: none; font-family: inherit;
+    min-height: 24px; max-height: 60px;
+  }
+  .cs-popup-chat-input:focus { outline: none; border-color: var(--cs-primary); }
+  .cs-popup-chat-send {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: none; background: var(--cs-primary); color: var(--cs-bg); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .cs-popup-chat-send:hover { transform: translateY(-1px); }
+  .cs-popup-chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .cs-popup-chat-send svg { width: 16px; height: 16px; }
+
   .loading-dots {
     display: inline-flex; align-items: center; gap: 3px;
   }

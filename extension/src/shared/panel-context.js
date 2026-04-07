@@ -32,7 +32,7 @@
   }
 
   // ── DOM Init ─────────────────────────────────────────────────
-  // @param {object} dom  { panelContext, ctxFavicon, ctxTitle, ctxUrl,
+  // @param {object} dom  { panelContext, ctxFavicon, ctxTitle, ctxUrl, ctxSelectedText,
   //                        ctxContentPreview, ctxHeadingSummarize, ctxHeadingAsk,
   //                        ctxRefreshBtn, translateInput, askQuestion }
   async function init(dom) {
@@ -79,14 +79,36 @@
 
   // ── Apply a TabContext to the context box DOM ─────────────────
   // Truncates title, URL, and content preview to 40 chars via window.truncate.
-  //
-  // @param {object} ctx  plain object: { url, title, favicon, content, selectedText }
+  // Preserves existing favicon/title/url when incoming ctx has empty values.
   function applyContextToDOM(ctx) {
     if (!ctx) return;
+    console.log('[ClawSide applyContextToDOM] incoming ctx:', JSON.stringify({ favicon: ctx.favicon, title: ctx.title, url: ctx.url, selectedText: ctx.selectedText ? ctx.selectedText.substring(0, 20) + '...' : '' }));
     var truncate = window.truncate || function (s, max) {
       if (!s) return '';
       return s.length > max ? s.slice(0, max) + '\u2026' : s;
     };
+    var favicon = ctx.favicon;
+    var title = ctx.title;
+    var url = ctx.url;
+    // If incoming favicon is empty, try to preserve current DOM favicon (don't use fallback)
+    if (!favicon && _el.ctxFavicon && _el.ctxFavicon.src) {
+      // Check if current DOM has a real favicon (not the fallback)
+      var currentDomSrc = _el.ctxFavicon.src;
+      var fallbackFavicon = getFallbackFaviconUrl();
+      if (currentDomSrc && currentDomSrc !== fallbackFavicon) {
+        favicon = currentDomSrc;
+        console.log('[ClawSide applyContextToDOM] preserving DOM favicon:', favicon);
+      }
+    }
+    // Also try to preserve from TCM (but TCM might be stale)
+    if (!favicon) {
+      var currentCtx = window.tabContextManager.getCurrent();
+      console.log('[ClawSide applyContextToDOM] currentCtx:', currentCtx ? JSON.stringify({ favicon: currentCtx.favicon, title: currentCtx.title, url: currentCtx.url }) : 'null');
+      if (currentCtx && currentCtx.favicon) {
+        favicon = currentCtx.favicon;
+      }
+    }
+    console.log('[ClawSide applyContextToDOM] final favicon:', favicon);
     // Metadata
     if (_el.ctxFavicon) {
       const fallbackFavicon = getFallbackFaviconUrl();
@@ -95,10 +117,20 @@
           _el.ctxFavicon.src = fallbackFavicon;
         }
       };
-      _el.ctxFavicon.src = ctx.favicon || fallbackFavicon;
+      _el.ctxFavicon.src = favicon || fallbackFavicon;
     }
-    if (_el.ctxTitle)   _el.ctxTitle.textContent = truncate(ctx.title, 40) || '—';
-    if (_el.ctxUrl)     _el.ctxUrl.textContent = truncate(ctx.url, 40) || '—';
+    if (_el.ctxTitle)   _el.ctxTitle.textContent = truncate(title, 40) || '—';
+    if (_el.ctxUrl)     _el.ctxUrl.textContent = truncate(url, 40) || '—';
+    // Selected text in context box
+    if (_el.ctxSelectedText) {
+      var contentSpan = _el.ctxSelectedText.querySelector('.page-selected-text-content');
+      if (ctx.selectedText) {
+        if (contentSpan) contentSpan.textContent = ctx.selectedText;
+        _el.ctxSelectedText.classList.remove('hidden');
+      } else {
+        _el.ctxSelectedText.classList.add('hidden');
+      }
+    }
     // Preview: first 40 chars of page body content
     if (_el.ctxContentPreview) {
       _el.ctxContentPreview.textContent = truncate(ctx.content, 40);
@@ -231,12 +263,13 @@
       const title     = tab.title     || '';
       const favicon   = tab.favIconUrl || '';
 
-      // Preserve existing selectedText — don't lose it during refresh.
+      // Preserve existing selectedText and favicon — don't lose them during refresh.
       // Use the ACTUAL active tab ID (from chrome.tabs.query), not TCM's stored activeTabId
       // (which might be a different tab if user switched tabs before opening panel).
       const activeTabId = tab.id;
       const existingCtx = window.tabContextManager.get(activeTabId);
       const selectedText = existingCtx ? existingCtx.selectedText : '';
+      const existingFavicon = existingCtx ? existingCtx.favicon : '';
 
       // Extract page body content. Prefer TCM content (loaded from storage by content script)
       // over executeScript (requires host permissions — silently fails without them).
@@ -267,7 +300,7 @@
       const ctx = {
         url:          url,
         title:        title,
-        favicon:      favicon,
+        favicon:      favicon || existingFavicon,
         content:      content,
         selectedText: selectedText,
       };
