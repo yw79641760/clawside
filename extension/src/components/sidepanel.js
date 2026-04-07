@@ -1056,6 +1056,12 @@
     }
     translateStreaming.reset();
     translateResult.classList.add('hidden');
+
+    // Get page context for translation
+    const currentUrl = window.panelContext.getCurrentUrl();
+    const currentTitle = window.panelContext.getCurrentPageTitle();
+    let pageContent = window.panelContext.getCurrentPageContent();
+
     showLoading('', translateBtn, 'translating');
     try {
       await loadSettings();
@@ -1067,7 +1073,13 @@
       }
       const templates = window.csSettings.getPromptTemplates(settings, 'translate');
       const systemPrompt = templates ? applyPrompt(templates.system, { lang: targetLang }) : '';
-      const userPrompt = templates ? applyPrompt(templates.user, { text, lang: targetLang }) : '';
+      const userPrompt = templates ? applyPrompt(templates.user, {
+        text,
+        lang: targetLang,
+        title: currentTitle,
+        url: currentUrl,
+        content: pageContent ? pageContent.slice(0, 8000) : ''
+      }) : '';
       await apiCall(userPrompt, {
         systemPrompt,
         toolName: 'translate',
@@ -1080,8 +1092,8 @@
       await addHistoryItem({
         id: crypto.randomUUID(), type: 'translate',
         original: text, result, lang: targetLang,
-        url: window.panelContext.getCurrentUrl(),
-        title: window.panelContext.getCurrentPageTitle(),
+        url: currentUrl,
+        title: currentTitle,
         timestamp: Date.now()
       });
     } catch (err) {
