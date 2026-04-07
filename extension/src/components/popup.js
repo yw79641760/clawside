@@ -139,7 +139,7 @@
     el.innerHTML =
       '<div class="cs-popup-header">' +
         '<div class="cs-popup-drag-handle">' +
-          '<svg width="24" height="6" viewBox="0 0 24 6" fill="none"><line x1="4" y1="2" x2="20" y2="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="4" y1="4" x2="20" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+          '<svg width="16" height="6" viewBox="0 0 16 6" fill="none"><line x1="2" y1="2" x2="14" y2="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="4" x2="14" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
         '</div>' +
         '<div class="cs-popup-header-main">' +
           '<span class="cs-popup-icon" id="cs-popup-icon"></span>' +

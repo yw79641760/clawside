@@ -201,9 +201,11 @@ const CONTENT_STYLES = `
     display: flex; justify-content: center; align-items: flex-start;
     width: 100%; height: 8px; cursor: grab;
     color: var(--cs-muted); flex-shrink: 0;
+    opacity: 0; transition: opacity 150ms;
   }
+  .cs-popup:hover .cs-popup-drag-handle { opacity: 1; }
   .cs-popup-drag-handle:active { cursor: grabbing; }
-  .cs-popup-drag-handle svg { width: 24px; height: 6px; }
+  .cs-popup-drag-handle svg { width: 16px; height: 6px; }
   .cs-popup-header-main {
     display: flex; align-items: center; gap: 4px;
     width: 100%;
