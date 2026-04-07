@@ -60,6 +60,7 @@
         "src/tools/appearance.js",
         "src/tools/browser.js",
         "lib/readability.iife.js",
+        "lib/marked.min.js",
         "src/tools/lru-cache.js",
         "src/tools/context-lru-cache.js",
         "src/shared/tab-context-manager.js",

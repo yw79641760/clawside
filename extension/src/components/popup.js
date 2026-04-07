@@ -182,19 +182,25 @@
   function positionPopup(el, refRect) {
     el.style.position = 'fixed';
     var vw = window.innerWidth;
+    var vh = window.innerHeight;
     var pw = 320;
     var top;
     if (refRect) {
-      top = refRect.bottom + window.scrollY + 8;
-      if (refRect.bottom + 300 > window.innerHeight) {
-        top = refRect.top + window.scrollY - 290 - 8;
+      // getBoundingClientRect() returns coordinates relative to viewport (already considers scroll)
+      // so we don't need to add scrollY
+      top = refRect.bottom + 8;
+      // If popup would go below viewport, show above the selection
+      if (top + 280 > vh) {
+        top = refRect.top - 280 - 8;
       }
-      var left = refRect.left + window.scrollX + refRect.width / 2 - pw / 2;
+      // Clamp to viewport bounds
+      top = Math.max(8, Math.min(top, vh - 280 - 8));
+      var left = refRect.left + refRect.width / 2 - pw / 2;
       left = Math.max(8, Math.min(left, vw - pw - 8));
       el.style.top = top + 'px';
       el.style.left = left + 'px';
     } else {
-      top = Math.max(8, window.innerHeight / 2 - 150);
+      top = Math.max(8, vh / 2 - 150);
       el.style.top = top + 'px';
       el.style.left = Math.max(8, vw / 2 - pw / 2) + 'px';
     }
@@ -202,12 +208,9 @@
 
   async function showPopup(action, text, rect, onStreamChunk) {
     if (!popup) {
-      console.log('[popup] creating popup');
       popup = createPopup();
-      console.log('[popup] popup created:', popup);
     }
     var refRect = rect || (bubble ? bubble.getBoundingClientRect() : null);
-    console.log('[popup] refRect:', refRect);
     positionPopup(popup, refRect);
 
     // Set selected text - ensure it's a text node, not an input
@@ -236,8 +239,8 @@
 
     if (onStreamChunk) {
       popup.querySelector('.cs-popup-body').innerHTML =
-        '<div class="cs-popup-loading">' +
-          '<span id="cs-popup-loading-text"></span>' +
+        '<div id="cs-stream-text" class="cs-popup-loading">' +
+          '<span class="loading-text">' + strings.loading + '</span>' +
           '<div class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
         '</div>';
       var bodyEl = popup.querySelector('.cs-popup-body');
@@ -245,15 +248,8 @@
       bodyEl.style.maxHeight = '220px';
       bodyEl.style.overflowY = 'auto';
       startCursorBlink();
-
-      // Set loading text after HTML replacement
-      var loadingTextEl = popup.querySelector('#cs-popup-loading-text');
-      if (loadingTextEl) {
-        loadingTextEl.textContent = strings.loading;
-      }
     }
 
-    console.log('[popup] showing popup, setting display flex');
     popup.style.display = 'flex';
 
     // Pin button toggle
@@ -353,7 +349,15 @@
 
   function appendStreamChunk(text) {
     var el = popup && popup.querySelector('#cs-stream-text');
-    if (el) el.textContent += text;
+    if (el) {
+      // Remove loading animation when first chunk arrives
+      el.classList.remove('cs-popup-loading');
+      var loadingText = el.querySelector('.loading-text');
+      var loadingDots = el.querySelector('.loading-dots');
+      if (loadingText) loadingText.remove();
+      if (loadingDots) loadingDots.remove();
+      el.textContent += text;
+    }
     var bodyEl = popup && popup.querySelector('.cs-popup-body');
     if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
   }
@@ -364,7 +368,12 @@
     if (cursor) cursor.remove();
     var bodyEl = popup && popup.querySelector('.cs-popup-body');
     if (bodyEl) {
-      bodyEl.textContent = text;
+      // Parse markdown if marked is available
+      if (window.marked && typeof window.marked.parse === 'function') {
+        bodyEl.innerHTML = window.marked.parse(text);
+      } else {
+        bodyEl.textContent = text;
+      }
       bodyEl.style.whiteSpace = 'pre-wrap';
     }
   }
@@ -447,9 +456,9 @@
     });
   }
 
-  async function doAction(action, text, url, title, question) {
-    url = url || window.location.href;
-    title = title || document.title;
+  async function doAction(action, text, rect, question) {
+    var url = window.location.href;
+    var title = document.title;
 
     var stored = await chrome.storage.local.get(['clawside_settings']);
     var s = stored.clawside_settings || { gatewayPort: '18789', authToken: '', language: 'auto', translateLanguage: 'auto' };
@@ -462,7 +471,7 @@
       appendStreamChunk(chunk);
     };
 
-    await showPopup(action, text, null, onStreamChunk);
+    await showPopup(action, text, rect, onStreamChunk);
 
     try {
       // translateLanguage: translation target, defaults to language setting
@@ -485,27 +494,13 @@
 
       var prompt;
       var systemPrompt = '';
-      console.log('[popup] action:', action, 's:', s);
       if (action === 'translate') {
         // Use custom prompts from settings
-        console.log('[popup] checking csSettings, window.csSettings:', window.csSettings);
         if (!window.csSettings) {
           console.error('[popup] window.csSettings not available');
           setPopupError('Settings not loaded');
           return;
         }
-        var templates = window.csSettings.getPromptTemplates(s, 'translate');
-        console.log('[popup] templates:', templates);
-        systemPrompt = applyPrompt(templates.system, { lang: targetLang });
-        console.log('[popup] systemPrompt:', systemPrompt);
-        prompt = applyPrompt(templates.user, {
-          text: text,
-          lang: targetLang,
-          title: pageTitle,
-          url: pageUrl,
-          content: pageContent
-        });
-        console.log('[popup] final prompt:', prompt);
         var templates = window.csSettings.getPromptTemplates(s, 'translate');
         if (!templates) {
           console.error('[popup] translate templates not found');
@@ -520,16 +515,19 @@
           url: pageUrl,
           content: pageContent
         });
-        console.log('[popup] calling apiCall with translate');
         try {
           await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
-          console.log('[popup] apiCall returned');
         } catch (err) {
           console.error('[popup] apiCall error:', err);
           setPopupError(err.message);
         }
       } else if (action === 'summarize') {
         var templates = window.csSettings.getPromptTemplates(s, 'summarize');
+        if (!templates) {
+          console.error('[popup] summarize templates not found');
+          setPopupError('Summarize template not found');
+          return;
+        }
         prompt = applyPrompt(templates.user, {
           text: text,
           lang: replyLang,
@@ -549,7 +547,6 @@
         });
         await apiCall(prompt, port, token, '', onStreamChunk, 'ask');
       }
-      console.log('[popup] finalizeStream, fullText:', fullText.length, 'chars');
       finalizeStream(fullText);
     } catch (err) {
       console.error('[popup] doAction error:', err);
@@ -626,24 +623,20 @@
       else if (id === 'cs-btn-ask') action = 'ask';
       if (!action) return;
 
-      console.log('[popup] button clicked:', id, 'action:', action);
-
       // Pull selected text from tabContextManager (shared across all tabs)
       var currentCtx = window.tabContextManager.getCurrent();
-      console.log('[popup] currentCtx:', currentCtx);
       var text = currentCtx ? currentCtx.selectedText : '';
-      console.log('[popup] selectedText:', text);
 
       // For translate/summarize: do it directly in popup (no need to open side panel)
       if ((action === 'translate' || action === 'summarize') && text) {
-        console.log('[popup] calling doAction');
+        // Save bubble rect BEFORE hiding it (getBoundingClientRect returns zeros when display:none)
+        var bubbleRect = bubble ? bubble.getBoundingClientRect() : null;
         hideBubble();
-        await doAction(action, text, window.location.href, document.title, null);
+        await doAction(action, text, bubbleRect, null);
         return;
       }
 
       // For summarize/ask: open side panel with the action tab
-      console.log('[popup] opening side panel, text empty?:', !text);
       chrome.storage.local.set({
         _pendingTab: currentCtx?.tabId || null,
         _pendingUrl: window.location.href,

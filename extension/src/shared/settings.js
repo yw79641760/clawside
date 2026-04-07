@@ -36,19 +36,20 @@
     },
 
     summarize: {
-      system: 'You are ClawSide\'s page summarizer, a concise AI that extracts key information from web pages.\n' +
+      system: 'You are ClawSide\'s text summarizer, a concise AI that extracts key information from text.\n' +
         '- Output only what is present in the content; do not invent or infer missing details\n' +
-        '- If content is empty or inaccessible, say "Unable to summarize — page content not available."',
-      user: 'Summarize the page in {lang} using this structure:\n' +
-        '- **Overview**: 1-2 sentences (omit if page has no meaningful content)\n' +
+        '- If content is empty or inaccessible, say "Unable to summarize — content not available."',
+      user: 'Summarize the page content or Text to summarize, depending on whether "Text to summarize" is provided.\n' +
+        'Use this structure:\n' +
+        '- **Overview**: 1-2 sentences (omit if text has no meaningful content)\n' +
         '- **Key Points**: 2-6 bullet points (adjust based on content richness)\n' +
         '- **Highlights**: notable facts, figures, or quotes if any exist\n\n' +
-        'Keep the total summary under 300 words. Do not repeat information across sections.\n' +
+        'Keep the summary under 200 words. Do not repeat information across sections.\n' +
         'Output Markdown only.\n\n' +
         'Page title: {title}\n' +
         'Page URL: {url}\n\n' +
-        'Page content:\n' +
-        '{content}'
+        'Page content:\n{content}\n\n' +
+        'Text to summarize (omit if empty):\n{text}'
     },
 
     ask: {
