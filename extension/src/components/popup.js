@@ -597,18 +597,24 @@
       else if (id === 'cs-btn-ask') action = 'ask';
       if (!action) return;
 
+      console.log('[popup] button clicked:', id, 'action:', action);
+
       // Pull selected text from tabContextManager (shared across all tabs)
       var currentCtx = window.tabContextManager.getCurrent();
+      console.log('[popup] currentCtx:', currentCtx);
       var text = currentCtx ? currentCtx.selectedText : '';
+      console.log('[popup] selectedText:', text);
 
       // For translate/summarize: do it directly in popup (no need to open side panel)
       if ((action === 'translate' || action === 'summarize') && text) {
+        console.log('[popup] calling doAction');
         hideBubble();
         doAction(action, text, window.location.href, document.title, null);
         return;
       }
 
       // For summarize/ask: open side panel with the action tab
+      console.log('[popup] opening side panel, text empty?:', !text);
       chrome.storage.local.set({
         _pendingTab: currentCtx?.tabId || null,
         _pendingUrl: window.location.href,
