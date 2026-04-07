@@ -137,14 +137,16 @@
     var el = document.createElement('div');
     el.className = 'cs-popup';
     el.innerHTML =
-      '<div class="cs-popup-drag">' +
-        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 5.625a.625.625 0 1 0 0 1.25h12a.625.625 0 1 0 0-1.25H2Zm0 3.5a.625.625 0 1 0 0 1.25h12a.625.625 0 1 0 0-1.25H2Z" fill="currentColor"/></svg>' +
-      '</div>' +
       '<div class="cs-popup-header">' +
-        '<span class="cs-popup-icon" id="cs-popup-icon"></span>' +
-        '<span class="cs-popup-title" id="cs-popup-title">Translation</span>' +
-        '<button class="cs-popup-pin" id="cs-popup-pin" title="Pin">' + BUBBLE_ICONS.pin + '</button>' +
-        '<button class="cs-popup-close" id="cs-popup-close">&#10005;</button>' +
+        '<div class="cs-popup-drag-handle">' +
+          '<svg width="24" height="4" viewBox="0 0 24 4" fill="none"><path d="M2 2h20M2 2c0 1.1.9 2 2 2s2-.9 2-2 2-.9 2-2 2-.9 2-2 2-.9 2-2 2-.9 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+        '</div>' +
+        '<div class="cs-popup-header-main">' +
+          '<span class="cs-popup-icon" id="cs-popup-icon"></span>' +
+          '<span class="cs-popup-title" id="cs-popup-title">Translation</span>' +
+          '<button class="cs-popup-pin" id="cs-popup-pin" title="Pin">' + BUBBLE_ICONS.pin + '</button>' +
+          '<button class="cs-popup-close" id="cs-popup-close">&#10005;</button>' +
+        '</div>' +
       '</div>' +
       '<div class="cs-popup-selected">' +
         '<span class="cs-popup-selected-text" id="cs-popup-selected-text"></span>' +
@@ -246,7 +248,7 @@
     };
 
     // Drag functionality
-    var dragEl = popup.querySelector('.cs-popup-drag');
+    var dragEl = popup.querySelector('.cs-popup-drag-handle');
     var isDragging = false;
     var dragOffsetX = 0;
     var dragOffsetY = 0;

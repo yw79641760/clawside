@@ -191,19 +191,23 @@ const CONTENT_STYLES = `
     from { opacity: 0; transform: scale(0.9) translateY(-6px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-  .cs-popup-drag {
-    display: flex; justify-content: center; align-items: center;
-    padding: 4px 0; cursor: grab; color: var(--cs-muted);
-    flex-shrink: 0;
-  }
-  .cs-popup-drag svg {
-    width: 16px; height: 12px;
-  }
-  .cs-popup-drag:active { cursor: grabbing; }
   .cs-popup-header {
-    display: flex; align-items: center; gap: 4px;
-    padding: 8px 12px; border-bottom: 1px solid var(--cs-border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 6px 12px 4px;
+    border-bottom: 1px solid var(--cs-border);
     background: var(--cs-header-bg);
+  }
+  .cs-popup-drag-handle {
+    display: flex; justify-content: center; align-items: center;
+    width: 100%; padding: 2px 0 4px; cursor: grab;
+    color: var(--cs-muted); flex-shrink: 0;
+  }
+  .cs-popup-drag-handle:active { cursor: grabbing; }
+  .cs-popup-drag-handle svg { width: 24px; height: 4px; }
+  .cs-popup-header-main {
+    display: flex; align-items: center; gap: 4px;
+    width: 100%;
+  }
   }
   .cs-popup-icon { font-size: 14px; margin-right: 2px; }
   .cs-popup-title { font-size: 13px; font-weight: 600; color: var(--cs-text); margin-right: auto; }
