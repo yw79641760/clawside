@@ -177,7 +177,6 @@
       '</div>' +
       '<div class="cs-popup-actions">' +
         '<button class="cs-popup-action-btn" id="cs-popup-copy-result" title="Copy">' + BUBBLE_ICONS.copy + '</button>' +
-        '<button class="cs-popup-action-btn" id="cs-popup-ask" title="Ask">' + BUBBLE_ICONS.ask + '</button>' +
       '</div>';
     document.body.appendChild(el);
     return el;
@@ -421,31 +420,6 @@
         copyResultBtn.onclick = function() {
           var bodyText = popup.querySelector('.cs-popup-body').textContent;
           copyText(bodyText, copyResultBtn);
-        };
-      }
-
-      // Ask button - opens side panel with ask tab
-      var askBtn = popup.querySelector('#cs-popup-ask');
-      if (askBtn) {
-        askBtn.onclick = function() {
-          var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
-          var text = currentCtx ? currentCtx.selectedText : '';
-          chrome.storage.local.set({
-            _pendingTab: currentCtx?.tabId || null,
-            _pendingUrl: window.location.href,
-            _pendingTitle: document.title,
-            _pendingText: text,
-            _pendingAction: 'ask'
-          }).catch(function () {});
-          chrome.runtime.sendMessage({
-            type: 'panel-open-with-tab',
-            tab: currentCtx?.tabId || null,
-            url: window.location.href,
-            title: document.title,
-            text: text,
-            action: 'ask'
-          }).catch(function () {});
-          hidePopup();
         };
       }
     } else {
