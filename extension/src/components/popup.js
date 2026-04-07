@@ -152,8 +152,8 @@
       '</div>' +
       '<div class="cs-popup-body" id="cs-popup-body">' +
         '<div class="cs-popup-loading">' +
-          '<span id="cs-popup-loading-text">Translating</span>' +
-          '<div class="cs-spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
+          '<span id="cs-popup-loading-text"></span>' +
+          '<div class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
         '</div>' +
       '</div>' +
       '<div class="cs-popup-actions">' +
@@ -216,14 +216,20 @@
     if (onStreamChunk) {
       popup.querySelector('.cs-popup-body').innerHTML =
         '<div class="cs-popup-loading">' +
-          '<span id="cs-popup-loading-text">Translating</span>' +
-          '<div class="cs-spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
+          '<span id="cs-popup-loading-text"></span>' +
+          '<div class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>' +
         '</div>';
       var bodyEl = popup.querySelector('.cs-popup-body');
       bodyEl.style.whiteSpace = 'pre-wrap';
       bodyEl.style.maxHeight = '220px';
       bodyEl.style.overflowY = 'auto';
       startCursorBlink();
+
+      // Set loading text after HTML replacement
+      var loadingTextEl = popup.querySelector('#cs-popup-loading-text');
+      if (loadingTextEl) {
+        loadingTextEl.textContent = strings.loading;
+      }
     }
 
     popup.style.display = 'flex';
