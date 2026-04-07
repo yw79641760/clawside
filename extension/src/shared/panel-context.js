@@ -91,22 +91,19 @@
     var favicon = ctx.favicon;
     var title = ctx.title;
     var url = ctx.url;
-    // If incoming favicon is empty, try to preserve current DOM favicon (don't use fallback)
+    // If incoming favicon is empty, only preserve current DOM favicon if URLs match
     if (!favicon && _el.ctxFavicon && _el.ctxFavicon.src) {
-      // Check if current DOM has a real favicon (not the fallback)
       var currentDomSrc = _el.ctxFavicon.src;
       var fallbackFavicon = getFallbackFaviconUrl();
+      // Only preserve if current DOM favicon is real AND URLs match
       if (currentDomSrc && currentDomSrc !== fallbackFavicon) {
-        favicon = currentDomSrc;
-        console.log('[ClawSide applyContextToDOM] preserving DOM favicon:', favicon);
-      }
-    }
-    // Also try to preserve from TCM (but TCM might be stale)
-    if (!favicon) {
-      var currentCtx = window.tabContextManager.getCurrent();
-      console.log('[ClawSide applyContextToDOM] currentCtx:', currentCtx ? JSON.stringify({ favicon: currentCtx.favicon, title: currentCtx.title, url: currentCtx.url }) : 'null');
-      if (currentCtx && currentCtx.favicon) {
-        favicon = currentCtx.favicon;
+        // Compare current DOM URL with new URL
+        var currentDomUrl = _el.ctxUrl ? _el.ctxUrl.textContent : '';
+        var newUrlDisplay = truncate(url, 40) || '';
+        // Only preserve favicon if URL hasn't changed
+        if (currentDomUrl && url && currentDomUrl === newUrlDisplay) {
+          favicon = currentDomSrc;
+        }
       }
     }
     console.log('[ClawSide applyContextToDOM] final favicon:', favicon);
