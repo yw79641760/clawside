@@ -481,7 +481,17 @@
       var systemPrompt = '';
       if (action === 'translate') {
         // Use custom prompts from settings
+        if (!window.csSettings) {
+          console.error('[popup] window.csSettings not available');
+          setPopupError('Settings not loaded');
+          return;
+        }
         var templates = window.csSettings.getPromptTemplates(s, 'translate');
+        if (!templates) {
+          console.error('[popup] translate templates not found');
+          setPopupError('Translate template not found');
+          return;
+        }
         systemPrompt = applyPrompt(templates.system, { lang: targetLang });
         prompt = applyPrompt(templates.user, {
           text: text,
