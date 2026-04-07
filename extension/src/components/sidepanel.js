@@ -117,7 +117,7 @@
     $('loadingText') && ($('loadingText').textContent = chrome.i18n.getMessage('loading'));
     // Settings sub-tabs
     $('labelSettingsBasic') && ($('labelSettingsBasic').textContent = chrome.i18n.getMessage('labelSettingsBasic'));
-    $('labelSettingsTools') && ($('labelSettingsTools').textContent = chrome.i18n.getMessage('labelSettingsTools'));
+    $('labelSettingsPrompts') && ($('labelSettingsPrompts').textContent = chrome.i18n.getMessage('labelSettingsPrompts'));
     // Tools settings
     $('labelToolTranslate') && ($('labelToolTranslate').textContent = chrome.i18n.getMessage('labelToolTranslate'));
     $('labelToolSummarize') && ($('labelToolSummarize').textContent = chrome.i18n.getMessage('labelToolSummarize'));
