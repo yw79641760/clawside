@@ -65,13 +65,14 @@
     });
 
     // React to async selection updates from content script (via storage bridge).
-    // Only updates the translate input — context box itself always shows page content excerpt.
+    // Sync translate input with selectedText.
     window.addEventListener('tabctx-updated', function (e) {
       var ctx = e.detail && e.detail.ctx;
       if (!ctx) return;
       // Keep context UI synced, but don't let async empty payloads wipe existing content.
       applyContextToDOM(mergeCtxPreserveContent(ctx));
-      if (ctx.selectedText && _el.translateInput && !_el.translateInput.value) {
+      // Always sync translate input with selectedText
+      if (_el.translateInput && ctx.selectedText) {
         _el.translateInput.value = ctx.selectedText;
       }
     });

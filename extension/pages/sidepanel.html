@@ -107,7 +107,12 @@
       <section class="panel" id="panelTranslate">
         <h3 id="titleTranslateHeader" class="panel-title">翻译</h3>
         <div class="input-area">
-          <div class="selection-label" id="labelTranslateInput">Text to translate</div>
+          <div class="selection-label-row">
+            <div class="selection-label" id="labelTranslateInput">Text to translate</div>
+            <button class="input-clear" id="translateInputClear" title="Clear">
+              <svg width="16" height="16" viewBox="0 0 64 64" fill="currentColor"><use href="#cs-icon-broom"></use></svg>
+            </button>
+          </div>
           <textarea id="translateInput" data-i18n-placeholder="placeholderTranslateInput" rows="4"></textarea>
         </div>
 

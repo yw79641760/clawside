@@ -103,63 +103,76 @@
     // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
     //                                       if false, include only title + url (for follow-up questions)
     buildPrompt(includeFullContext = true, extraSystemPrompt = '') {
-      // System prompt: tool definition only (no page content)
-      const systemPrompt = this.buildSystemPrompt(extraSystemPrompt);
+      // Get ask prompt template from settings
+      var templates = window.csSettings ? window.csSettings.getPromptTemplates(window.csSettings.getDefaultSettings(), 'ask') : null;
 
-      // Build page context for user prompt
-      let pageContext = '';
-      if (this.context.title || this.context.url) {
-        const parts = [];
-        if (this.context.title) parts.push(`Title: ${this.context.title}`);
-        if (this.context.url) parts.push(`URL: ${this.context.url}`);
-        pageContext = parts.join('\n');
-      }
-
-      // Add page content for first ask (to save tokens on follow-ups)
+      // Build page context variables
+      var pageContent = '';
       if (includeFullContext && this.context.content && String(this.context.content).trim()) {
         var body = String(this.context.content).trim();
         var truncated = body.length > ASK_PAGE_CONTENT_MAX
           ? body.slice(0, ASK_PAGE_CONTENT_MAX)
           : body;
-        pageContext += '\n\nPage content (excerpt):\n' + truncated
-          + (body.length > ASK_PAGE_CONTENT_MAX ? '\n[Truncated]' : '');
+        pageContent = truncated + (body.length > ASK_PAGE_CONTENT_MAX ? '\n[Truncated]' : '');
       }
 
       // Find the last user message (skip empty assistant placeholder if any)
       const lastMsg = this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
       const lastUserMsg = lastMsg?.role === 'user' ? lastMsg : this.messages.slice().reverse().find(m => m.role === 'user');
+      var question = lastUserMsg ? lastUserMsg.content : '';
 
-      // User prompt: [page context] + [user question]
-      let userContent = '';
-      if (pageContext) {
-        userContent = pageContext + '\n\n';
+      // Prepare variables for prompt template
+      var promptVars = {
+        title: this.context.title || '',
+        url: this.context.url || '',
+        selectedText: this.context.selectedText || '',
+        content: pageContent,
+        question: question,
+        lang: 'English'
+      };
+
+      var systemPrompt = '';
+      var userPrompt = '';
+
+      if (templates) {
+        // Use settings prompt template
+        var applyFn = window.csSettings ? window.csSettings.applyPrompt : null;
+        if (applyFn) {
+          systemPrompt = applyFn(templates.system, promptVars);
+          userPrompt = applyFn(templates.user, promptVars);
+        }
       }
-      if (lastUserMsg) {
-        userContent += 'User question: ' + lastUserMsg.content;
+
+      // Fallback if no templates or applyFn
+      if (!systemPrompt) {
+        systemPrompt = [
+          'You are ClawSide\'s webpage Q&A assistant.',
+          '- Answer based ONLY on the provided context; do not fabricate information',
+          '- If the answer cannot be found in context, say so explicitly',
+          '- Respond in Markdown; keep it concise (3-6 bullet points or short paragraphs)'
+        ].join('\n');
+      }
+
+      if (!userPrompt) {
+        userPrompt = [
+          'Title: ' + (this.context.title || ''),
+          'URL: ' + (this.context.url || ''),
+          this.context.selectedText ? 'Selected text (prefer over page content if provided):\n' + this.context.selectedText : '',
+          pageContent ? 'Page content (excerpt):\n' + pageContent : '',
+          question ? 'User question: ' + question : ''
+        ].filter(Boolean).join('\n\n');
+      }
+
+      // Add extra system prompt if provided
+      if (extraSystemPrompt) {
+        systemPrompt = systemPrompt + '\n\n' + extraSystemPrompt;
       }
 
       // Only add tail if last message is from assistant (and not empty)
       const needsTail = lastMsg && lastMsg.role === 'assistant' && String(lastMsg.content || '').trim();
       const tail = needsTail ? 'Assistant:' : '';
 
-      return [systemPrompt, userContent, tail].filter(Boolean).join('\n\n');
-    }
-
-    // Build system prompt - tool definition only (no page context)
-    buildSystemPrompt(extraSystemPrompt = '') {
-      const parts = [];
-
-      parts.push([
-        'You are a helpful assistant for webpage Q&A.',
-        'Follow the user question and use the provided page context.',
-        'If selected text is present, prefer it over the full content.',
-        'If the answer cannot be found in the provided context, say so explicitly and explain what is missing.',
-        'Respond in Markdown.',
-        'Be concise: prefer 3-8 bullet points or short paragraphs.'
-      ].join('\n'));
-
-      const base = parts.join('\n\n');
-      return extraSystemPrompt ? `${base}\n\n${extraSystemPrompt}` : base;
+      return [systemPrompt, userPrompt, tail].filter(Boolean).join('\n\n');
     }
 
     // Save to storage (via LRU cache)

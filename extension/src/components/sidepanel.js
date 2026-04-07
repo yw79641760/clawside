@@ -1563,7 +1563,30 @@
   // Clear translate result when input changes
   translateInput.addEventListener('input', () => {
     translateResult.classList.add('hidden');
+    // Clear context box selectedText when user manually edits input
+    var selectedTextEl = document.getElementById('ctxSelectedText');
+    if (selectedTextEl) {
+      selectedTextEl.classList.add('hidden');
+    }
+    // Also clear in TCM so subsequent operations use input value, not selectedText
+    window.panelContext.setSelectedText('');
   });
+
+  // Clear translate input button
+  const translateInputClear = $('translateInputClear');
+  if (translateInputClear) {
+    translateInputClear.addEventListener('click', () => {
+      translateInput.value = '';
+      translateInput.focus();
+      translateResult.classList.add('hidden');
+      // Clear context box selectedText
+      var selectedTextEl = document.getElementById('ctxSelectedText');
+      if (selectedTextEl) {
+        selectedTextEl.classList.add('hidden');
+      }
+      window.panelContext.setSelectedText('');
+    });
+  }
 
   copyTranslateResult.addEventListener('click', () => doCopy(translateStreaming.getRawText(), copyTranslateResult));
   copySummarizeResult.addEventListener('click', () => doCopy(summarizeStreaming.getRawText(), copySummarizeResult));
