@@ -18,7 +18,7 @@ const SVG = {
   eyeoff:     '<svg class="cs-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#cs-icon-eye-off"></use></svg>',
   history:    '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-history"></use></svg>',
   settings:   '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-settings"></use></svg>',
-  loading:    '<svg class="cs-icon cs-spin" width="20" height="20" viewBox="0 0 24 24"><use href="#cs-icon-loading"></use></svg>',
+  loading:    '<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>',
   error:      '<svg class="cs-icon" width="20" height="20" viewBox="0 0 24 24"><use href="#cs-icon-error"></use></svg>',
   cancel:     '<svg class="cs-icon" width="20" height="20" viewBox="0 0 24 24"><use href="#cs-icon-cancel"></use></svg>',
 };
