@@ -56,8 +56,19 @@ LLM Provider (configured in OpenClaw)
 - `clawside_settings` - User settings (gateway port, auth token, language, tool prompts)
 - `clawside_chat_{tabId}_{urlHash}` - Chat history per tab+URL (max 50 conversations)
 - `clawside_summarize_{tabId}_{urlHash}` - Summarize results per tab+URL
-- `_pendingTab`, `_pendingUrl`, `_pendingTitle`, `_pendingText`, `_pendingAction` - Temporary storage for panel-open flow
+- `_pendingTab`, `_pendingUrl`, `_pendingTitle`, `_pendingText`, `_pendingAction`, `_pendingMessages` - Temporary storage for panel-open flow (includes chat messages when transferring from popup ask)
 - `_tabCtxData`, `_tabCtxVersion` - Tab context persistence (internal use by tab-context-manager.js)
+
+## Popup to Side Panel Communication
+
+When clicking the open-external button in popup ask:
+1. Popup stores `_pendingAction: 'ask'` and `_pendingMessages` (chat history array) in chrome.storage.local
+2. Background receives the message and calls `chrome.sidePanel.open()`
+3. Side panel reads storage, detects `_pendingAction`, and opens the ask tab
+4. Chat messages are loaded into chat session via `chatSessionManager.getSession()` and saved to `clawside_chat_{tabId}_{urlHash}`
+5. Pending storage is cleared after processing
+
+This mechanism also applies to translate/summarize actions (without messages).
 
 ## OpenClaw Gateway Integration
 
@@ -95,3 +106,4 @@ The extension communicates with OpenClaw via the `/v1/chat/completions` endpoint
 - Auto-trigger summarize: when opening side panel via summarize action with no existing result, automatically triggers summarize
 - Global page translation: click translate in radial menu to translate all paragraphs on the page, with loading/error placeholders for each paragraph
 - Translation toggle: clicking translate again when translation is showing will hide it; clicking when hidden will re-show without re-requesting LLM
+- Popup ask transfer: when clicking open-external in popup ask, chat history is passed via `_pendingMessages` storage to side panel's ask tab, preserving conversation continuity

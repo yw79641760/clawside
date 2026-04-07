@@ -79,6 +79,12 @@ Click the ClawSide extension icon in toolbar:
 - 💬 **Ask** — ask custom questions, Ctrl+Enter to send, chat history preserved per tab+URL
 - 📜 **History** — view all past interactions, expand to see details
 
+### Popup Ask Transfer
+In popup ask (floating bubble 💬), after having a conversation:
+- Click the **open-external** icon (top-right) to transfer chat history to side panel's Ask tab
+- Conversation continues seamlessly in the full side panel
+- Chat history is saved per tab+URL in local storage
+
 ### Ask from Summarize
 In summarize result header, click the ask icon to:
 - Jump to Ask tab
