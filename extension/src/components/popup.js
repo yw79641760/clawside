@@ -614,7 +614,7 @@
       hideTimer = setTimeout(handleSelection, 100);
     });
 
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', async function (e) {
       if (!bubble || !bubble.contains(e.target)) return;
       e.stopPropagation();
       var btn = e.target.closest('.cs-btn');
@@ -638,7 +638,7 @@
       if ((action === 'translate' || action === 'summarize') && text) {
         console.log('[popup] calling doAction');
         hideBubble();
-        doAction(action, text, window.location.href, document.title, null);
+        await doAction(action, text, window.location.href, document.title, null);
         return;
       }
 
