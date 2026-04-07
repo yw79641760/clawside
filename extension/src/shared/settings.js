@@ -23,7 +23,7 @@
         '- Keep code snippets, URLs, and technical terms in their original form\n' +
         '- Short text (<20 chars): translate directly without notes\n' +
         '- Empty or garbled text: output "—"\n' +
-        '- Output the translation followed by a brief explanation of the translated text based on the provided context',
+        '- Output only the translation, nothing else',
       user: 'Translate the following text to {lang}.\n' +
         '- Preserve tone (formal/informal) from the original\n' +
         '- Keep code snippets, URLs, and technical terms unchanged\n' +
