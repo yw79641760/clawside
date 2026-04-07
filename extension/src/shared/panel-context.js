@@ -52,10 +52,12 @@
     _el.ctxRefreshBtn?.addEventListener('click', async () => {
       // Add spinning class for animation
       _el.ctxRefreshBtn.classList.add('spinning');
+      console.log('[panel-context] Refresh clicked, spinning:', _el.ctxRefreshBtn.classList.contains('spinning'));
       try {
         await updatePageContext(_el.translateInput);
       } finally {
         _el.ctxRefreshBtn.classList.remove('spinning');
+        console.log('[panel-context] Refresh done, spinning:', _el.ctxRefreshBtn.classList.contains('spinning'));
       }
     });
 
