@@ -479,15 +479,17 @@
 
       var prompt;
       var systemPrompt = '';
-      console.log('[popup] action:', action);
+      console.log('[popup] action:', action, 's:', s);
       if (action === 'translate') {
         // Use custom prompts from settings
-        console.log('[popup] checking csSettings');
+        console.log('[popup] checking csSettings, window.csSettings:', window.csSettings);
         if (!window.csSettings) {
           console.error('[popup] window.csSettings not available');
           setPopupError('Settings not loaded');
           return;
         }
+        var templates = window.csSettings.getPromptTemplates(s, 'translate');
+        console.log('[popup] templates:', templates);
         var templates = window.csSettings.getPromptTemplates(s, 'translate');
         if (!templates) {
           console.error('[popup] translate templates not found');
