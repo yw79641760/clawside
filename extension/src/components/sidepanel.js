@@ -567,15 +567,10 @@
 
   // Render all chat messages
   function renderChatMessages() {
-    console.log('[sidepanel] renderChatMessages called');
-    console.log('[sidepanel] - chatSession:', !!chatSession);
-    console.log('[sidepanel] - chatMessages:', !!chatMessages);
-    console.log('[sidepanel] - panelAsk.hidden:', panelAsk.classList.contains('hidden'));
     if (!chatSession) return;
     if (!chatMessages) return;
 
     const messages = chatSession.getMessages();
-    console.log('[sidepanel] renderChatMessages messages count:', messages.length);
     chatMessages.innerHTML = '';
 
     if (messages.length === 0) {
@@ -1834,7 +1829,6 @@
     //  d) Panel opened without floating ball (no pending tab):
     //       onChanged never fires, guard=false, _pendingTab=null
     //       → storage read → showTab('translate') ← CORRECT
-    console.log('[sidepanel] initial read _pendingReadGuard:', _pendingReadGuard);
     const stored = await new Promise((resolve) =>
       chrome.storage.local.get(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages'], resolve)
     );
@@ -1846,7 +1840,6 @@
     } else if (stored._pendingAction) {
       // Has action but no tab - use action to determine which tab to show
       // Also need to load context and chat messages
-      console.log('[sidepanel] _pendingAction branch, action:', stored._pendingAction, 'messages:', stored._pendingMessages ? stored._pendingMessages.length : 0);
       const action = stored._pendingAction;
       const messages = stored._pendingMessages;
       const url = stored._pendingUrl || '';
@@ -1872,12 +1865,8 @@
         window.tabContextManager.set(activeTab.id, ctx);
         window.tabContextManager.setActiveTabId(activeTab.id);
 
-        showTab(action);
-        if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
-
-        // Load chat messages if action is 'ask' and there are pending messages
+        // Load chat messages BEFORE showTab, so when ask tab renders it has the messages
         if (action === 'ask' && messages && messages.length > 0) {
-          console.log('[sidepanel] loading chat messages, count:', messages.length);
           const session = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
           // Set page context
           session.setContext({
@@ -1896,7 +1885,13 @@
           await session.save();
           // Update global chatSession so renderChatMessages uses the right one
           chatSession = session;
-          console.log('[sidepanel] messages saved, calling renderChatMessages');
+        }
+
+        showTab(action);
+        if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
+
+        // Call renderChatMessages AFTER showTab to ensure the ask panel is visible
+        if (action === 'ask' && messages && messages.length > 0) {
           renderChatMessages();
         }
 
@@ -1911,6 +1906,17 @@
 
     // Load summarize result for current tab on init
     await refreshChatContext();
+
+    // After refreshChatContext (which may override chatSession),
+    // re-load the messages if we just transferred from popup
+    if (stored._pendingAction === 'ask' && stored._pendingMessages && stored._pendingMessages.length > 0) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const url = stored._pendingUrl || tab.url || '';
+        chatSession = await window.chatSessionManager.getSession(tab.id, url);
+        renderChatMessages();
+      }
+    }
 
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {

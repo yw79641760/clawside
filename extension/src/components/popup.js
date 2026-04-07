@@ -368,7 +368,6 @@
         var action = (popupType === 'ask') ? 'ask' : 'translate';
         // Pass chat messages to side panel if this is an ask popup
         var pendingMessages = (popupType === 'ask' && popupMessages.length > 0) ? popupMessages : null;
-        console.log('[popup] openExternal popupMessages:', popupMessages.length, 'pendingMessages:', pendingMessages ? pendingMessages.length : 0);
         chrome.storage.local.set({
           _pendingTab: currentCtx?.tabId || null,
           _pendingUrl: window.location.href,
