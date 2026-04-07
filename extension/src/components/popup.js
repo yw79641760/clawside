@@ -201,7 +201,11 @@
   }
 
   async function showPopup(action, text, rect, onStreamChunk) {
-    if (!popup) popup = createPopup();
+    if (!popup) {
+      console.log('[popup] creating popup');
+      popup = createPopup();
+      console.log('[popup] popup created:', popup);
+    }
     var refRect = rect || (bubble ? bubble.getBoundingClientRect() : null);
     positionPopup(popup, refRect);
 
@@ -248,6 +252,7 @@
       }
     }
 
+    console.log('[popup] showing popup, setting display flex');
     popup.style.display = 'flex';
 
     // Pin button toggle
@@ -515,8 +520,13 @@
           content: pageContent
         });
         console.log('[popup] calling apiCall with translate');
-        await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
-        console.log('[popup] apiCall returned');
+        try {
+          await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
+          console.log('[popup] apiCall returned');
+        } catch (err) {
+          console.error('[popup] apiCall error:', err);
+          setPopupError(err.message);
+        }
       } else if (action === 'summarize') {
         var templates = window.csSettings.getPromptTemplates(s, 'summarize');
         prompt = applyPrompt(templates.user, {
@@ -538,8 +548,10 @@
         });
         await apiCall(prompt, port, token, '', onStreamChunk, 'ask');
       }
+      console.log('[popup] finalizeStream, fullText:', fullText.length, 'chars');
       finalizeStream(fullText);
     } catch (err) {
+      console.error('[popup] doAction error:', err);
       setPopupError(err.message);
     }
   }
