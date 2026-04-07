@@ -199,7 +199,8 @@
   // ── Visibility ───────────────────────────────────────────────
   function updateVisibility(activeTab) {
     if (!_el.panelContext) return;
-    _el.panelContext.classList.toggle('hidden', !['summarize', 'ask'].includes(activeTab));
+    _el.panelContext.classList.toggle('hidden', !['translate', 'summarize', 'ask'].includes(activeTab));
+    _el.ctxHeadingTranslate?.classList.toggle('hidden', activeTab !== 'translate');
     _el.ctxHeadingSummarize?.classList.toggle('hidden', activeTab !== 'summarize');
     _el.ctxHeadingAsk?.classList.toggle('hidden', activeTab !== 'ask');
   }

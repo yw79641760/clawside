@@ -127,6 +127,7 @@
     // Context headings
     $('ctxHeadingSummarize') && ($('ctxHeadingSummarize').textContent = chrome.i18n.getMessage('labelContextSummarize'));
     $('ctxHeadingAsk') && ($('ctxHeadingAsk').textContent = chrome.i18n.getMessage('labelContextAsk'));
+    $('ctxHeadingTranslate') && ($('ctxHeadingTranslate').textContent = chrome.i18n.getMessage('labelContextTranslate'));
     // Placeholders
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
@@ -1448,7 +1449,7 @@
   });
 
   // === Event Listeners ===
-  tabTranslate.addEventListener('click', () => showTab('translate'));
+  tabTranslate.addEventListener('click', () => { showTab('translate'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
   tabSummarize.addEventListener('click', () => { showTab('summarize'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
   tabAsk.addEventListener('click', () => { showTab('ask'); window.panelContext.updatePageContext(translateInput).catch(() => {}); });
   tabHistory.addEventListener('click', () => showTab('history'));
@@ -1746,6 +1747,7 @@
       ctxTitle: $('ctxTitle'),
       ctxUrl: $('ctxUrl'),
       ctxContentPreview: $('ctxContentPreview'),
+      ctxHeadingTranslate: $('ctxHeadingTranslate'),
       ctxHeadingSummarize: $('ctxHeadingSummarize'),
       ctxHeadingAsk: $('ctxHeadingAsk'),
       ctxRefreshBtn: $('ctxRefreshBtn'),

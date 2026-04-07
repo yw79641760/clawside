@@ -72,5 +72,6 @@
   "placeholderPromptAsk": { "message": "Ask prompt..." },
   "labelContextSummarize": { "message": "Current Page" },
   "labelContextAsk": { "message": "Current Page" },
+  "labelContextTranslate": { "message": "Current Page" },
   "placeholderPromptVars": { "message": "Available variables: <code>{text}</code> selected text, <code>{content}</code> page content, <code>{title}</code> page title, <code>{url}</code> page URL, <code>{lang}</code> target language, <code>{paragraphs}</code> paragraph list (global translate)" }
 }
