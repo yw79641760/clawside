@@ -203,7 +203,7 @@ const CONTENT_STYLES = `
     color: var(--cs-muted); flex-shrink: 0;
   }
   .cs-popup-drag-handle:active { cursor: grabbing; }
-  .cs-popup-drag-handle svg { width: 24px; height: 4px; }
+  .cs-popup-drag-handle svg { width: 24px; height: 6px; }
   .cs-popup-header-main {
     display: flex; align-items: center; gap: 4px;
     width: 100%;
