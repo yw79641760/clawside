@@ -327,12 +327,6 @@ const CONTENT_STYLES = `
   /* Actions always visible */
   .cs-popup-chat-message-actions {
     display: flex; gap: 4px; position: absolute;
-  }
-  .cs-popup-chat-message.assistant .cs-popup-chat-message-actions {
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .cs-popup-chat-message.assistant:hover .cs-popup-chat-message-actions {
     opacity: 1;
   }
   /* User message - right aligned */
@@ -340,21 +334,16 @@ const CONTENT_STYLES = `
     background: var(--cs-primary); color: var(--cs-bg);
     margin-left: auto; width: auto; max-width: 90%;
   }
-  /* User message actions - left side of bubble, show on hover */
+  /* User message actions - left side of bubble, always visible */
   .cs-popup-chat-message.user .cs-popup-chat-message-actions {
     left: -44px; top: 0; flex-direction: row-reverse;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .cs-popup-chat-message.user:hover .cs-popup-chat-message-actions {
-    opacity: 1;
   }
   /* Assistant message - left aligned */
   .cs-popup-chat-message.assistant {
     background: var(--cs-header-bg); color: var(--cs-text);
     width: auto; max-width: 90%; text-align: left;
   }
-  /* Assistant message actions - below, right aligned */
+  /* Assistant message actions - below, right aligned, always visible */
   .cs-popup-chat-message.assistant .cs-popup-chat-message-actions {
     left: auto; right: 0; top: 100%; margin-top: 2px;
   }
