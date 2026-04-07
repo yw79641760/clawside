@@ -207,6 +207,7 @@
       console.log('[popup] popup created:', popup);
     }
     var refRect = rect || (bubble ? bubble.getBoundingClientRect() : null);
+    console.log('[popup] refRect:', refRect);
     positionPopup(popup, refRect);
 
     // Set selected text - ensure it's a text node, not an input
