@@ -152,7 +152,7 @@
     if (popup) popup.remove();
     var el = document.createElement('div');
     el.className = 'cs-popup';
-    el.dataset.popupType = 'basic';
+    el.dataset.popupType = action; // 'translate' or 'summarize'
     el.innerHTML =
       '<div class="cs-popup-header">' +
         '<div class="cs-popup-drag-handle">' +
@@ -352,7 +352,7 @@
         var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
         var text = currentCtx ? currentCtx.selectedText : '';
         // Determine action based on popup type
-        var popupType = popup.dataset.popupType || 'basic';
+        var popupType = popup.dataset.popupType || 'translate';
         var action = (popupType === 'ask') ? 'ask' : 'translate';
         chrome.storage.local.set({
           _pendingTab: currentCtx?.tabId || null,
