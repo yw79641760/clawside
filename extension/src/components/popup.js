@@ -198,9 +198,10 @@
       if (selectedEl.querySelector('input')) {
         selectedEl.innerHTML = '';
       }
-      // Truncate to 30 chars with ellipsis
+      // Store full text for copy, display truncated
       var truncated = text ? (text.length > 30 ? text.substring(0, 30) + '...' : text) : '';
       selectedEl.textContent = truncated;
+      selectedEl.dataset.fullText = text || '';
     }
 
     var strings = getPopupStrings(action);
@@ -275,7 +276,8 @@
 
     popup.querySelector('#cs-popup-close').onclick = hidePopup;
     popup.querySelector('#cs-popup-copy').onclick = function () {
-      var selectedText = popup.querySelector('#cs-popup-selected-text').textContent;
+      var selectedEl = popup.querySelector('#cs-popup-selected-text');
+      var selectedText = selectedEl.dataset.fullText || selectedEl.textContent;
       copyText(selectedText, popup.querySelector('#cs-popup-copy'));
     };
 
