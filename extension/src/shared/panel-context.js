@@ -50,19 +50,16 @@
 
     // Refresh button: re-extracts page content and updates ALL context box fields
     _el.ctxRefreshBtn?.addEventListener('click', async () => {
-      console.log('[panel-context] Refresh button clicked');
       // Add spinning class for animation
       _el.ctxRefreshBtn.classList.add('spinning');
       // Force reflow to ensure animation starts
       void _el.ctxRefreshBtn.offsetWidth;
-      console.log('[panel-context] after reflow, classList:', _el.ctxRefreshBtn.classList.toString());
       try {
         await updatePageContext(_el.translateInput);
       } finally {
         // Keep spinning for at least 500ms for visibility
         setTimeout(() => {
           _el.ctxRefreshBtn.classList.remove('spinning');
-          console.log('[panel-context] spinning removed after timeout');
         }, 500);
       }
     });
