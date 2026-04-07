@@ -49,8 +49,14 @@
     });
 
     // Refresh button: re-extracts page content and updates ALL context box fields
-    _el.ctxRefreshBtn?.addEventListener('click', () => {
-      updatePageContext(_el.translateInput);
+    _el.ctxRefreshBtn?.addEventListener('click', async () => {
+      // Add spinning class for animation
+      _el.ctxRefreshBtn.classList.add('spinning');
+      try {
+        await updatePageContext(_el.translateInput);
+      } finally {
+        _el.ctxRefreshBtn.classList.remove('spinning');
+      }
     });
 
     // React to async selection updates from content script (via storage bridge).
