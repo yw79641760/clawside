@@ -560,7 +560,7 @@
     chatMessages.appendChild(userMsg);
 
     // Store user message
-    popupMessages.push({ role: 'user', content: question });
+    popupMessages.push({ role: 'user', content: question, from: 'ask' });
 
     // Wire up user message action buttons
     userMsg.querySelector('.cs-popup-chat-copy').onclick = function() {
@@ -580,7 +580,9 @@
     var selectedText = currentCtx ? currentCtx.selectedText : '';
     var pageUrl = currentCtx ? currentCtx.url : window.location.href;
     var pageTitle = currentCtx ? currentCtx.title : document.title;
-    var pageContent = currentCtx ? (currentCtx.content || '').slice(0, 8000) : '';
+    // Check if conversation has previous ask messages (by checking popupMessages for from field)
+    var hasPreviousAsk = popupMessages.some(msg => msg.from === 'ask');
+    var pageContent = hasPreviousAsk ? '' : (currentCtx ? (currentCtx.content || '').slice(0, 8000) : '');
 
     // Build prompt and call API
     chrome.storage.local.get(['clawside_settings']).then(function(stored) {
@@ -648,7 +650,7 @@
       apiCall(prompt, port, token, systemPrompt, onChunk, 'ask').then(function() {
         // Done - streaming completed
         // Store assistant message
-        popupMessages.push({ role: 'assistant', content: fullText });
+        popupMessages.push({ role: 'assistant', content: fullText, from: 'ask' });
         // Add copy button to finished response
         var actionsEl = assistantMsg.querySelector('.cs-popup-chat-message-actions');
         if (actionsEl) {
