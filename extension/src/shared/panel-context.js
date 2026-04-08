@@ -83,7 +83,6 @@
   // Preserves existing favicon/title/url when incoming ctx has empty values.
   function applyContextToDOM(ctx) {
     if (!ctx) return;
-    console.log('[ClawSide applyContextToDOM] incoming ctx:', JSON.stringify({ favicon: ctx.favicon, title: ctx.title, url: ctx.url, selectedText: ctx.selectedText ? ctx.selectedText.substring(0, 20) + '...' : '' }));
     var truncate = window.truncate || function (s, max) {
       if (!s) return '';
       return s.length > max ? s.slice(0, max) + '\u2026' : s;
@@ -106,7 +105,6 @@
         }
       }
     }
-    console.log('[ClawSide applyContextToDOM] final favicon:', favicon);
     // Metadata
     if (_el.ctxFavicon) {
       const fallbackFavicon = getFallbackFaviconUrl();

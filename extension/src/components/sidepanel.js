@@ -513,6 +513,7 @@
       gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable';
       gatewayStatusEl.style.color = 'var(--success)';
     } catch (err) {
+      console.error('[ClawSide] Test connection error:', err);
       const errMsg = err.message || '';
       if (errMsg.includes('401') || errMsg.includes('Unauthorized') || errMsg.includes('invalid_token')) {
         gatewayStatusEl.textContent = '✗ Token rejected by gateway';
@@ -973,7 +974,6 @@
     if (item.key) {
       const items = await loadHistory();
       if (items.some(i => i.key === item.key)) {
-        console.log('[ClawSide] skip duplicate history:', item.key);
         return;
       }
     }
@@ -991,20 +991,16 @@
     saveAskSessionToHistory._saving = true;
 
     try {
-      console.log('[ClawSide] saveAskSessionToHistory called, chatSession:', !!chatSession);
       if (!chatSession) return;
 
       const messages = chatSession.messages;
-      console.log('[ClawSide] messages count:', messages?.length);
       // Only save if there's at least one user message
       const hasUserMsg = messages?.some(m => m.role === 'user');
-      console.log('[ClawSide] hasUserMsg:', hasUserMsg);
       if (!hasUserMsg) return;
 
       const url = window.panelContext.getCurrentUrl();
       const title = window.panelContext.getCurrentPageTitle();
       const tabId = chatSession?.tabId || '';
-      console.log('[ClawSide] saving ask history, url:', url, 'title:', title, 'tabId:', tabId);
 
       // Build unique key for deduplication
       const historyKey = `cs_history_ask_${tabId}_${window.hashUrl(url)}`;
@@ -1013,7 +1009,6 @@
       const items = await loadHistory();
       const lastItem = items[0];
       if (lastItem && lastItem.key === historyKey) {
-        console.log('[ClawSide] skip duplicate ask history by key:', historyKey);
         return;
       }
 
@@ -1027,7 +1022,6 @@
         messages: messages,
         timestamp: Date.now()
       });
-      console.log('[ClawSide] ask history saved');
     } finally {
       saveAskSessionToHistory._saving = false;
     }
@@ -1159,6 +1153,7 @@
         timestamp: Date.now()
       });
     } catch (err) {
+      console.error('[ClawSide] Translate error:', err);
       showStatus(translateStatus, err.message);
     } finally {
       hideLoading(translateBtn, 'tabTranslate');
@@ -1260,6 +1255,7 @@
         summary, timestamp: Date.now()
       });
     } catch (err) {
+      console.error('[ClawSide] Summarize error:', err);
       showStatus(summarizeStatus, err.message);
     } finally {
       hideLoading(summarizeBtn, 'tabSummarize');
