@@ -577,7 +577,7 @@
 
     // Get selected text from popup UI element (not TCM - popup is separate window)
     var selectedEl = popup && popup.querySelector('#cs-popup-selected-text');
-    var selectedText = selectedEl ? selectedEl.textContent.trim() : '';
+    var selectedText = selectedEl ? (selectedEl.dataset.fullText || selectedEl.textContent.trim()) : '';
     var pageUrl = window.location.href;
     var pageTitle = document.title;
 
