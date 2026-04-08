@@ -1678,9 +1678,9 @@
           }
         }
         // Add user message asking about the summary
-        chatSession.addUserMessage('Here is the summary of the current page:', timestamp);
+        chatSession.addUserMessage('Here is the summary of the current page:', timestamp, 'summarize');
         // Add assistant message with the summarize result
-        chatSession.addAssistantMessage(summary, timestamp);
+        chatSession.addAssistantMessage(summary, timestamp, 'summarize');
         chatSession.save();
         renderChatMessages();
 
