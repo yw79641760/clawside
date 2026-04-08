@@ -56,6 +56,9 @@ LLM Provider (configured in OpenClaw)
 - `clawside_settings` - User settings (gateway port, auth token, language, tool prompts)
 - `clawside_chat_{tabId}_{urlHash}` - Chat history per tab+URL (max 50 conversations)
 - `clawside_summarize_{tabId}_{urlHash}` - Summarize results per tab+URL
+- `cs_history_ask_{tabId}_{urlHash}` - Ask history deduplication key
+- `cs_history_translate_{textHash}` - Translate history deduplication key
+- `cs_history_summarize_{tabId}_{urlHash}` - Summarize history deduplication key
 - `_pendingTab`, `_pendingUrl`, `_pendingTitle`, `_pendingText`, `_pendingAction`, `_pendingMessages` - Temporary storage for panel-open flow (includes chat messages when transferring from popup ask)
 - `_tabCtxData`, `_tabCtxVersion` - Tab context persistence (internal use by tab-context-manager.js)
 
@@ -77,7 +80,7 @@ The extension communicates with OpenClaw via the `/v1/chat/completions` endpoint
 - Auth: Bearer token (if gateway has `auth.mode: "token"`)
 - Model: `openclaw/main`
 - Content-Type: `application/json`
-- Session: `openai-user:clawside:{toolName}` (toolName: default, translate, summarize, ask)
+- Session: `clawside:{toolName}` (toolName: default, translate, summarize, ask)
 
 **Required OpenClaw config** (`~/.openclaw/openclaw.json`):
 ```json
@@ -97,10 +100,15 @@ The extension communicates with OpenClaw via the `/v1/chat/completions` endpoint
 ## Important Notes
 
 - Chat uses plain text prompt format (not JSON messages), with "User:"/"Assistant:" prefix and "Assistant:" tail for better LLM adherence
+- Chat session uses `hasPreviousAsk()` to determine whether to include page content in the prompt
 - Page content is truncated to 12k characters for Ask context (TCM often caps at ~10k)
 - Settings stored in `chrome.storage.local` under `clawside_settings` key
 - Chat history stored per-tab+url: `clawside_chat_{tabId}_{urlHash}`, max 50 conversations with LRU eviction
 - Tab context stored per-tab: uses ContextLRUCache with maxMapSize 50, maxLruSize 10
+- History deduplication: uses key-based system to prevent duplicate entries in history tab
+  - Ask: `cs_history_ask_{tabId}_{urlHash}`
+  - Translate: `cs_history_translate_{textHash}`
+  - Summarize: `cs_history_summarize_{tabId}_{urlHash}`
 - Floating bubble: clicking translate/summarize/ask sends action to side panel via storage
 - Radial menu (dock.js): long-press on bubble opens menu, clicking a tool opens side panel to that tab
 - Auto-trigger summarize: when opening side panel via summarize action with no existing result, automatically triggers summarize

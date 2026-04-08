@@ -97,6 +97,7 @@ Click ⚙️ in side panel:
 - Auth Token (if your gateway requires it)
 - Language preference
 - Tool prompt customization
+- Appearance (system/light/dark)
 
 ## Troubleshooting
 
@@ -108,8 +109,26 @@ Click ⚙️ in side panel:
 ### 401 Unauthorized
 - Enter your gateway token in ⚙️ settings
 
+### Bubble doesn't appear on text selection
+- Reload the extension: `chrome://extensions/` → reload icon
+- Check console for errors (Content script may have failed to load)
+
+### Streaming not working
+- Ensure you're using `chrome.runtime.onMessage` instead of `chrome.tabs.onMessage` in content scripts
+
 ## Requirements
 
 - Chrome 114+ (side panel API)
 - OpenClaw Gateway running locally
 - `gateway.http.endpoints.chatCompletions.enabled: true`
+
+## Chrome Web Store
+
+To publish to Chrome Web Store:
+1. Run `npm run build` to generate production bundle
+2. Zip the `extension/dist` folder
+3. Upload via [Chrome Developer Dashboard](https://developer.chrome.com/docs/extensions/publish)
+
+## License
+
+MIT

@@ -112,6 +112,10 @@ LLM (configured provider)
 
 - **Trigger**: Click "History" tab in side panel
 - **Output**: Chronological list of all translate/summarize/ask interactions, expandable items
+- **Deduplication**: Uses key-based system to prevent duplicate entries
+  - Ask: `cs_history_ask_{tabId}_{urlHash}`
+  - Translate: `cs_history_translate_{textHash}`
+  - Summarize: `cs_history_summarize_{tabId}_{urlHash}`
 
 ### 4.7 Settings
 
