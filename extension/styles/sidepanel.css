@@ -1052,6 +1052,10 @@ body {
   vertical-align: middle;
 }
 
+.setting-note #discordLink {
+  color: #5765F2;
+}
+
 .setting-note .link-btn:hover {
   text-decoration: underline;
 }
