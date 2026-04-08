@@ -379,7 +379,7 @@ const CONTENT_STYLES = `
     flex: 1; padding: 6px 8px; border: 1px solid var(--cs-border);
     border-radius: 6px; background: var(--cs-bg); color: var(--cs-text);
     font-size: 12px; resize: none; font-family: inherit;
-    min-height: 24px; max-height: 60px;
+    height: 32px;
   }
   .cs-popup-chat-input:focus { outline: none; border-color: var(--cs-primary); }
   .cs-popup-chat-send {
