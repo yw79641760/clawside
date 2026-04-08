@@ -5,7 +5,8 @@
   "main": "extension/background.js",
   "scripts": {
     "build": "echo 'No build step required for unpacked extension'",
-    "test": "node tests/run.js"
+    "test": "node tests/run.js",
+    "test:ui": "node tests/ui-logic.test.js"
   },
   "keywords": [
     "chrome-extension",
