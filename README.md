@@ -1,5 +1,7 @@
 # ClawSide
 
+![ClawSide Logo](extension/assets/icons/icon128.png)
+
 Chrome side panel extension that brings OpenClaw directly into your browser. Select text → floating bubble → instant results.
 
 ## Architecture
