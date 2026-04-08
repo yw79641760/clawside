@@ -559,7 +559,7 @@
       '</div>';
     chatMessages.appendChild(userMsg);
 
-    // Store user message
+    // Store user message FIRST
     popupMessages.push({ role: 'user', content: question, from: 'ask' });
 
     // Wire up user message action buttons
@@ -580,8 +580,10 @@
     var selectedText = currentCtx ? currentCtx.selectedText : '';
     var pageUrl = currentCtx ? currentCtx.url : window.location.href;
     var pageTitle = currentCtx ? currentCtx.title : document.title;
-    // Check if conversation has previous ask messages (by checking popupMessages for from field)
-    var hasPreviousAsk = popupMessages.some(msg => msg.from === 'ask');
+
+    // Check if PREVIOUS messages had from='ask' (before this new message)
+    // If no previous ask messages, include page content
+    var hasPreviousAsk = popupMessages.slice(0, -1).some(msg => msg.from === 'ask');
     var pageContent = hasPreviousAsk ? '' : (currentCtx ? (currentCtx.content || '').slice(0, 8000) : '');
 
     // Build prompt and call API
