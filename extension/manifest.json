@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "ClawSide",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Connect your browser to local OpenClaw for translation, summarization, and memory",
   "icons": {
     "16": "assets/icons/icon16.png",
