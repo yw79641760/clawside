@@ -935,10 +935,9 @@
   }
 
   // === Streaming message listeners (tabContextManager handles tab/text sync) ===
-  // NOTE: Use chrome.tabs.onMessage to receive responses from openclaw.js
-  // (background sends via chrome.tabs.sendMessage when sourceTabId is provided)
+  // NOTE: Use chrome.runtime.onMessage in popup environment
   function setupStreamingListeners() {
-    chrome.tabs.onMessage.addListener(function (msg) {
+    chrome.runtime.onMessage.addListener(function (msg) {
       if (msg.type === 'clawside-stream-chunk') {
         var req = pendingRequests[msg.requestId];
         if (req && typeof req.onChunk === 'function') {
