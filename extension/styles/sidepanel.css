@@ -1249,6 +1249,18 @@ textarea#translateInput::placeholder {
   40% { transform: scale(1); opacity: 1; }
 }
 
+/* === Chat Message Loading Placeholder === */
+.message-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--cs-muted);
+}
+
+.message-loading .loading-label {
+  font-size: 13px;
+}
+
 .spinner {
   width: 32px;
   height: 32px;

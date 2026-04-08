@@ -336,7 +336,7 @@ const CONTENT_STYLES = `
   }
   /* User message actions - left side of bubble, always visible */
   .cs-popup-chat-message.user .cs-popup-chat-message-actions {
-    left: -44px; top: 0; flex-direction: row-reverse;
+    left: -44px; top: 0;
   }
   /* Assistant message - left aligned */
   .cs-popup-chat-message.assistant {

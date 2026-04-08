@@ -102,7 +102,7 @@
     //   Assistant:
     // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
     //                                       if false, include only title + url (for follow-up questions)
-    buildPrompt(includeFullContext = true, extraSystemPrompt = '') {
+    buildPrompt(includeFullContext = true) {
       // Get ask prompt template from settings
       var templates = window.csSettings ? window.csSettings.getPromptTemplates(window.csSettings.getDefaultSettings(), 'ask') : null;
       if (!templates) {
@@ -132,23 +132,24 @@
       var question = lastUserMsg ? lastUserMsg.content : '';
 
       // Prepare variables for prompt template
+      // Use lang-utils to get reply language label directly from settings
+      var langLabel = 'English';
+      if (window.getReplyLabel && window.csSettings) {
+        var currentSettings = window.csSettings.getDefaultSettings();
+        langLabel = window.getReplyLabel(currentSettings);
+      }
       var promptVars = {
         title: this.context.title || '',
         url: this.context.url || '',
         selectedText: this.context.selectedText || '',
         content: pageContent,
         question: question,
-        lang: 'English'
+        lang: langLabel
       };
 
       // Use settings prompt template
       var systemPrompt = applyFn(templates.system, promptVars);
       var userPrompt = applyFn(templates.user, promptVars);
-
-      // Add extra system prompt if provided
-      if (extraSystemPrompt) {
-        systemPrompt = systemPrompt + '\n\n' + extraSystemPrompt;
-      }
 
       // Only add tail if last message is from assistant (and not empty)
       const needsTail = lastMsg && lastMsg.role === 'assistant' && String(lastMsg.content || '').trim();

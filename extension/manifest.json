@@ -59,6 +59,7 @@
         "src/tools/icons.js",
         "src/tools/appearance.js",
         "src/tools/browser.js",
+        "src/tools/lang-utils.js",
         "lib/readability.iife.js",
         "lib/marked.min.js",
         "src/tools/lru-cache.js",

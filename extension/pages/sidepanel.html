@@ -50,8 +50,8 @@
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
       <circle cx="12" cy="7" r="4"/>
     </symbol>
-    <symbol id="cs-icon-broom" viewBox="0 0 1024 1024">
-      <path d="M650.666667 672h-42.666667v-85.333333h-27.733333v85.333333h-57.6v-85.333333h-27.733334v85.333333h-55.466666v-85.333333h-29.866667v85.333333h-36.266667c2.133333-14.933333 4.266667-17.066667 4.266667-38.4v-91.733333h266.666667v91.733333c2.133333 21.333333 4.266667 23.466667 6.4 38.4z m-298.666667-204.8h153.6v-115.2h12.8v115.2h153.6v38.4h-320v-38.4z m219.733333-55.466667V298.666667h-119.466666v113.066666H298.666667v128h27.733333v91.733334c0 38.4-8.533333 70.4-8.533333 70.4 0 4.266667-4.266667 10.666667-8.533334 23.466666h405.333334c-4.266667-10.666667-8.533333-19.2-8.533334-23.466666 0 0-8.533333-32-8.533333-70.4v-91.733334H725.333333v-128h-153.6z"></path>
+    <symbol id="cs-icon-broom" viewBox="0 0 1024 1024" fill="currentColor">
+      <path d="M933.635019 386.430542c0-40.014391-30.189886-70.101939-70.101939-70.101939H632.35019V135.393964c0-40.014391-30.189886-70.101939-70.101939-70.101939h-100.394163c-40.014391 0-70.101939 30.189886-70.101939 70.101939v180.934639H160.569258c-40.014391 0-70.101939 30.189886-70.101938 70.101939v100.394163c0 30.292225 18.318609 55.979212 46.6664 65.394364l3.581851 1.228063v269.86688c0 22.61683-4.912253 47.689786-10.131521 71.43234l-0.102339 0.614032-2.763142 5.628623c-1.944433 3.888867-1.944433 7.982411-1.944433 12.792324 0 24.868279 20.160704 45.028983 45.028982 45.028983h682.803118c4.707575 0 8.801119 0 12.792325-1.944434l0.409354-0.204677c12.280632-4.912253 20.979412-12.075954 27.426744-22.61683 5.321607-13.611033 6.140316-23.844893 2.456127-33.260044l-2.558465-5.116929-0.102339-0.307016c-7.163702-21.388767-10.336198-43.596242-10.336198-71.944034V553.447132l3.581851-1.228063c28.347791-9.415151 46.6664-35.102139 46.6664-65.394364v-100.394163zM707.671397 918.898261V737.963622c0-12.280632-7.675395-19.956026-19.956026-19.956027s-19.956026 7.675395-19.956027 19.956027v180.934639H531.956026V737.963622c0-12.280632-7.675395-19.956026-19.956026-19.956027s-19.956026 7.675395-19.956026 19.956027v180.934639H356.240656V737.963622c0-12.280632-7.675395-19.956026-19.956027-19.956027s-19.956026 7.675395-19.956026 19.956027v180.934639H162.206676l6.140316-12.280632c9.824505-27.222067 14.634419-54.444134 14.634419-83.303617V557.028983h663.051769v266.285029c0 28.859484 4.809914 56.081551 14.634419 83.303617l6.140316 12.280632H707.671397z m186.051569-431.971217c0 17.806916-12.485309 30.292225-30.292224 30.292224H160.569258c-17.806916 0-30.292225-12.485309-30.292224-30.292224v-100.394164c0-17.806916 12.485309-30.292225 30.292224-30.292224h270.992605V135.393964c0-17.806916 12.485309-30.292225 30.292225-30.292225h100.394163c17.806916 0 30.292225 12.485309 30.292225 30.292225V356.138317h270.992604c17.806916 0 30.292225 12.485309 30.292225 30.292225v100.496502z"/>
     </symbol>
   </svg>
 </head>
@@ -86,7 +86,7 @@
             <h3 class="page-info-heading hidden" id="ctxHeadingTranslate">当前页面</h3>
             <h3 class="page-info-heading" id="ctxHeadingSummarize">当前页面</h3>
             <h3 class="page-info-heading hidden" id="ctxHeadingAsk">当前页面</h3>
-            <button class="page-info-refresh" id="ctxRefreshBtn" title="Refresh context">
+            <button class="page-info-refresh" id="ctxRefreshBtn" title="" data-i18n-title="ctxRefresh">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </button>
           </div>
@@ -109,8 +109,8 @@
         <div class="input-area">
           <div class="selection-label-row">
             <div class="selection-label" id="labelTranslateInput">Text to translate</div>
-            <button class="input-clear" id="translateInputClear" title="Clear">
-              <svg width="16" height="16" viewBox="0 0 64 64" fill="currentColor"><use href="#cs-icon-broom"></use></svg>
+            <button class="input-clear" id="translateInputClear" title="" data-i18n-title="clear">
+              <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><use href="#cs-icon-broom"></use></svg>
             </button>
           </div>
           <textarea id="translateInput" data-i18n-placeholder="placeholderTranslateInput" rows="4"></textarea>
@@ -157,9 +157,9 @@
           <div class="result-header">
             <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg></span>
             <span class="result-title" id="titleSummarize">Summary</span>
-            <button class="btn-copy" id="exportSummarizeResult" title="Export"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg></button>
-            <button class="btn-copy" id="copySummarizeResult" title="Copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
-            <button class="btn-copy" id="askFromSummarize" title="Ask about this">
+            <button class="btn-copy" id="exportSummarizeResult" title="" data-i18n-title="exportItem"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg></button>
+            <button class="btn-copy" id="copySummarizeResult" title="" data-i18n-title="copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
+            <button class="btn-copy" id="askFromSummarize" title="" data-i18n-title="globalAsk">
               <svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>
             </button>
           </div>
@@ -174,14 +174,14 @@
         <div class="chat-header">
           <h3 id="titleAskHeader" class="panel-title">提问</h3>
           <div class="chat-header-actions">
-            <button class="btn-icon btn-export-chat" id="exportChatBtn" title="Export chat">
+            <button class="btn-icon btn-export-chat" id="exportChatBtn" title="" data-i18n-title="exportChat">
               <svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg>
             </button>
-            <button class="btn-icon btn-copy-chat" id="copyChatBtn" title="Copy chat">
+            <button class="btn-icon btn-copy-chat" id="copyChatBtn" title="" data-i18n-title="copyChat">
               <svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>
             </button>
-            <button class="btn-icon btn-clear-chat" id="clearChatBtn" title="Clear chat history">
-              <svg width="24" height="24" viewBox="0 0 64 64" fill="currentColor">
+            <button class="btn-icon btn-clear-chat" id="clearChatBtn" title="" data-i18n-title="clearChat">
+              <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor">
                 <use href="#cs-icon-broom"></use>
               </svg>
             </button>
@@ -208,7 +208,7 @@
             rows="2"
             maxlength="4000"
           ></textarea>
-          <button class="btn-send" id="chatSendBtn" disabled>
+          <button class="btn-send" id="chatSendBtn" disabled title="">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -232,7 +232,7 @@
         <div class="empty-state hidden" id="historyEmpty">
           <div class="empty-icon">📭</div>
           <div class="empty-text">No interactions yet</div>
-          <div class="empty-hint">Use Translate, Summarize, or Ask to get started</div>
+          <div class="empty-hint" data-i18n="historyHint">Use Translate, Summarize, or Ask to get started</div>
         </div>
       </section>
 
@@ -324,7 +324,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>
                 <span id="labelToolTranslate">翻译</span>
               </div>
-              <button class="btn-icon" id="resetPromptTranslate" title="Reset to default">
+              <button class="btn-icon" id="resetPromptTranslate" title="" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
@@ -344,7 +344,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>
                 <span id="labelToolGlobalTranslate">全局翻译</span>
               </div>
-              <button class="btn-icon" id="resetPromptGlobalTranslate" title="Reset to default">
+              <button class="btn-icon" id="resetPromptGlobalTranslate" title="" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
@@ -364,7 +364,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span id="labelToolSummarize">总结</span>
               </div>
-              <button class="btn-icon" id="resetPromptSummarize" title="Reset to default">
+              <button class="btn-icon" id="resetPromptSummarize" title="" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
@@ -384,7 +384,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 <span id="labelToolAsk">提问</span>
               </div>
-              <button class="btn-icon" id="resetPromptAsk" title="Reset to default">
+              <button class="btn-icon" id="resetPromptAsk" title="" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
@@ -415,8 +415,10 @@
 
   <script src="../src/tools/icons.js"></script>
   <script src="../src/tools/browser.js"></script>
+  <script src="../src/tools/lang-utils.js"></script>
   <script src="../src/tools/text.js"></script>
   <script src="../src/tools/lru-cache.js"></script>
+  <script src="../src/tools/url-utils.js"></script>
   <script src="../src/tools/chat-lru-cache.js"></script>
   <script src="../src/tools/context-lru-cache.js"></script>
   <script src="../lib/marked.min.js"></script>

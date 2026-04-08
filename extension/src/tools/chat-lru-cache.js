@@ -5,37 +5,10 @@
 (function() {
   'use strict';
 
-  // Simple hash function for URL (for storage key)
-  function hashUrl(url) {
-    if (!url) return 'none';
-    // Simple hash: first 8 chars of btoa, or simplified
-    try {
-      // Use origin + pathname for key (ignore query hash for privacy)
-      const u = new URL(url);
-      const key = u.origin + u.pathname;
-      // Simple hash
-      let hash = 0;
-      for (let i = 0; i < key.length; i++) {
-        const char = key.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-      }
-      return Math.abs(hash).toString(36);
-    } catch {
-      // Fallback for invalid URLs
-      let hash = 0;
-      for (let i = 0; i < url.length; i++) {
-        const char = url.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-      }
-      return Math.abs(hash).toString(36);
-    }
-  }
-
   /**
    * ChatLRUCache - LRU cache for chat sessions.
    * Key = tabId + urlHash, Value = messages array.
+   * Uses window.hashUrl from url-utils.js for URL hashing.
    */
   class ChatLRUCache extends window.LRUCache {
     constructor(options = {}) {

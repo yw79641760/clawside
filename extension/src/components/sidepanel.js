@@ -57,6 +57,11 @@
   let currentTab = 'translate';
   let history = [];
   let browserLang = 'English';
+  // Helper to get i18n message safely (avoid context invalidated errors)
+  // Uses window.i18n from browser.js
+  const i18n = window.i18n || ((key) => key);
+  // Flag to track if pending messages were already loaded (to prevent double init)
+  let _pendingMessagesLoaded = false;
   let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
 
   // Per-tool deferred context backfill marker, keyed by current page URL.
@@ -72,75 +77,99 @@
   // SECTION 3: Language & i18n
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  // === Translations (chrome.i18n.getMessage + resolveLang/getBrowserLang from browser.js) ===
+  // === Translations (i18n + resolveLang/getBrowserLang from browser.js) ===
 
   async function applyPanelLanguage() {
     // Result titles
-    $('titleTranslate') && ($('titleTranslate').textContent = chrome.i18n.getMessage('resultTranslate'));
-    $('titleSummarize') && ($('titleSummarize').textContent = chrome.i18n.getMessage('resultSummarize'));
-    $('titleAnswer') && ($('titleAnswer').textContent = chrome.i18n.getMessage('resultAnswer'));
+    $('titleTranslate') && ($('titleTranslate').textContent = i18n('resultTranslate'));
+    $('titleSummarize') && ($('titleSummarize').textContent = i18n('resultSummarize'));
+    $('titleAnswer') && ($('titleAnswer').textContent = i18n('resultAnswer'));
     // Copy buttons - icon only, no text
-    // $('copyTranslateResult') && ($('copyTranslateResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
-    // $('copySummarizeResult') && ($('copySummarizeResult').innerHTML = `${svgIcon('copy')} ${chrome.i18n.getMessage('copy')}`);
+    // $('copyTranslateResult') && ($('copyTranslateResult').innerHTML = `${svgIcon('copy')} ${i18n('copy')}`);
+    // $('copySummarizeResult') && ($('copySummarizeResult').innerHTML = `${svgIcon('copy')} ${i18n('copy')}`);
     // Inputs
-    $('translateInput') && ($('translateInput').placeholder = chrome.i18n.getMessage('translateInputPlaceholder'));
+    $('translateInput') && ($('translateInput').placeholder = i18n('translateInputPlaceholder'));
     // Settings
-    $('settingsTitle') && ($('settingsTitle').textContent = chrome.i18n.getMessage('settingsTitle'));
-    $('labelTargetLang') && ($('labelTargetLang').textContent = chrome.i18n.getMessage('targetLang'));
-    $('labelTargetLangTranslate') && ($('labelTargetLangTranslate').textContent = chrome.i18n.getMessage('labelTargetLangTranslate'));
-    $('labelAppearance') && ($('labelAppearance').textContent = chrome.i18n.getMessage('appearance'));
-    $('optionAuto') && ($('optionAuto').textContent = chrome.i18n.getMessage('optionAuto'));
-    $('optionSystem') && ($('optionSystem').textContent = chrome.i18n.getMessage('systemOpt'));
-    $('optionLight') && ($('optionLight').textContent = chrome.i18n.getMessage('lightOpt'));
-    $('optionDark') && ($('optionDark').textContent = chrome.i18n.getMessage('darkOpt'));
-    $('labelPort') && ($('labelPort').textContent = chrome.i18n.getMessage('gatewayPort'));
-    $('labelToken') && ($('labelToken').textContent = chrome.i18n.getMessage('authToken'));
-    $('testConnBtn').textContent = chrome.i18n.getMessage('testConn');
-    $('gatewayNote') && ($('gatewayNote').innerHTML = chrome.i18n.getMessage('gatewayNote'));
+    $('settingsTitle') && ($('settingsTitle').textContent = i18n('settingsTitle'));
+    $('labelTargetLang') && ($('labelTargetLang').textContent = i18n('targetLang'));
+    $('labelTargetLangTranslate') && ($('labelTargetLangTranslate').textContent = i18n('labelTargetLangTranslate'));
+    $('labelAppearance') && ($('labelAppearance').textContent = i18n('appearance'));
+    $('optionAuto') && ($('optionAuto').textContent = i18n('optionAuto'));
+    $('optionSystem') && ($('optionSystem').textContent = i18n('systemOpt'));
+    $('optionLight') && ($('optionLight').textContent = i18n('lightOpt'));
+    $('optionDark') && ($('optionDark').textContent = i18n('darkOpt'));
+    $('labelPort') && ($('labelPort').textContent = i18n('gatewayPort'));
+    $('labelToken') && ($('labelToken').textContent = i18n('authToken'));
+    $('testConnBtn').textContent = i18n('testConn');
+    $('gatewayNote') && ($('gatewayNote').innerHTML = i18n('gatewayNote'));
     // Panel headers
-    $('titleTranslateHeader') && ($('titleTranslateHeader').textContent = chrome.i18n.getMessage('titleTranslateHeader'));
-    $('titleSummarizeHeader') && ($('titleSummarizeHeader').textContent = chrome.i18n.getMessage('titleSummarizeHeader'));
-    $('titleAskHeader') && ($('titleAskHeader').textContent = chrome.i18n.getMessage('titleAskHeader'));
-    $('titleHistoryHeader') && ($('titleHistoryHeader').textContent = chrome.i18n.getMessage('titleHistoryHeader'));
+    $('titleTranslateHeader') && ($('titleTranslateHeader').textContent = i18n('titleTranslateHeader'));
+    $('titleSummarizeHeader') && ($('titleSummarizeHeader').textContent = i18n('titleSummarizeHeader'));
+    $('titleAskHeader') && ($('titleAskHeader').textContent = i18n('titleAskHeader'));
+    $('titleHistoryHeader') && ($('titleHistoryHeader').textContent = i18n('titleHistoryHeader'));
+    // Context refresh
+    $('ctxRefreshBtn') && ($('ctxRefreshBtn').title = i18n('ctxRefresh'));
+    // Translate input clear
+    $('translateInputClear') && ($('translateInputClear').title = i18n('clear'));
     // Chat empty state
-    $('chatEmptyText') && ($('chatEmptyText').textContent = chrome.i18n.getMessage('chatEmptyText'));
-    $('chatEmptyHint') && ($('chatEmptyHint').textContent = chrome.i18n.getMessage('chatEmptyHint'));
+    $('chatEmptyText') && ($('chatEmptyText').textContent = i18n('chatEmptyText'));
+    $('chatEmptyHint') && ($('chatEmptyHint').textContent = i18n('chatEmptyHint'));
     // Chat input placeholder
-    $('chatInput') && ($('chatInput').placeholder = chrome.i18n.getMessage('chatInputPlaceholder'));
+    $('chatInput') && ($('chatInput').placeholder = i18n('chatInputPlaceholder'));
+    // Chat send button tooltip
+    $('chatSendBtn') && ($('chatSendBtn').title = i18n('globalAsk'));
+    // Chat header buttons
+    $('exportChatBtn') && ($('exportChatBtn').title = i18n('exportChat'));
+    $('copyChatBtn') && ($('copyChatBtn').title = i18n('copyChat'));
+    $('clearChatBtn') && ($('clearChatBtn').title = i18n('clearChat'));
+    // Chat message action buttons (edit/copy in user message, copy in assistant)
+    document.querySelectorAll('.message-action-btn[data-action="edit"]').forEach(btn => btn.title = i18n('editMessage'));
+    document.querySelectorAll('.message-action-btn[data-action="copy"]').forEach(btn => btn.title = i18n('copy'));
     // Panel labels and buttons
-    $('labelTranslateInput') && ($('labelTranslateInput').textContent = chrome.i18n.getMessage('labelTranslateInput'));
-    $('historyClearBtn') && ($('historyClearBtn').textContent = chrome.i18n.getMessage('historyClear'));
-    $('labelTranslateBtn') && ($('labelTranslateBtn').textContent = chrome.i18n.getMessage('labelTranslateBtn'));
-    $('labelSummarizeBtn') && ($('labelSummarizeBtn').textContent = chrome.i18n.getMessage('labelSummarizeBtn'));
-    $('labelAskBtn') && ($('labelAskBtn').textContent = chrome.i18n.getMessage('labelAskBtn'));
+    $('labelTranslateInput') && ($('labelTranslateInput').textContent = i18n('labelTranslateInput'));
+    $('historyClearBtn') && ($('historyClearBtn').textContent = i18n('historyClear'));
+    $('labelTranslateBtn') && ($('labelTranslateBtn').textContent = i18n('labelTranslateBtn'));
+    $('labelSummarizeBtn') && ($('labelSummarizeBtn').textContent = i18n('labelSummarizeBtn'));
+    $('labelAskBtn') && ($('labelAskBtn').textContent = i18n('labelAskBtn'));
     // Loading
-    $('loadingText') && ($('loadingText').textContent = chrome.i18n.getMessage('loading'));
+    $('loadingText') && ($('loadingText').textContent = i18n('loading'));
     // Settings sub-tabs
-    $('labelSettingsBasic') && ($('labelSettingsBasic').textContent = chrome.i18n.getMessage('labelSettingsBasic'));
-    $('labelSettingsPrompts') && ($('labelSettingsPrompts').textContent = chrome.i18n.getMessage('labelSettingsPrompts'));
+    $('labelSettingsBasic') && ($('labelSettingsBasic').textContent = i18n('labelSettingsBasic'));
+    $('labelSettingsPrompts') && ($('labelSettingsPrompts').textContent = i18n('labelSettingsPrompts'));
     // Feedback
-    $('labelFeedback') && ($('labelFeedback').textContent = chrome.i18n.getMessage('labelFeedback'));
-    $('feedbackText') && ($('feedbackText').textContent = chrome.i18n.getMessage('feedbackText'));
+    $('labelFeedback') && ($('labelFeedback').textContent = i18n('labelFeedback'));
+    $('feedbackText') && ($('feedbackText').textContent = i18n('feedbackText'));
     // Tools settings
-    $('labelToolTranslate') && ($('labelToolTranslate').textContent = chrome.i18n.getMessage('labelToolTranslate'));
-    $('labelToolSummarize') && ($('labelToolSummarize').textContent = chrome.i18n.getMessage('labelToolSummarize'));
-    $('labelToolAsk') && ($('labelToolAsk').textContent = chrome.i18n.getMessage('labelToolAsk'));
-    $('labelToolGlobalTranslate') && ($('labelToolGlobalTranslate').textContent = chrome.i18n.getMessage('labelToolGlobalTranslate'));
-    $('labelPromptVars') && ($('labelPromptVars').innerHTML = chrome.i18n.getMessage('placeholderPromptVars'));
+    $('labelToolTranslate') && ($('labelToolTranslate').textContent = i18n('labelToolTranslate'));
+    $('labelToolSummarize') && ($('labelToolSummarize').textContent = i18n('labelToolSummarize'));
+    $('labelToolAsk') && ($('labelToolAsk').textContent = i18n('labelToolAsk'));
+    $('labelToolGlobalTranslate') && ($('labelToolGlobalTranslate').textContent = i18n('labelToolGlobalTranslate'));
+    $('labelPromptVars') && ($('labelPromptVars').innerHTML = i18n('placeholderPromptVars'));
     // Context headings
-    $('ctxHeadingSummarize') && ($('ctxHeadingSummarize').textContent = chrome.i18n.getMessage('labelContextSummarize'));
-    $('ctxHeadingAsk') && ($('ctxHeadingAsk').textContent = chrome.i18n.getMessage('labelContextAsk'));
-    $('ctxHeadingTranslate') && ($('ctxHeadingTranslate').textContent = chrome.i18n.getMessage('labelContextTranslate'));
+    $('ctxHeadingSummarize') && ($('ctxHeadingSummarize').textContent = i18n('labelContextSummarize'));
+    $('ctxHeadingAsk') && ($('ctxHeadingAsk').textContent = i18n('labelContextAsk'));
+    $('ctxHeadingTranslate') && ($('ctxHeadingTranslate').textContent = i18n('labelContextTranslate'));
+    // Context labels
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      el.textContent = i18n(key);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-title');
+      el.title = i18n(key);
+    });
     // Placeholders
     document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
       var key = el.getAttribute('data-i18n-placeholder');
-      el.placeholder = chrome.i18n.getMessage(key);
+      el.placeholder = i18n(key);
     });
     // Scan button text
-    $('scanGatewayBtn') && ($('scanGatewayBtn').textContent = chrome.i18n.getMessage('scanGateway') || 'Scan');
+    $('scanGatewayBtn') && ($('scanGatewayBtn').textContent = i18n('scanGateway') || 'Scan');
     // History empty state
     const historyEmptyText = $('historyEmpty')?.querySelector('.empty-text');
-    if (historyEmptyText) historyEmptyText.textContent = chrome.i18n.getMessage('emptyHistory');
+    if (historyEmptyText) historyEmptyText.textContent = i18n('emptyHistory');
+    const historyEmptyHint = $('historyEmpty')?.querySelector('.empty-hint');
+    if (historyEmptyHint) historyEmptyHint.textContent = i18n('historyHint');
   }
 
   // === DOM ===
@@ -223,7 +252,7 @@
       btnElement.disabled = true;
       if (btnI18nKey) {
         // Icon after text: "Translating ◌"
-        btnElement.innerHTML = chrome.i18n.getMessage(btnI18nKey) + ' ' + svgIcon('loading');
+        btnElement.innerHTML = i18n(btnI18nKey) + ' ' + svgIcon('loading');
       }
       return;
     }
@@ -237,7 +266,7 @@
     if (btnElement) {
       btnElement.disabled = false;
       if (btnI18nKey) {
-        btnElement.textContent = chrome.i18n.getMessage(btnI18nKey);
+        btnElement.textContent = i18n(btnI18nKey);
       }
       return;
     }
@@ -305,12 +334,15 @@
       updateTokenStatus();
       showSettingsSubTab('basic');
       if (browserLangHint) {
-        const resolvedLang = window.resolveLang(settings.language, browserLang);
-        browserLangHint.textContent = `${chrome.i18n.getMessage('browserLangHint')} → ${browserLang}`;
+        browserLangHint.textContent = `${i18n('browserLangHint')} → ${browserLang}`;
       }
     }
     if (tab === 'ask') {
-      await initChat();
+      // Skip re-init if pending messages were already loaded by handlePendingTab
+      if (!_pendingMessagesLoaded) {
+        await initChat();
+      }
+      // NOTE: Do NOT reset _pendingMessagesLoaded here - let refreshChatSession handle it
       chatInput.focus();
     }
     if (tab === 'summarize' || tab === 'ask') {
@@ -458,42 +490,37 @@
     gatewayStatusEl.textContent = 'Checking...';
     gatewayStatusEl.style.color = 'var(--text)';
 
-    // Reuse apiCall to test connection (goes through background script → gateway)
+    // Test directly from sidepanel to avoid service worker lifecycle issues
     try {
-      const port = settingBridgePort.value?.trim() || DEFAULT_PORT;
+      const portNum = settingBridgePort.value?.trim() || DEFAULT_PORT;
       const token = settingAuthToken.value?.trim() || '';
-      // Use a minimal prompt to test
-      const result = await new Promise((resolve, reject) => {
-        const requestId = 'test_' + Date.now();
-        const timeout = setTimeout(() => {
-          chrome.runtime.onMessage.removeListener(handler);
-          reject(new Error('timeout'));
-        }, 15000);
-        const handler = (msg) => {
-          if (msg.requestId === requestId) {
-            clearTimeout(timeout);
-            chrome.runtime.onMessage.removeListener(handler);
-            if (msg.type === 'clawside-api-result') resolve(msg.result);
-            else reject(new Error(msg.error || 'Unknown error'));
-          }
-        };
-        chrome.runtime.onMessage.addListener(handler);
-        chrome.runtime.sendMessage({
-          type: 'clawside-api',
-          prompt: 'Reply with "OK" only.',
-          port, token, requestId, stream: false
-        });
+      const url = 'http://127.0.0.1:' + portNum + '/v1/chat/completions';
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      };
+      const body = JSON.stringify({
+        model: 'openclaw',
+        user: 'clawside:test',
+        messages: [{ role: 'user', content: 'Reply with OK only.' }],
+        stream: false
       });
+
+      const res = await fetch(url, { method: 'POST', headers, body });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data.choices?.[0]?.message?.content) throw new Error('Invalid response');
+
       gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable';
       gatewayStatusEl.style.color = 'var(--success)';
     } catch (err) {
-      const msg = err.message || '';
-      if (msg.includes('401') || msg.includes('Unauthorized') || msg.includes('invalid_token')) {
+      const errMsg = err.message || '';
+      if (errMsg.includes('401') || errMsg.includes('Unauthorized') || errMsg.includes('invalid_token')) {
         gatewayStatusEl.textContent = '✗ Token rejected by gateway';
-      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg === 'timeout') {
+      } else if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg === 'timeout') {
         gatewayStatusEl.textContent = '✗ Cannot reach gateway — check port';
       } else {
-        gatewayStatusEl.textContent = '✗ ' + msg;
+        gatewayStatusEl.textContent = '✗ ' + errMsg;
       }
       gatewayStatusEl.style.color = 'var(--error)';
     }
@@ -526,10 +553,16 @@
   }
 
   // Refresh chat session for current tab (e.g., when URL changes)
-  async function refreshChatContext() {
+  async function refreshChatSession() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
       const url = tab.url || '';
+
+      // Skip chat session refresh if pending messages were just loaded
+      // to avoid overwriting the new messages with old ones from storage
+      if (_pendingMessagesLoaded) {
+        return;
+      }
 
       // Refresh chat session
       chatSession = await window.chatSessionManager.switchContext(tab.id, url);
@@ -544,7 +577,16 @@
 
       renderChatMessages();
 
-      // Refresh summarize result for current tab
+      // Reset flag after refresh is done
+      _pendingMessagesLoaded = false;
+    }
+  }
+
+  // Refresh summarize result for current tab (e.g., when URL changes)
+  async function refreshSummarizeResult() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      const url = tab.url || '';
       await loadSummarizeToUi(tab.id, url);
     }
   }
@@ -610,13 +652,13 @@
           ${htmlContent}
         </div>
         <div class="message-actions-left">
-          <button class="message-action-btn" data-action="edit" title="Edit">
+          <button class="message-action-btn" data-action="edit" title="">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
-          <button class="message-action-btn" data-action="copy" title="Copy">
+          <button class="message-action-btn" data-action="copy" title="">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -624,21 +666,12 @@
           </button>
         </div>
       `;
-      
-      // Wire edit button
+
+      // Set i18n titles for user message action buttons
       const editBtn = div.querySelector('[data-action="edit"]');
-      editBtn.addEventListener('click', () => {
-        chatInput.value = content;
-        chatInput.focus();
-        updateChatInputState();
-      });
-      
-      // Wire copy button
       const copyBtn = div.querySelector('[data-action="copy"]');
-      copyBtn.addEventListener('click', () => {
-        window.copyToClipboard(content);
-        showCopiedFeedback(copyBtn);
-      });
+      editBtn.title = i18n('editMessage');
+      copyBtn.title = i18n('copy');
     } 
     // Assistant message: copy icon on right outside bubble
     else {
@@ -648,7 +681,7 @@
           ${htmlContent}
         </div>
         <div class="message-actions-right">
-          <button class="message-action-btn" data-action="copy" title="Copy">
+          <button class="message-action-btn" data-action="copy" title="">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -656,15 +689,16 @@
           </button>
         </div>
       `;
-      
-      // Wire copy button
+
+      // Set i18n title for assistant copy button and wire it
       const copyBtn = div.querySelector('[data-action="copy"]');
+      copyBtn.title = i18n('copy');
       copyBtn.addEventListener('click', () => {
         window.copyToClipboard(content);
         showCopiedFeedback(copyBtn);
       });
     }
-    
+
     return div;
   }
 
@@ -697,7 +731,12 @@
 
     div.innerHTML = `
       <div class="message-avatar"><img src="../assets/icons/icon16.png" width="28" height="28" alt="AI"></div>
-      <div class="message-content streaming"></div>
+      <div class="message-content streaming">
+        <span class="message-loading">
+          <span class="loading-label">${i18n('thinking')}</span>
+          <span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+        </span>
+      </div>
     `;
 
     chatMessages.appendChild(div);
@@ -709,6 +748,14 @@
   function updateStreamingMessage(content) {
     const streamingDiv = chatMessages.querySelector('.chat-message.assistant[data-streaming="true"] .message-content');
     if (!streamingDiv) return;
+
+    // If we have content, hide the loading placeholder
+    if (content) {
+      const loadingEl = streamingDiv.querySelector('.message-loading');
+      if (loadingEl) {
+        loadingEl.style.display = 'none';
+      }
+    }
 
     streamingDiv.innerHTML = window.marked.parse(content);
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -730,7 +777,7 @@
       // Add actions
       const actionsHtml = `
         <div class="message-actions-right">
-          <button class="message-action-btn" data-action="copy" title="Copy">
+          <button class="message-action-btn" data-action="copy" title="">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -740,8 +787,9 @@
       `;
       streamingDiv.insertAdjacentHTML('beforeend', actionsHtml);
 
-      // Wire copy button
+      // Wire copy button with i18n title
       const copyBtn = streamingDiv.querySelector('[data-action="copy"]');
+      copyBtn.title = i18n('copy');
       copyBtn.addEventListener('click', () => {
         window.copyToClipboard(content);
         showCopiedFeedback(copyBtn);
@@ -789,16 +837,13 @@
       // Build prompt with conversation history
       // Use firstAsk flag to include page context only on first message
       await loadSettings();
-      const langCode = window.resolveLang(settings.language, browserLang);
-      const langLabel = langCode === 'zh' ? 'Chinese' : (langCode === 'ja' ? 'Japanese' : 'English');
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
         title: window.panelContext.getCurrentPageTitle() || chatSession.context.title || '',
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const extraSystemPrompt = `Response language: ${langLabel}.`;
-      const promptText = chatSession.buildPrompt(firstAsk, extraSystemPrompt);
+      const promptText = chatSession.buildPrompt(firstAsk);
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';
@@ -880,30 +925,7 @@
 
   // Get summarize storage key for tab+url
   function getSummarizeKey(tabId, url) {
-    // Reuse hashUrl function
-    const hashUrl = (url) => {
-      if (!url) return 'none';
-      try {
-        const u = new URL(url);
-        const key = u.origin + u.pathname;
-        let hash = 0;
-        for (let i = 0; i < key.length; i++) {
-          const char = key.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash;
-        }
-        return Math.abs(hash).toString(36);
-      } catch {
-        let hash = 0;
-        for (let i = 0; i < url.length; i++) {
-          const char = url.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash;
-        }
-        return Math.abs(hash).toString(36);
-      }
-    };
-    return `clawside_summarize_${tabId}_${hashUrl(url)}`;
+    return `clawside_summarize_${tabId}_${window.hashUrl(url)}`;
   }
 
   async function loadSummarizeResult(tabId, url) {
@@ -958,29 +980,50 @@
 
   // Save ask session to history (called when user switches tab or closes panel)
   async function saveAskSessionToHistory() {
-    console.log('[ClawSide] saveAskSessionToHistory called, chatSession:', !!chatSession);
-    if (!chatSession) return;
+    // Skip if already saving (prevent duplicate calls)
+    if (saveAskSessionToHistory._saving) return;
+    saveAskSessionToHistory._saving = true;
 
-    const messages = chatSession.messages;
-    console.log('[ClawSide] messages count:', messages?.length);
-    // Only save if there's at least one user message
-    const hasUserMsg = messages?.some(m => m.role === 'user');
-    console.log('[ClawSide] hasUserMsg:', hasUserMsg);
-    if (!hasUserMsg) return;
+    try {
+      console.log('[ClawSide] saveAskSessionToHistory called, chatSession:', !!chatSession);
+      if (!chatSession) return;
 
-    const url = window.panelContext.getCurrentUrl();
-    const title = window.panelContext.getCurrentPageTitle();
-    console.log('[ClawSide] saving ask history, url:', url, 'title:', title);
+      const messages = chatSession.messages;
+      console.log('[ClawSide] messages count:', messages?.length);
+      // Only save if there's at least one user message
+      const hasUserMsg = messages?.some(m => m.role === 'user');
+      console.log('[ClawSide] hasUserMsg:', hasUserMsg);
+      if (!hasUserMsg) return;
 
-    await addHistoryItem({
-      id: crypto.randomUUID(),
-      type: 'ask',
-      url: url || '',
-      title: title || '',
-      messages: messages,
-      timestamp: Date.now()
-    });
-    console.log('[ClawSide] ask history saved');
+      const url = window.panelContext.getCurrentUrl();
+      const title = window.panelContext.getCurrentPageTitle();
+      console.log('[ClawSide] saving ask history, url:', url, 'title:', title);
+
+      // Check for duplicate: skip if most recent item has same url + same messages
+      const items = await loadHistory();
+      const lastItem = items[0];
+      if (lastItem && lastItem.type === 'ask' && lastItem.url === url) {
+        // Compare messages content
+        const lastMsgsJson = JSON.stringify(lastItem.messages);
+        const currentMsgsJson = JSON.stringify(messages);
+        if (lastMsgsJson === currentMsgsJson) {
+          console.log('[ClawSide] skip duplicate ask history');
+          return;
+        }
+      }
+
+      await addHistoryItem({
+        id: crypto.randomUUID(),
+        type: 'ask',
+        url: url || '',
+        title: title || '',
+        messages: messages,
+        timestamp: Date.now()
+      });
+      console.log('[ClawSide] ask history saved');
+    } finally {
+      saveAskSessionToHistory._saving = false;
+    }
   }
 
   // === API via background script (streaming) ===
@@ -1068,17 +1111,20 @@
     showLoading('', translateBtn, 'translating');
     try {
       await loadSettings();
-      let targetLang = targetLangSelect.value;
-      if (targetLang === 'auto') {
-        // translateLanguage is for translation target; language is for summarize/ask reply
-        const translateLang = settings.translateLanguage;
-        targetLang = (!translateLang || translateLang === 'auto') ? browserLang : (translateLang || browserLang);
+      // Use lang-utils to get translate target language label
+      // If user selected specific language in dropdown (not 'auto'), use that; otherwise use settings
+      let targetLangLabel;
+      if (targetLangSelect.value !== 'auto') {
+        const code = window.resolveToCode(targetLangSelect.value, browserLang);
+        targetLangLabel = window.codeToLabel(code);
+      } else {
+        targetLangLabel = window.getTranslateLabel ? window.getTranslateLabel(settings) : 'English';
       }
       const templates = window.csSettings.getPromptTemplates(settings, 'translate');
-      const systemPrompt = templates ? applyPrompt(templates.system, { lang: targetLang }) : '';
+      const systemPrompt = templates ? applyPrompt(templates.system, { lang: targetLangLabel }) : '';
       const userPrompt = templates ? applyPrompt(templates.user, {
         text,
-        lang: targetLang,
+        lang: targetLangLabel,
         title: currentTitle,
         url: currentUrl,
         content: pageContent ? pageContent.slice(0, 8000) : ''
@@ -1136,7 +1182,7 @@
     let extractionFailed = false;
 
     if (!pageContent || pageContent.trim().length < 100) {
-      showLoading(chrome.i18n.getMessage('loading'));
+      showLoading(i18n('loading'));
       try {
         if (tab?.id) {
           const results = await chrome.scripting.executeScript({
@@ -1168,8 +1214,8 @@
     try {
       await loadSettings();
       const templates = window.csSettings.getPromptTemplates(settings, 'summarize');
-      const lang = window.resolveLang(settings.language, browserLang);
-      const langLabel = lang === 'zh' ? 'Chinese (中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
+      // Use lang-utils to get reply language label directly
+      const langLabel = window.getReplyLabel ? window.getReplyLabel(settings) : 'English';
       const systemPrompt = templates ? applyPrompt(templates.system, { lang: langLabel }) : '';
       const userPrompt = templates ? applyPrompt(templates.user, {
         lang: langLabel,
@@ -1342,7 +1388,8 @@
 
   async function renderHistory() {
     const items = await loadHistory();
-    historyCount.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+    const itemLabel = items.length === 1 ? i18n('historyItem') : i18n('historyItems');
+    historyCount.textContent = `${items.length} ${itemLabel}`;
     historyEmpty.classList.toggle('hidden', items.length > 0);
     historyList.innerHTML = '';
     clearHistoryBtn.classList.toggle('hidden', items.length === 0);
@@ -1351,7 +1398,7 @@
       const el = document.createElement('div');
       el.className = 'history-item';
       const itemIcon = item.type === 'translate' ? svgIcon('translate') : item.type === 'summarize' ? svgIcon('summarize') : svgIcon('ask');
-      const typeLabel = item.type === 'translate' ? chrome.i18n.getMessage('tabTranslate') : item.type === 'summarize' ? chrome.i18n.getMessage('tabSummarize') : chrome.i18n.getMessage('tabAsk');
+      const typeLabel = item.type === 'translate' ? i18n('tabTranslate') : item.type === 'summarize' ? i18n('tabSummarize') : i18n('tabAsk');
 
         let preview;
         if (item.type === 'translate') {
@@ -1371,9 +1418,9 @@
             <span class="history-item-icon">${itemIcon}</span>
             <span class="history-item-type">${typeLabel}</span>
             <span class="history-item-actions">
-              <button class="history-export-btn" data-index="${idx}" title="Export">${svgIcon("export")}</button>
-              <button class="history-copy-btn" data-index="${idx}" title="Copy">${svgIcon("copy")}</button>
-              <button class="history-delete-btn" data-index="${idx}" title="Delete">${svgIcon("delete")}</button>
+              <button class="history-export-btn" data-index="${idx}" title="${i18n('exportItem')}">${svgIcon("export")}</button>
+              <button class="history-copy-btn" data-index="${idx}" title="${i18n('copy')}">${svgIcon("copy")}</button>
+              <button class="history-delete-btn" data-index="${idx}" title="${i18n('deleteItem')}">${svgIcon("delete")}</button>
             </span>
             <span class="history-item-time">${formatTime(item.timestamp)}</span>
           </div>
@@ -1794,10 +1841,10 @@
     });
 
     // Detect browser language
-    browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
     const rawLang = navigator.language || navigator.userLanguage || 'en';
+    browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
     await loadSettings();
-    if (browserLangHint) browserLangHint.textContent = `${chrome.i18n.getMessage('browserLangHint')}: ${rawLang} → ${browserLang}`;
+    if (browserLangHint) browserLangHint.textContent = `${rawLang} → ${browserLang}`;
 
     // Register the storage listener FIRST — it handles floating-ball clicks when
     // the panel is already open. The write is synchronous, so onChanged fires
@@ -1870,6 +1917,7 @@
 
         // Load chat messages BEFORE showTab, so when ask tab renders it has the messages
         if (action === 'ask' && messages && messages.length > 0) {
+          _pendingMessagesLoaded = true; // Mark as loaded
           const session = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
           // Set page context
           session.setContext({
@@ -1908,23 +1956,13 @@
     await window.panelContext.updatePageContext();
 
     // Load summarize result for current tab on init
-    await refreshChatContext();
-
-    // After refreshChatContext (which may override chatSession),
-    // re-load the messages if we just transferred from popup
-    if (stored._pendingAction === 'ask' && stored._pendingMessages && stored._pendingMessages.length > 0) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        const url = stored._pendingUrl || tab.url || '';
-        chatSession = await window.chatSessionManager.getSession(tab.id, url);
-        renderChatMessages();
-      }
-    }
+    await refreshSummarizeResult();
 
     // Listen for Chrome tab switches to refresh context
     chrome.tabs.onActivated.addListener(async (_activeInfo) => {
       await window.panelContext.updatePageContext();
-      await refreshChatContext();
+      await refreshChatSession();
+      await refreshSummarizeResult();
       // Check if there's a pending summarize result for this browser tab
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const currentTabId = activeTab?.id || null;
@@ -1946,7 +1984,8 @@
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (activeTab?.id === tabId) {
         await window.panelContext.updatePageContext();
-        await refreshChatContext();
+        await refreshChatSession();
+        await refreshSummarizeResult();
       }
     });
 
@@ -1957,7 +1996,8 @@
       if (activeTab?.id === navInfo.tabId) {
         setTimeout(async () => {
           await window.panelContext.updatePageContext();
-          await refreshChatContext();
+          await refreshChatSession();
+          await refreshSummarizeResult();
         }, 600);
       }
     });
@@ -1998,6 +2038,22 @@
         const ctx = { url: actualUrl, title: actualTitle, favicon: actualFavicon, content: finalContent, selectedText: selectedTxt };
         window.tabContextManager.set(activeTab.id, ctx);
         window.tabContextManager.setActiveTabId(activeTab.id);
+
+        // Pre-load chat messages BEFORE showTab if action is 'ask' and there are pending messages
+        if (action === 'ask' && messages && messages.length > 0) {
+          _pendingMessagesLoaded = true; // Mark as loaded so showTab won't re-init
+          chatSession = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
+          // Add messages to session
+          messages.forEach(msg => {
+            if (msg.role === 'user') {
+              chatSession.addUserMessage(msg.content);
+            } else if (msg.role === 'assistant') {
+              chatSession.addAssistantMessage(msg.content);
+            }
+          });
+          await chatSession.save();
+        }
+
         showTab(action || 'translate');
         if (window.panelContext._applyContext) window.panelContext._applyContext(ctx);
         chrome.storage.local.remove(['_pendingTab', '_pendingUrl', '_pendingTitle', '_pendingText', '_pendingAction', '_pendingMessages']);
@@ -2010,19 +2066,8 @@
           }
         }
 
-        // Load chat messages if action is 'ask' and there are pending messages
+        // Refresh chat display if messages were loaded
         if (action === 'ask' && messages && messages.length > 0) {
-          const session = await window.chatSessionManager.getSession(activeTab.id, actualUrl);
-          // Add messages to session (skip the first one if it's being displayed in popup already)
-          messages.forEach(msg => {
-            if (msg.role === 'user') {
-              session.addUserMessage(msg.content);
-            } else if (msg.role === 'assistant') {
-              session.addAssistantMessage(msg.content);
-            }
-          });
-          await session.save();
-          // Refresh chat display
           renderChatMessages();
         }
       }

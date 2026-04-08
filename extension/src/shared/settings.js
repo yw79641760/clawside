@@ -66,6 +66,7 @@
         'Guidelines:\n' +
         '- Answer in {lang} using Markdown\n' +
         '- Keep to 3-6 bullet points or short paragraphs\n' +
+        '- If page content is empty, refer to the previous messages in this conversation to find the page content - it was provided earlier\n' +
         '- If the answer isn\'t in the context, say "Not found in page content" and explain what\'s missing\n' +
         '- If the question is vague, ask one clarifying question first'
     },

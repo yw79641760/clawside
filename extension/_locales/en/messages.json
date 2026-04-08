@@ -76,5 +76,18 @@
   "labelContextAsk": { "message": "Current Page" },
   "labelContextTranslate": { "message": "Current Page" },
   "labelSelectedText": { "message": "Selected Text" },
+  "ctxRefresh": { "message": "Refresh context" },
+  "clear": { "message": "Clear" },
+  "exportChat": { "message": "Export chat" },
+  "copyChat": { "message": "Copy chat" },
+  "editMessage": { "message": "Edit" },
+  "historyHint": { "message": "Use Translate, Summarize, or Ask to get started" },
+  "historyItems": { "message": "items" },
+  "historyItem": { "message": "item" },
+  "exportItem": { "message": "Export" },
+  "deleteItem": { "message": "Delete" },
+  "resetPrompt": { "message": "Reset to default" },
+  "pin": { "message": "Pin" },
+  "openInSidePanel": { "message": "Open in side panel" },
   "placeholderPromptVars": { "message": "Available variables: <code>{text}</code> selected text, <code>{content}</code> page content, <code>{title}</code> page title, <code>{url}</code> page URL, <code>{lang}</code> target language, <code>{paragraphs}</code> paragraph list (global translate)" }
 }

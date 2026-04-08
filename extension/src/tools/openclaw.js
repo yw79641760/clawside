@@ -1,5 +1,6 @@
 // ClawSide - OpenClaw Gateway Client
-// Handles all HTTP communication with the OpenClaw local gateway.
+// Handles HTTP communication with the OpenClaw local gateway.
+// Docs: https://docs.openclaw.ai/gateway/openai-http-api
 
 /**
  * Build the base URL for the OpenClaw gateway.
@@ -10,16 +11,27 @@ export function buildUrl(port) {
 
 /**
  * Build request headers for the OpenClaw gateway.
+ * Supports token and password authentication modes.
+ * @see https://docs.openclaw.ai/gateway/openai-http-api#authentication
  */
 export function buildHeaders(token) {
-  return {
+  const headers = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + String(token || '').trim()
   };
+  // Token authentication: Bearer token
+  if (token && token.trim()) {
+    headers['Authorization'] = 'Bearer ' + token.trim();
+  }
+  return headers;
 }
 
 /**
  * Build the common request body for chat completions.
+ * @param {string} prompt - User prompt
+ * @param {string} toolName - Tool identifier (default/summarize/translate/ask)
+ * @param {string} systemPrompt - Optional system prompt
+ * @returns {Object} Chat completion body
+ * @see https://docs.openclaw.ai/gateway/openai-http-api#chat-completions
  */
 export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
   const messages = [];
@@ -28,26 +40,29 @@ export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
   }
   messages.push({ role: 'user', content: prompt });
   return {
-    model: 'openclaw/main',
+    // Model routing: "openclaw" or "openclaw/<agentId>" for specific agent
+    // Empty string defaults to "openclaw" (default agent)
+    model: 'openclaw',
+    // Session format: clawside:{toolName}
+    // @see https://docs.openclaw.ai/gateway/openai-http-api#authentication
     user: 'clawside:' + toolName,
     messages
   };
 }
 
-// === Streaming API Call ===
 /**
  * Send a streaming chat completion request.
  * Chunks are dispatched via chrome.runtime.sendMessage as 'clawside-stream-chunk'.
  * On completion, 'clawside-stream-done' is sent.
  * On error, 'clawside-stream-error' is sent.
  *
- * @param {string}   prompt
- * @param {string}   systemPrompt
- * @param {string}   port
- * @param {string}   token
- * @param {string}   requestId
- * @param {string}   toolName
- * @param {number|null} sourceTabId - Tab ID to send response back to (for content scripts)
+ * @param {string} prompt - User prompt
+ * @param {string} systemPrompt - System prompt
+ * @param {string} port - Gateway port
+ * @param {string} token - Auth token
+ * @param {string} requestId - Request identifier for response routing
+ * @param {string} toolName - Tool identifier (default/summarize/translate/ask)
+ * @param {number|null} sourceTabId - Tab ID for content script response routing
  * @returns {Promise<void>}
  */
 export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', sourceTabId = null) {
@@ -65,26 +80,22 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 
-  // Helper to send message back to extension
-  // For content scripts (dock.js): use chrome.tabs.sendMessage with tab ID
-  // For extension pages (sidepanel): use chrome.runtime.sendMessage
+  // Send message back to extension
+  // For content scripts: use chrome.tabs.sendMessage with tab ID
+  // For side panel: use chrome.runtime.sendMessage
   const sendMsg = (msg) => {
-    // If we have a sourceTabId, use tabs.sendMessage for content scripts
     if (sourceTabId) {
       return chrome.tabs.sendMessage(sourceTabId, msg)
-        .catch(() => {
-          // Fall back to runtime.sendMessage
-          return chrome.runtime.sendMessage(msg).catch(() => {});
-        });
+        .catch(() => chrome.runtime.sendMessage(msg).catch(() => {}));
     }
-    // No sourceTabId (sidepanel): use runtime.sendMessage
     return chrome.runtime.sendMessage(msg).catch(() => {});
   };
 
@@ -113,20 +124,18 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
   sendMsg({ type: 'clawside-stream-done', requestId });
 }
 
-// === Non-streaming API Call (response sent via message) ===
 /**
- * Send a non-streaming chat completion request.
- * Result is dispatched via 'clawside-api-result'.
- * Errors are dispatched via 'clawside-api-error'.
+ * Send a non-streaming chat completion request and return result directly.
  *
- * @param {string}   prompt
- * @param {string}   port
- * @param {string}   token
- * @param {string}   requestId
- * @param {string}   toolName
- * @returns {Promise<void>}
+ * @param {string} prompt - User prompt
+ * @param {string} systemPrompt - System prompt
+ * @param {string} port - Gateway port
+ * @param {string} token - Auth token
+ * @param {string} toolName - Tool identifier
+ * @param {string} requestId - Request identifier for response routing
+ * @returns {Promise<string>} Assistant response
  */
-export async function apiNonStream(prompt, systemPrompt, port, token, requestId, toolName = 'default') {
+export async function apiCall(prompt, systemPrompt, port, token, toolName = 'default', requestId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
@@ -134,61 +143,17 @@ export async function apiNonStream(prompt, systemPrompt, port, token, requestId,
     stream: false
   };
 
-  const res = await fetch(`${url}/v1/chat/completions`, {
+  const response = await fetch(`${url}/v1/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body)
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const result = data.choices?.[0]?.message?.content?.trim() || '';
-  chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
-}
-
-// === Non-streaming API Call (returns promise) ===
-/**
- * Send a non-streaming chat completion request and return the result directly.
- *
- * @param {string}   prompt
- * @param {string}   port
- * @param {string}   token
- * @param {string}   toolName
- * @returns {Promise<string>}
- */
-export async function apiCall(prompt, systemPrompt, port, token, toolName = 'default') {
-  const url = buildUrl(port);
-  const headers = buildHeaders(token);
-  const body = buildBody(prompt, toolName, systemPrompt);
-
-  const res = await fetch(`${url}/v1/chat/completions`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
-  const data = await res.json();
+
+  const data = await response.json();
   return data.choices?.[0]?.message?.content?.trim() || '';
-}
-
-// === Connection Test ===
-/**
- * Test connectivity to the OpenClaw gateway.
- * Sends a minimal non-streaming request to verify the endpoint is reachable.
- *
- * @param {string} port
- * @param {string} token
- * @returns {Promise<{ ok: boolean, message: string }>}
- */
-export async function testConnection(port, token) {
-  try {
-    await apiCall('hi', port, token, 'test');
-    return { ok: true, message: 'Connected' };
-  } catch (err) {
-    return { ok: false, message: err.message };
-  }
 }

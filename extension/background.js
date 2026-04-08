@@ -1,7 +1,7 @@
 // ClawSide - Service Worker (Background)
 // Handles message routing, panel behavior, and forwards API calls to tools/openclaw.js.
 
-import { apiStream, apiNonStream } from './src/tools/openclaw.js';
+import { apiStream, apiCall } from './src/tools/openclaw.js';
 
 // Cached side panel tab ID — registered by the panel itself on load.
 // Kept in storage so the SW can persist it across restarts.
@@ -56,7 +56,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
       });
     } else {
-      apiNonStream(prompt, systemPrompt, port, token, requestId, toolName).catch((err) => {
+      apiCall(prompt, systemPrompt, port, token, toolName, requestId).then((result) => {
+        chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
+      }).catch((err) => {
         chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
       });
     }

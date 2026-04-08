@@ -84,8 +84,8 @@
     var title = msgKey;
     var loading = loadingKey;
     try {
-      title = chrome.i18n.getMessage(msgKey) || msgKey;
-      loading = chrome.i18n.getMessage(loadingKey) || loadingKey;
+      title = i18n(msgKey) || msgKey;
+      loading = i18n(loadingKey) || loadingKey;
     } catch(e) {}
     return {
       icon: window.svgIcon ? window.svgIcon(action) : (BUBBLE_ICONS[action] || ''),
@@ -116,9 +116,9 @@
     var summarizeTooltip = 'Summarize';
     var askTooltip = 'Ask';
     try {
-      translateTooltip = chrome.i18n.getMessage('tabTranslate') || 'Translate';
-      summarizeTooltip = chrome.i18n.getMessage('tabSummarize') || 'Summarize';
-      askTooltip = chrome.i18n.getMessage('tabAsk') || 'Ask';
+      translateTooltip = i18n('tabTranslate') || 'Translate';
+      summarizeTooltip = i18n('tabSummarize') || 'Summarize';
+      askTooltip = i18n('tabAsk') || 'Ask';
     } catch(e) {}
     el.innerHTML =
       '<button class="cs-btn" id="cs-btn-translate" title="' + translateTooltip + '">' + BUBBLE_ICONS.translate + '</button>' +
@@ -173,13 +173,13 @@
         '<div class="cs-popup-header-main">' +
           '<span class="cs-popup-icon" id="cs-popup-icon"></span>' +
           '<span class="cs-popup-title" id="cs-popup-title">Translation</span>' +
-          '<button class="cs-popup-pin" id="cs-popup-pin" title="Pin">' + BUBBLE_ICONS.pin + '</button>' +
+          '<button class="cs-popup-pin" id="cs-popup-pin" title="' + i18n('pin') + '">' + BUBBLE_ICONS.pin + '</button>' +
           '<button class="cs-popup-close" id="cs-popup-close">&#10005;</button>' +
         '</div>' +
       '</div>' +
       '<div class="cs-popup-selected">' +
         '<span class="cs-popup-selected-text" id="cs-popup-selected-text"></span>' +
-        '<button class="cs-popup-copy" id="cs-popup-copy">' + BUBBLE_ICONS.copy + '</button>' +
+        '<button class="cs-popup-copy" id="cs-popup-copy" title="' + i18n('copy') + '">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>' +
       '<div class="cs-popup-body" id="cs-popup-body">' +
         '<div class="cs-popup-loading">' +
@@ -188,7 +188,7 @@
         '</div>' +
       '</div>' +
       '<div class="cs-popup-actions">' +
-        '<button class="cs-popup-action-btn" id="cs-popup-copy-result" title="Copy">' + BUBBLE_ICONS.copy + '</button>' +
+        '<button class="cs-popup-action-btn" id="cs-popup-copy-result" title="' + i18n('copy') + '">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>';
     document.body.appendChild(el);
     return el;
@@ -208,19 +208,19 @@
         '<div class="cs-popup-header-main">' +
           '<span class="cs-popup-icon" id="cs-popup-icon">' + BUBBLE_ICONS.ask + '</span>' +
           '<span class="cs-popup-title" id="cs-popup-title">Ask</span>' +
-          '<button class="cs-popup-open-external" id="cs-popup-open-external" title="Open in side panel">' + BUBBLE_ICONS.openExternal + '</button>' +
-          '<button class="cs-popup-pin" id="cs-popup-pin" title="Pin">' + BUBBLE_ICONS.pin + '</button>' +
+          '<button class="cs-popup-open-external" id="cs-popup-open-external" title="' + i18n('openInSidePanel') + '">' + BUBBLE_ICONS.openExternal + '</button>' +
+          '<button class="cs-popup-pin" id="cs-popup-pin" title="' + i18n('pin') + '">' + BUBBLE_ICONS.pin + '</button>' +
           '<button class="cs-popup-close" id="cs-popup-close">&#10005;</button>' +
         '</div>' +
       '</div>' +
       '<div class="cs-popup-selected">' +
         '<span class="cs-popup-selected-text" id="cs-popup-selected-text"></span>' +
-        '<button class="cs-popup-copy" id="cs-popup-copy">' + BUBBLE_ICONS.copy + '</button>' +
+        '<button class="cs-popup-copy" id="cs-popup-copy" title="' + i18n('copy') + '">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>' +
       '<div class="cs-popup-chat-messages" id="cs-popup-chat-messages"></div>' +
       '<div class="cs-popup-chat-input-area">' +
-        '<textarea class="cs-popup-chat-input" id="cs-popup-chat-input" placeholder="Ask a question..." rows="1"></textarea>' +
-        '<button class="cs-popup-chat-send" id="cs-popup-chat-send">' + BUBBLE_ICONS.send + '</button>' +
+        '<textarea class="cs-popup-chat-input" id="cs-popup-chat-input" placeholder="' + i18n('chatInputPlaceholder') + '" rows="1"></textarea>' +
+        '<button class="cs-popup-chat-send" id="cs-popup-chat-send" title="' + i18n('globalAsk') + '">' + BUBBLE_ICONS.send + '</button>' +
       '</div>';
     document.body.appendChild(el);
     return el;
@@ -368,23 +368,29 @@
         var action = (popupType === 'ask') ? 'ask' : 'translate';
         // Pass chat messages to side panel if this is an ask popup
         var pendingMessages = (popupType === 'ask' && popupMessages.length > 0) ? popupMessages : null;
+
+        // Get current tab ID from tabContextManager (more reliable than chrome.tabs.query in content script)
+        var tabId = window.tabContextManager ? window.tabContextManager.getActiveTabId() : null;
+
         chrome.storage.local.set({
-          _pendingTab: currentCtx?.tabId || null,
-          _pendingUrl: window.location.href,
-          _pendingTitle: document.title,
-          _pendingText: text,
-          _pendingAction: action,
-          _pendingMessages: pendingMessages
-        }).catch(function () {});
-        chrome.runtime.sendMessage({
-          type: 'panel-open-with-tab',
-          tab: currentCtx?.tabId || null,
-          url: window.location.href,
-          title: document.title,
-          text: text,
-          action: action,
-          messages: pendingMessages
-        }).catch(function () {});
+            _pendingTab: tabId,
+            _pendingUrl: window.location.href,
+            _pendingTitle: document.title,
+            _pendingText: text,
+            _pendingAction: action,
+            _pendingMessages: pendingMessages
+          }).catch(function () {});
+
+          chrome.runtime.sendMessage({
+            type: 'panel-open-with-tab',
+            tab: tabId,
+            url: window.location.href,
+            title: document.title,
+            text: text,
+            action: action,
+            messages: pendingMessages
+          }).catch(function () {});
+
         hidePopup();
       };
     }
@@ -548,8 +554,8 @@
     userMsg.className = 'cs-popup-chat-message user';
     userMsg.innerHTML = '<div class="cs-popup-chat-message-content">' + question + '</div>' +
       '<div class="cs-popup-chat-message-actions">' +
-        '<button class="cs-popup-chat-action-btn cs-popup-chat-edit" title="Edit">' + BUBBLE_ICONS.edit + '</button>' +
-        '<button class="cs-popup-chat-action-btn cs-popup-chat-copy" title="Copy">' + BUBBLE_ICONS.copy + '</button>' +
+        '<button class="cs-popup-chat-action-btn cs-popup-chat-edit" title="' + i18n('editMessage') + '">' + BUBBLE_ICONS.edit + '</button>' +
+        '<button class="cs-popup-chat-action-btn cs-popup-chat-copy" title="' + i18n('copy') + '">' + BUBBLE_ICONS.copy + '</button>' +
       '</div>';
     chatMessages.appendChild(userMsg);
 
@@ -579,15 +585,15 @@
     // Build prompt and call API
     chrome.storage.local.get(['clawside_settings']).then(function(stored) {
       var s = stored.clawside_settings || {};
-      var browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
-      var replyLang = (s.language && s.language !== 'auto') ? s.language : browserLang;
+      // Use lang-utils to get display label directly
+      var langLabel = window.getReplyLabel ? window.getReplyLabel(s) : 'English';
 
       var templates = window.csSettings.getPromptTemplates(s, 'ask');
       var systemPrompt = templates ? templates.system : '';
       var prompt = templates ? window.csSettings.applyPrompt(templates.user, {
         selectedText: selectedText,
         question: question,
-        lang: replyLang,
+        lang: langLabel,
         title: pageTitle,
         url: pageUrl,
         content: pageContent
@@ -599,7 +605,7 @@
       // Get loading text from i18n
       var loadingText = 'Thinking';
       try {
-        loadingText = chrome.i18n.getMessage('thinking') || 'Thinking';
+        loadingText = i18n('thinking') || 'Thinking';
       } catch(e) {}
 
       // Create assistant message element for streaming with loading state
@@ -607,7 +613,7 @@
       assistantMsg.className = 'cs-popup-chat-message assistant cs-popup-loading';
       assistantMsg.innerHTML = '<span class="loading-text">' + loadingText + '</span>' +
         '<span class="loading-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>' +
-        '<div class="cs-popup-chat-message-actions" style="display:none"><button class="cs-popup-chat-action-btn cs-popup-chat-copy" title="Copy">' + BUBBLE_ICONS.copy + '</button></div>';
+        '<div class="cs-popup-chat-message-actions" style="display:none"><button class="cs-popup-chat-action-btn cs-popup-chat-copy" title="' + i18n('copy') + '">' + BUBBLE_ICONS.copy + '</button></div>';
       chatMessages.appendChild(assistantMsg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -755,17 +761,8 @@
     await showPopup(action, text, rect, onStreamChunk);
 
     try {
-      var browserLang = window.getBrowserLocale ? window.getBrowserLocale() : 'English';
-      var replyLang = (s.language && s.language !== 'auto')
-        ? s.language
-        : browserLang;
-
-      // translateLanguage: translation target, defaults to language setting
-      var defaultLang = (s.language && s.language !== 'auto') ? s.language : browserLang;
-      var translateLang = s.translateLanguage;
-      var targetLang = (translateLang && translateLang !== 'auto')
-        ? translateLang
-        : defaultLang;
+      // Use lang-utils to get translate target language label directly
+      var targetLangLabel = window.getTranslateLabel ? window.getTranslateLabel(s) : 'English';
 
       // Get page context from tabContextManager
       var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
@@ -788,10 +785,10 @@
           setPopupError('Translate template not found');
           return;
         }
-        systemPrompt = applyPrompt(templates.system, { lang: targetLang });
+        systemPrompt = applyPrompt(templates.system, { lang: targetLangLabel });
         prompt = applyPrompt(templates.user, {
           text: text,
-          lang: targetLang,
+          lang: targetLangLabel,
           title: pageTitle,
           url: pageUrl,
           content: pageContent
@@ -938,8 +935,10 @@
   }
 
   // === Streaming message listeners (tabContextManager handles tab/text sync) ===
+  // NOTE: Use chrome.tabs.onMessage to receive responses from openclaw.js
+  // (background sends via chrome.tabs.sendMessage when sourceTabId is provided)
   function setupStreamingListeners() {
-    chrome.runtime.onMessage.addListener(function (msg) {
+    chrome.tabs.onMessage.addListener(function (msg) {
       if (msg.type === 'clawside-stream-chunk') {
         var req = pendingRequests[msg.requestId];
         if (req && typeof req.onChunk === 'function') {

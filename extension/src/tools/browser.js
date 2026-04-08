@@ -1,20 +1,16 @@
 // ClawSide - Browser Utilities
-// Browser-environment capabilities: language detection, clipboard, storage wrapper.
-// Shared across content script and side panel.
+// Browser-environment capabilities: clipboard, storage wrapper.
+// Language utilities moved to lang-utils.js.
 
 /**
- * Get the browser's display-language label (e.g. 'Chinese', 'Japanese', 'English').
- * Used by side panel settings to show detected browser language.
+ * Get i18n message safely (avoids context invalidated errors).
  */
-function getBrowserLocale() {
-  const lang = navigator.language || navigator.userLanguage || 'en';
-  const map = {
-    'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'Chinese', 'zh-HK': 'Chinese',
-    'ja': 'Japanese', 'ko': 'Korean',
-    'fr': 'French', 'de': 'German', 'es': 'Spanish', 'ru': 'Russian',
-    'en': 'English',
-  };
-  return map[lang] || map[lang.split('-')[0]] || 'English';
+function i18n(key) {
+  try {
+    return chrome.i18n.getMessage(key) || key;
+  } catch (e) {
+    return key;
+  }
 }
 
 /**
@@ -29,33 +25,6 @@ async function copyToClipboard(text) {
   }
 }
 
-/**
- * Resolve a language setting ('auto', 'Chinese', 'Japanese', ...) to a short code.
- */
-function resolveLang(lang, browserLang) {
-  browserLang = browserLang || 'en';
-  if (lang === 'auto') {
-    if (browserLang.slice(0, 2) === 'zh') return 'zh';
-    if (browserLang.slice(0, 2) === 'ja') return 'ja';
-    return 'en';
-  }
-  if (lang === 'Chinese')  return 'zh';
-  if (lang === 'Japanese') return 'ja';
-  return 'en';
-}
-
-/**
- * Get the short browser language code from navigator.
- */
-function getBrowserLang() {
-  var l = navigator.language || '';
-  if (l.slice(0, 2) === 'zh') return 'zh';
-  if (l.slice(0, 2) === 'ja') return 'ja';
-  return 'en';
-}
-
-// Expose globals for non-module scripts (sidepanel.html uses <script> not type="module")
-window.getBrowserLocale = getBrowserLocale;
-window.copyToClipboard  = copyToClipboard;
-window.resolveLang       = resolveLang;
-window.getBrowserLang    = getBrowserLang;
+// Expose globals for non-module scripts
+window.i18n = i18n;
+window.copyToClipboard = copyToClipboard;
