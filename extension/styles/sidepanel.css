@@ -1715,12 +1715,13 @@ textarea#translateInput::placeholder {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  padding: 10px 14px;
+  padding: 8px 14px;
   font-size: 13px;
   font-family: inherit;
   resize: vertical;
   min-height: 44px;
   max-height: 120px;
+  line-height: 1.4;
   transition: border-color var(--transition);
 }
 
