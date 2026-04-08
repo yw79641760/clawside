@@ -1147,7 +1147,7 @@
         }
       });
       const result = translateStreaming.getRawText();
-      const historyKey = `cs_history_translate_${window.hashUrl(result)}`;
+      const historyKey = `cs_history_translate_${window.hashUrl(text)}`;
       await addHistoryItem({
         id: crypto.randomUUID(),
         key: historyKey,
