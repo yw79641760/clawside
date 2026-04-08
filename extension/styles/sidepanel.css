@@ -1719,10 +1719,11 @@ textarea#translateInput::placeholder {
   font-size: 13px;
   font-family: inherit;
   resize: vertical;
-  min-height: 44px;
+  min-height: 40px;
   max-height: 120px;
   transition: border-color var(--transition);
   box-sizing: border-box;
+  line-height: 20px;
 }
 
 .chat-input-area textarea:focus {
