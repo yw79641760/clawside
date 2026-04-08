@@ -29,7 +29,6 @@
   // === Chat State ===
   let chatSession = null;
   let currentChatMessageId = null;
-  let firstAsk = true; // flag to include page context on first message
 
   // === Apply Prompt with special variables (hasSelection, hasContent) ===
   var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
@@ -706,7 +705,7 @@
   function addUserMessage(content) {
     if (!chatSession) return;
 
-    chatSession.addUserMessage(content);
+    chatSession.addUserMessage(content, null, 'ask');
     if (chatMessages) {
       const msgEl = createMessageElement('user', content);
       chatMessages.appendChild(msgEl);
@@ -724,7 +723,7 @@
     if (!chatSession) return null;
     if (!chatMessages) return null;
 
-    const msg = chatSession.addAssistantMessage('');
+    const msg = chatSession.addAssistantMessage('', null, 'ask');
     const div = document.createElement('div');
     div.className = 'chat-message assistant';
     div.dataset.streaming = 'true';
@@ -799,8 +798,6 @@
       if (chatSession) {
         chatSession.updateLastAssistantMessage(content);
         chatSession.save();
-        // First message sent, subsequent messages don't need page context
-        firstAsk = false;
       }
     }
   }
@@ -835,7 +832,7 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Use firstAsk flag to include page context only on first message
+      // Use chatSession.isFirstAsk() to include page context only on first message
       await loadSettings();
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
@@ -843,7 +840,7 @@
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const promptText = chatSession.buildPrompt(firstAsk);
+      const promptText = chatSession.buildPrompt();
       
       const port = settings.gatewayPort || DEFAULT_PORT;
       const token = settings.authToken || '';

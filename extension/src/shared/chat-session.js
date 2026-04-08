@@ -58,10 +58,11 @@
     }
 
     // Add user message
-    addUserMessage(content, timestamp = null) {
+    addUserMessage(content, timestamp = null, from = 'ask') {
       const msg = {
         role: 'user',
         content,
+        from: from,
         timestamp: timestamp || Date.now()
       };
       this.messages.push(msg);
@@ -69,14 +70,21 @@
     }
 
     // Add assistant message (initially empty for streaming)
-    addAssistantMessage(content = '', timestamp = null) {
+    addAssistantMessage(content = '', timestamp = null, from = 'ask') {
       const msg = {
         role: 'assistant',
         content,
+        from: from,
         timestamp: timestamp || Date.now()
       };
       this.messages.push(msg);
       return msg;
+    }
+
+    // Check if this is the first ask (no 'ask' messages in conversation)
+    isFirstAsk() {
+      // Check if any message has from='ask'
+      return !this.messages.some(msg => msg.from === 'ask');
     }
 
     // Update last assistant message (for streaming)
@@ -102,7 +110,7 @@
     //   Assistant:
     // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
     //                                       if false, include only title + url (for follow-up questions)
-    buildPrompt(includeFullContext = true) {
+    buildPrompt() {
       // Get ask prompt template from settings
       var templates = window.csSettings ? window.csSettings.getPromptTemplates(window.csSettings.getDefaultSettings(), 'ask') : null;
       if (!templates) {
@@ -117,8 +125,10 @@
       }
 
       // Build page context variables
+      // Use isFirstAsk() to determine whether to include page content
       var pageContent = '';
-      if (includeFullContext && this.context.content && String(this.context.content).trim()) {
+      var includeContent = this.isFirstAsk();
+      if (includeContent && this.context.content && String(this.context.content).trim()) {
         var body = String(this.context.content).trim();
         var truncated = body.length > ASK_PAGE_CONTENT_MAX
           ? body.slice(0, ASK_PAGE_CONTENT_MAX)

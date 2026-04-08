@@ -772,6 +772,9 @@
 
       var prompt;
       var systemPrompt = '';
+      // Use lang-utils to get reply language for summarize
+      var replyLang = window.getReplyLabel ? window.getReplyLabel(s) : 'English';
+
       if (action === 'translate') {
         // Use custom prompts from settings
         if (!window.csSettings) {
