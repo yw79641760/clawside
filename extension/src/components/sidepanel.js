@@ -969,6 +969,15 @@
   }
 
   async function addHistoryItem(item) {
+    // Check for duplicate by key
+    if (item.key) {
+      const items = await loadHistory();
+      if (items.some(i => i.key === item.key)) {
+        console.log('[ClawSide] skip duplicate history:', item.key);
+        return;
+      }
+    }
+
     const items = await loadHistory();
     items.unshift(item);
     if (items.length > 50) items.splice(50);
@@ -994,24 +1003,25 @@
 
       const url = window.panelContext.getCurrentUrl();
       const title = window.panelContext.getCurrentPageTitle();
-      console.log('[ClawSide] saving ask history, url:', url, 'title:', title);
+      const tabId = chatSession?.tabId || '';
+      console.log('[ClawSide] saving ask history, url:', url, 'title:', title, 'tabId:', tabId);
 
-      // Check for duplicate: skip if most recent item has same url + same messages
+      // Build unique key for deduplication
+      const historyKey = `cs_history_ask_${tabId}_${window.hashUrl(url)}`;
+
+      // Check for duplicate: skip if most recent item has same key
       const items = await loadHistory();
       const lastItem = items[0];
-      if (lastItem && lastItem.type === 'ask' && lastItem.url === url) {
-        // Compare messages content
-        const lastMsgsJson = JSON.stringify(lastItem.messages);
-        const currentMsgsJson = JSON.stringify(messages);
-        if (lastMsgsJson === currentMsgsJson) {
-          console.log('[ClawSide] skip duplicate ask history');
-          return;
-        }
+      if (lastItem && lastItem.key === historyKey) {
+        console.log('[ClawSide] skip duplicate ask history by key:', historyKey);
+        return;
       }
 
       await addHistoryItem({
         id: crypto.randomUUID(),
+        key: historyKey,
         type: 'ask',
+        tabId: tabId,
         url: url || '',
         title: title || '',
         messages: messages,
@@ -1092,6 +1102,8 @@
 
   // === Actions (streaming) ===
   async function doTranslate() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tabId = tab?.id;
     const text = translateInput.value.trim();
     if (!text) {
       showStatus(translateStatus, 'Please enter or select text to translate');
@@ -1135,8 +1147,12 @@
         }
       });
       const result = translateStreaming.getRawText();
+      const historyKey = `cs_history_translate_${tabId}_${window.hashUrl(currentUrl)}`;
       await addHistoryItem({
-        id: crypto.randomUUID(), type: 'translate',
+        id: crypto.randomUUID(),
+        key: historyKey,
+        type: 'translate',
+        tabId: tabId || '',
         original: text, result, lang: targetLang,
         url: currentUrl,
         title: currentTitle,
@@ -1234,8 +1250,12 @@
       // Save to tab+url specific storage
       await saveSummarizeResult(tabId, url, summary, title);
       // Also add to global history
+      const historyKey = `cs_history_summarize_${tabId}_${window.hashUrl(url)}`;
       await addHistoryItem({
-        id: crypto.randomUUID(), type: 'summarize',
+        id: crypto.randomUUID(),
+        key: historyKey,
+        type: 'summarize',
+        tabId: tabId || '',
         url, title,
         summary, timestamp: Date.now()
       });
