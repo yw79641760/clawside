@@ -29,7 +29,7 @@ All notable changes to ClawSide will be documented in this file.
 - Session format: `clawside:{toolName}` (instead of `openai-user:clawside:{toolName}`)
 - Page content truncated to 12k characters for Ask context
 
-## [0.1.0] - 2026-03-?? - Initial alpha release
+## [0.1.0] - 2026-03-25 - Initial alpha release
 
 ### Added
 - Basic floating bubble with translate/summarize/ask actions
