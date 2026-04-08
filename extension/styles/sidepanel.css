@@ -1040,11 +1040,16 @@ body {
 .setting-note .link-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: var(--accent);
   text-decoration: none;
   margin-left: 8px;
   font-weight: 500;
+  vertical-align: middle;
+}
+
+.setting-note .link-btn svg {
+  vertical-align: middle;
 }
 
 .setting-note .link-btn:hover {
