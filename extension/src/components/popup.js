@@ -575,15 +575,17 @@
     // Clear input
     chatInput.value = '';
 
-    // Get selected text and page context
-    var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
-    var selectedText = currentCtx ? currentCtx.selectedText : '';
-    var pageUrl = currentCtx ? currentCtx.url : window.location.href;
-    var pageTitle = currentCtx ? currentCtx.title : document.title;
+    // Get selected text from popup UI element (not TCM - popup is separate window)
+    var selectedEl = popup && popup.querySelector('#cs-popup-selected-text');
+    var selectedText = selectedEl ? selectedEl.textContent.trim() : '';
+    var pageUrl = window.location.href;
+    var pageTitle = document.title;
 
     // Check if PREVIOUS messages had from='ask' (before this new message)
     // If no previous ask messages, include page content
     var hasPreviousAsk = popupMessages.slice(0, -1).some(msg => msg.from === 'ask');
+    // Get page content from TCM (shared across extension)
+    var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
     var pageContent = hasPreviousAsk ? '' : (currentCtx ? (currentCtx.content || '').slice(0, 8000) : '');
 
     // Build prompt and call API
