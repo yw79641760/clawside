@@ -16,6 +16,7 @@
     { code: 'pt', label: 'Portuguese', native: 'Português' },
     { code: 'es', label: 'Spanish', native: 'Español' },
     { code: 'ru', label: 'Russian', native: 'Русский' },
+    { code: 'zh-TW', label: 'TraditionalChinese', native: '繁體中文' },
   ];
 
   /**
@@ -24,7 +25,7 @@
   function getBrowserLocale() {
     const lang = navigator.language || navigator.userLanguage || 'en';
     const map = {
-      'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'Chinese', 'zh-HK': 'Chinese',
+      'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'TraditionalChinese', 'zh-HK': 'TraditionalChinese',
       'ja': 'Japanese', 'ko': 'Korean',
       'fr': 'French', 'de': 'German', 'es': 'Spanish', 'ru': 'Russian',
       'pt': 'Portuguese',
@@ -38,7 +39,10 @@
    */
   function getBrowserLang() {
     const l = navigator.language || '';
-    if (l.slice(0, 2) === 'zh') return 'zh';
+    if (l.slice(0, 2) === 'zh') {
+      if (l === 'zh-TW' || l === 'zh-HK') return 'zh-TW';
+      return 'zh';
+    }
     if (l.slice(0, 2) === 'ja') return 'ja';
     if (l.slice(0, 2) === 'ko') return 'ko';
     if (l.slice(0, 2) === 'fr') return 'fr';
@@ -59,6 +63,7 @@
     browserLocale = browserLocale || 'English';
     if (lang === 'auto') {
       if (browserLocale === 'Chinese') return 'zh';
+      if (browserLocale === 'TraditionalChinese') return 'zh-TW';
       if (browserLocale === 'Japanese') return 'ja';
       if (browserLocale === 'Korean') return 'ko';
       if (browserLocale === 'French') return 'fr';
@@ -79,6 +84,7 @@
       'Portuguese': 'pt',
       'Spanish': 'es',
       'Russian': 'ru',
+      'TraditionalChinese': 'zh-TW',
     };
     return labelToCode[lang] || 'en';
   }
