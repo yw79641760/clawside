@@ -494,7 +494,10 @@
       var loadingDots = el.querySelector('.loading-dots');
       if (loadingText) loadingText.remove();
       if (loadingDots) loadingDots.remove();
-      el.textContent += text;
+      // Parse markdown
+      el.innerHTML = window.marked && typeof window.marked.parse === 'function'
+        ? window.marked.parse(text)
+        : text;
     }
     var bodyEl = popup && popup.querySelector('.cs-popup-body');
     if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
@@ -761,7 +764,7 @@
     var fullText = '';
     var onStreamChunk = function (chunk) {
       fullText += chunk;
-      appendStreamChunk(chunk);
+      appendStreamChunk(fullText);
     };
 
     await showPopup(action, text, rect, onStreamChunk);
