@@ -58,20 +58,20 @@
 <body>
 <div class="app">
     <!-- Action Bar -->
-    <nav class="action-bar">
-      <button class="action-btn active" id="tabTranslate" data-tab="translate">
+    <nav class="action-bar" role="tablist" aria-label="功能标签">
+      <button class="action-btn active" id="tabTranslate" data-tab="translate" role="tab" aria-selected="true" aria-controls="panelTranslate" aria-label="翻译">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>
       </button>
-      <button class="action-btn" id="tabSummarize" data-tab="summarize">
+      <button class="action-btn" id="tabSummarize" data-tab="summarize" role="tab" aria-selected="false" aria-controls="panelSummarize" aria-label="摘要">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>
       </button>
-      <button class="action-btn" id="tabAsk" data-tab="ask">
+      <button class="action-btn" id="tabAsk" data-tab="ask" role="tab" aria-selected="false" aria-controls="panelAsk" aria-label="提问">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>
       </button>
-      <button class="action-btn" id="settingsBtn" data-tab="settings" style="margin-left:auto;padding:0 8px">
+      <button class="action-btn" id="settingsBtn" data-tab="settings" style="margin-left:auto;padding:0 8px" role="tab" aria-selected="false" aria-controls="panelSettings" aria-label="设置">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-settings"></use></svg>
       </button>
-      <button class="action-btn" id="tabHistory" data-tab="history">
+      <button class="action-btn" id="tabHistory" data-tab="history" role="tab" aria-selected="false" aria-controls="panelHistory" aria-label="历史">
         <svg width="16" height="16" class="tab-icon" viewBox="0 0 24 24"><use href="#cs-icon-history"></use></svg>
       </button>
     </nav>
@@ -80,13 +80,13 @@
     <main class="content">
 
       <!-- Panel Context (shared for translate + summarize + ask) -->
-      <div id="panelContext">
+      <div id="panelContext" role="region" aria-label="页面上下文">
         <div class="page-info">
           <div class="page-info-heading-row">
             <h3 class="page-info-heading hidden" id="ctxHeadingTranslate">当前页面</h3>
             <h3 class="page-info-heading" id="ctxHeadingSummarize">当前页面</h3>
             <h3 class="page-info-heading hidden" id="ctxHeadingAsk">当前页面</h3>
-            <button class="page-info-refresh" id="ctxRefreshBtn" title="" data-i18n-title="ctxRefresh">
+            <button class="page-info-refresh" id="ctxRefreshBtn" title="" data-i18n-title="ctxRefresh" aria-label="刷新上下文">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </button>
           </div>
@@ -104,21 +104,21 @@
       </div>
 
       <!-- Translate Panel -->
-      <section class="panel" id="panelTranslate">
+      <section class="panel" id="panelTranslate" role="tabpanel" aria-labelledby="titleTranslateHeader">
         <h3 id="titleTranslateHeader" class="panel-title">翻译</h3>
         <div class="input-area">
           <div class="selection-label-row">
             <div class="selection-label" id="labelTranslateInput">Text to translate</div>
-            <button class="input-clear" id="translateInputClear" title="" data-i18n-title="clear">
+            <button class="input-clear" id="translateInputClear" title="" data-i18n-title="clear" aria-label="清除输入">
               <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><use href="#cs-icon-broom"></use></svg>
             </button>
           </div>
-          <textarea id="translateInput" data-i18n-placeholder="placeholderTranslateInput" rows="4"></textarea>
+          <textarea id="translateInput" data-i18n-placeholder="placeholderTranslateInput" rows="4" aria-label="翻译输入框"></textarea>
         </div>
 
         <div class="lang-row">
           <label for="targetLang" id="labelTargetLangTranslate">Target language</label>
-          <select id="targetLang">
+          <select id="targetLang" aria-label="目标语言选择">
             <option value="English">English</option>
             <option value="Chinese">简体中文</option>
             <option value="TraditionalChinese">繁體中文</option>
@@ -132,16 +132,16 @@
           </select>
         </div>
 
-        <button class="btn-primary" id="translateBtn">
+        <button class="btn-primary" id="translateBtn" aria-label="执行翻译">
           <span id="labelTranslateBtn">Translate</span>
         </button>
 
         <!-- Result -->
-        <div class="result-card hidden" id="translateResult">
+        <div class="result-card hidden" id="translateResult" role="region" aria-live="polite">
           <div class="result-header">
             <span class="result-icon"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg></span>
             <span class="result-title" id="titleTranslate">Translation</span>
-            <button class="btn-copy" id="copyTranslateResult" title="Copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
+            <button class="btn-copy" id="copyTranslateResult" aria-label="复制翻译结果"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
           </div>
           <div class="result-body" id="translateResultText"></div>
         </div>
@@ -150,20 +150,20 @@
       </section>
 
       <!-- Summarize Panel -->
-      <section class="panel hidden" id="panelSummarize">
+      <section class="panel hidden" id="panelSummarize" role="tabpanel" aria-labelledby="titleSummarizeHeader">
         <h3 id="titleSummarizeHeader" class="panel-title panel-heading">总结</h3>
-        <button class="btn-primary" id="summarizeBtn">
+        <button class="btn-primary" id="summarizeBtn" aria-label="执行页面摘要">
           <span id="labelSummarizeBtn">Summarize This Page</span>
         </button>
 
         <!-- Result -->
-        <div class="result-card hidden" id="summarizeResult">
+        <div class="result-card hidden" id="summarizeResult" role="region" aria-live="polite">
           <div class="result-header">
             <span class="result-icon"><svg width="16" height="16" class="result-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg></span>
             <span class="result-title" id="titleSummarize">Summary</span>
-            <button class="btn-copy" id="exportSummarizeResult" title="" data-i18n-title="exportItem"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg></button>
-            <button class="btn-copy" id="copySummarizeResult" title="" data-i18n-title="copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
-            <button class="btn-copy" id="askFromSummarize" title="" data-i18n-title="globalAsk">
+            <button class="btn-copy" id="exportSummarizeResult" aria-label="导出摘要" data-i18n-title="exportItem"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg></button>
+            <button class="btn-copy" id="copySummarizeResult" aria-label="复制摘要" data-i18n-title="copy"><svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg></button>
+            <button class="btn-copy" id="askFromSummarize" aria-label="从摘要提问" data-i18n-title="globalAsk">
               <svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>
             </button>
           </div>
@@ -174,17 +174,17 @@
       </section>
 
       <!-- Ask Panel - Chat Interface -->
-      <section class="panel hidden" id="panelAsk">
+      <section class="panel hidden" id="panelAsk" role="tabpanel" aria-labelledby="titleAskHeader">
         <div class="chat-header">
           <h3 id="titleAskHeader" class="panel-title">提问</h3>
           <div class="chat-header-actions">
-            <button class="btn-icon btn-export-chat" id="exportChatBtn" title="" data-i18n-title="exportChat">
+            <button class="btn-icon btn-export-chat" id="exportChatBtn" aria-label="导出聊天记录" data-i18n-title="exportChat">
               <svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-export"></use></svg>
             </button>
-            <button class="btn-icon btn-copy-chat" id="copyChatBtn" title="" data-i18n-title="copyChat">
+            <button class="btn-icon btn-copy-chat" id="copyChatBtn" aria-label="复制聊天记录" data-i18n-title="copyChat">
               <svg width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>
             </button>
-            <button class="btn-icon btn-clear-chat" id="clearChatBtn" title="" data-i18n-title="clearChat">
+            <button class="btn-icon btn-clear-chat" id="clearChatBtn" aria-label="清除聊天记录" data-i18n-title="clearChat">
               <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor">
                 <use href="#cs-icon-broom"></use>
               </svg>
@@ -193,12 +193,12 @@
         </div>
 
         <!-- Chat Messages Container -->
-        <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-atomic="false">
           <!-- Messages will be dynamically inserted here -->
         </div>
 
         <!-- Empty State -->
-        <div class="chat-empty-state" id="chatEmptyState">
+        <div class="chat-empty-state" id="chatEmptyState" aria-hidden="true">
           <div class="chat-empty-icon">💬</div>
           <div class="chat-empty-text" id="chatEmptyText">Start a conversation about this page</div>
           <div class="chat-empty-hint" id="chatEmptyHint">Ask anything about the current page or selected text</div>
@@ -211,8 +211,9 @@
             data-i18n-placeholder="placeholderChatInput"
             rows="2"
             maxlength="4000"
+            aria-label="聊天输入框"
           ></textarea>
-          <button class="btn-send" id="chatSendBtn" disabled title="">
+          <button class="btn-send" id="chatSendBtn" disabled aria-label="发送消息">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -224,16 +225,16 @@
       </section>
 
       <!-- History Panel -->
-      <section class="panel hidden" id="panelHistory">
+      <section class="panel hidden" id="panelHistory" role="tabpanel" aria-labelledby="titleHistoryHeader">
         <h3 id="titleHistoryHeader" class="panel-title">历史</h3>
         <div class="history-header">
-          <span class="history-count" id="historyCount">0 items</span>
-          <button class="btn-danger hidden" id="historyClearBtn">Clear All</button>
+          <span class="history-count" id="historyCount" aria-live="polite">0 items</span>
+          <button class="btn-danger hidden" id="historyClearBtn" aria-label="清除所有历史记录">Clear All</button>
         </div>
 
-        <div class="history-list" id="historyList"></div>
+        <div class="history-list" id="historyList" role="list" aria-label="交互历史记录"></div>
 
-        <div class="empty-state hidden" id="historyEmpty">
+        <div class="empty-state hidden" id="historyEmpty" aria-hidden="true">
           <div class="empty-icon">📭</div>
           <div class="empty-text">No interactions yet</div>
           <div class="empty-hint" data-i18n="historyHint">Use Translate, Summarize, or Ask to get started</div>
@@ -241,26 +242,26 @@
       </section>
 
       <!-- Settings Panel -->
-      <section class="panel hidden" id="panelSettings">
+      <section class="panel hidden" id="panelSettings" role="tabpanel" aria-labelledby="settingsTitle">
         <h3 id="settingsTitle">Settings</h3>
 
         <!-- Settings Sub-tabs -->
-        <div class="settings-sub-tabs">
-          <button class="settings-sub-tab active" id="settingsTabBasic" data-subtab="basic">
+        <div class="settings-sub-tabs" role="tablist" aria-label="设置子标签">
+          <button class="settings-sub-tab active" id="settingsTabBasic" data-subtab="basic" role="tab" aria-selected="true" aria-controls="settingsBasic">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             <span id="labelSettingsBasic">基本</span>
           </button>
-          <button class="settings-sub-tab" id="settingsTabPrompts" data-subtab="prompts">
+          <button class="settings-sub-tab" id="settingsTabPrompts" data-subtab="prompts" role="tab" aria-selected="false" aria-controls="settingsPrompts">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
             <span id="labelSettingsPrompts">提示词</span>
           </button>
         </div>
 
         <!-- Basic Settings -->
-        <div class="settings-sub-panel" id="settingsBasic">
+        <div class="settings-sub-panel" id="settingsBasic" role="tabpanel" aria-labelledby="settingsTabBasic">
           <div class="setting-item">
-            <label id="labelTargetLang">语言</label>
-            <select id="settingLanguage">
+            <label id="labelTargetLang" for="settingLanguage">语言</label>
+            <select id="settingLanguage" aria-label="回复语言选择">
               <option value="auto" id="optionAuto">Browser Language</option>
               <option value="English">English</option>
               <option value="Chinese">简体中文 (Chinese)</option>
@@ -277,8 +278,8 @@
           </div>
 
           <div class="setting-item">
-            <label id="labelAppearance">Appearance</label>
-            <select id="settingAppearance">
+            <label id="labelAppearance" for="settingAppearance">Appearance</label>
+            <select id="settingAppearance" aria-label="外观主题选择">
               <option value="system" id="optionSystem"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> System</option>
               <option value="light" id="optionLight"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light</option>
               <option value="dark" id="optionDark"><svg width="16" height="16" class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark</option>
@@ -286,28 +287,28 @@
           </div>
 
           <div class="setting-item">
-            <label id="labelPort">OpenClaw Gateway Port</label>
+            <label id="labelPort" for="settingBridgePort">OpenClaw Gateway Port</label>
             <div class="port-row">
-              <input type="number" id="settingBridgePort" value="18789" placeholder="18789">
-              <button class="btn-secondary" id="scanGatewayBtn" data-i18n="scanGateway">Scan</button>
+              <input type="number" id="settingBridgePort" value="18789" placeholder="18789" aria-label="Gateway端口">
+              <button class="btn-secondary" id="scanGatewayBtn" data-i18n="scanGateway" aria-label="扫描网关">Scan</button>
             </div>
           </div>
 
           <div class="setting-item">
-            <label id="labelToken">Gateway Auth Token</label>
+            <label id="labelToken" for="settingAuthToken">Gateway Auth Token</label>
             <div class="token-row">
-              <input type="password" id="settingAuthToken" data-i18n-placeholder="placeholderAuthToken">
-              <button class="btn-icon" id="toggleTokenBtn" title="Show token"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-              <span class="token-status" id="tokenStatus">—</span>
+              <input type="password" id="settingAuthToken" data-i18n-placeholder="placeholderAuthToken" aria-label="认证令牌">
+              <button class="btn-icon" id="toggleTokenBtn" aria-label="显示或隐藏令牌"><svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+              <span class="token-status" id="tokenStatus" aria-live="polite">—</span>
             </div>
           </div>
 
-          <div class="setting-note hidden" id="gatewayStatusBar">
+          <div class="setting-note hidden" id="gatewayStatusBar" aria-live="polite">
             Status: <span id="gatewayStatus">—</span>
           </div>
 
-          <button class="btn-primary" id="testConnBtn">Test Connection</button>
-          <div class="status-msg hidden" id="testConnStatus"></div>
+          <button class="btn-primary" id="testConnBtn" aria-label="测试网关连接">Test Connection</button>
+          <div class="status-msg hidden" id="testConnStatus" aria-live="polite"></div>
 
           <div class="setting-note" id="gatewayNote" style="margin-top:12px">
             The extension calls OpenClaw Gateway's <code>/v1/chat/completions</code> endpoint.
@@ -328,24 +329,24 @@
         </div>
 
         <!-- Tools Settings -->
-        <div class="settings-sub-panel hidden" id="settingsPrompts">
+        <div class="settings-sub-panel hidden" id="settingsPrompts" role="tabpanel" aria-labelledby="settingsTabPrompts">
           <div class="tool-prompt-section" id="toolPromptTranslate">
             <div class="tool-prompt-header">
               <div class="tool-prompt-title">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>
                 <span id="labelToolTranslate">翻译</span>
               </div>
-              <button class="btn-icon" id="resetPromptTranslate" title="" data-i18n-title="resetPrompt">
+              <button class="btn-icon" id="resetPromptTranslate" aria-label="重置翻译提示词" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelSystemPrompt">System Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptTranslateSystem" rows="2" data-i18n-placeholder="placeholderPromptTranslate"></textarea>
+              <label class="tool-prompt-label" for="promptTranslateSystem" data-i18n="labelSystemPrompt">System Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptTranslateSystem" rows="2" data-i18n-placeholder="placeholderPromptTranslate" aria-label="翻译系统提示词"></textarea>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelUserPrompt">User Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptTranslateUser" rows="2" data-i18n-placeholder="placeholderPromptTranslate"></textarea>
+              <label class="tool-prompt-label" for="promptTranslateUser" data-i18n="labelUserPrompt">User Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptTranslateUser" rows="2" data-i18n-placeholder="placeholderPromptTranslate" aria-label="翻译用户提示词"></textarea>
             </div>
           </div>
 
@@ -355,17 +356,17 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><ellipse cx="12" cy="12" rx="4" ry="9"></ellipse></svg>
                 <span id="labelToolGlobalTranslate">全局翻译</span>
               </div>
-              <button class="btn-icon" id="resetPromptGlobalTranslate" title="" data-i18n-title="resetPrompt">
+              <button class="btn-icon" id="resetPromptGlobalTranslate" aria-label="重置全局翻译提示词" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelSystemPrompt">System Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptGlobalTranslateSystem" rows="2" data-i18n-placeholder="placeholderPromptGlobalTranslate"></textarea>
+              <label class="tool-prompt-label" for="promptGlobalTranslateSystem" data-i18n="labelSystemPrompt">System Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptGlobalTranslateSystem" rows="2" data-i18n-placeholder="placeholderPromptGlobalTranslate" aria-label="全局翻译系统提示词"></textarea>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelUserPrompt">User Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptGlobalTranslateUser" rows="3" data-i18n-placeholder="placeholderPromptGlobalTranslate"></textarea>
+              <label class="tool-prompt-label" for="promptGlobalTranslateUser" data-i18n="labelUserPrompt">User Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptGlobalTranslateUser" rows="3" data-i18n-placeholder="placeholderPromptGlobalTranslate" aria-label="全局翻译用户提示词"></textarea>
             </div>
           </div>
 
@@ -375,17 +376,17 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span id="labelToolSummarize">总结</span>
               </div>
-              <button class="btn-icon" id="resetPromptSummarize" title="" data-i18n-title="resetPrompt">
+              <button class="btn-icon" id="resetPromptSummarize" aria-label="重置摘要提示词" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelSystemPrompt">System Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptSummarizeSystem" rows="2" data-i18n-placeholder="placeholderPromptSummarize"></textarea>
+              <label class="tool-prompt-label" for="promptSummarizeSystem" data-i18n="labelSystemPrompt">System Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptSummarizeSystem" rows="2" data-i18n-placeholder="placeholderPromptSummarize" aria-label="摘要系统提示词"></textarea>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelUserPrompt">User Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptSummarizeUser" rows="2" data-i18n-placeholder="placeholderPromptSummarize"></textarea>
+              <label class="tool-prompt-label" for="promptSummarizeUser" data-i18n="labelUserPrompt">User Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptSummarizeUser" rows="2" data-i18n-placeholder="placeholderPromptSummarize" aria-label="摘要用户提示词"></textarea>
             </div>
           </div>
 
@@ -395,17 +396,17 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 <span id="labelToolAsk">提问</span>
               </div>
-              <button class="btn-icon" id="resetPromptAsk" title="" data-i18n-title="resetPrompt">
+              <button class="btn-icon" id="resetPromptAsk" aria-label="重置提问提示词" data-i18n-title="resetPrompt">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
               </button>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelSystemPrompt">System Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptAskSystem" rows="2" data-i18n-placeholder="placeholderPromptAsk"></textarea>
+              <label class="tool-prompt-label" for="promptAskSystem" data-i18n="labelSystemPrompt">System Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptAskSystem" rows="2" data-i18n-placeholder="placeholderPromptAsk" aria-label="提问系统提示词"></textarea>
             </div>
             <div class="tool-prompt-row">
-              <label class="tool-prompt-label" data-i18n="labelUserPrompt">User Prompt</label>
-              <textarea class="tool-prompt-textarea" id="promptAskUser" rows="3" data-i18n-placeholder="placeholderPromptAsk"></textarea>
+              <label class="tool-prompt-label" for="promptAskUser" data-i18n="labelUserPrompt">User Prompt</label>
+              <textarea class="tool-prompt-textarea" id="promptAskUser" rows="3" data-i18n-placeholder="placeholderPromptAsk" aria-label="提问用户提示词"></textarea>
             </div>
           </div>
 
@@ -418,8 +419,8 @@
     </main>
 
     <!-- Loading Overlay -->
-    <div class="loading-overlay hidden" id="loadingOverlay">
-      <div class="spinner"></div>
+    <div class="loading-overlay hidden" id="loadingOverlay" role="status" aria-live="polite" aria-busy="true">
+      <div class="spinner" aria-hidden="true"></div>
       <div class="loading-text" id="loadingText">Processing...</div>
     </div>
   </div>
