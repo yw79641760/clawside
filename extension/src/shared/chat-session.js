@@ -81,10 +81,10 @@
       return msg;
     }
 
-    // Check if this is the first ask (no 'ask' messages in conversation)
-    isFirstAsk() {
+    // Check if conversation has previous ask messages
+    hasPreviousAsk() {
       // Check if any message has from='ask'
-      return !this.messages.some(msg => msg.from === 'ask');
+      return this.messages.some(msg => msg.from === 'ask');
     }
 
     // Update last assistant message (for streaming)
@@ -125,9 +125,9 @@
       }
 
       // Build page context variables
-      // Use isFirstAsk() to determine whether to include page content
+      // Use hasPreviousAsk() to determine whether to include page content
       var pageContent = '';
-      var includeContent = this.isFirstAsk();
+      var includeContent = !this.hasPreviousAsk();
       if (includeContent && this.context.content && String(this.context.content).trim()) {
         var body = String(this.context.content).trim();
         var truncated = body.length > ASK_PAGE_CONTENT_MAX

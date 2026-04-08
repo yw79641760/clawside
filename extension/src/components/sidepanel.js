@@ -832,7 +832,7 @@
       addAssistantMessagePlaceholder();
       
       // Build prompt with conversation history
-      // Use chatSession.isFirstAsk() to include page context only on first message
+      // Use chatSession.hasPreviousAsk() to include page context only on first message
       await loadSettings();
       chatSession.setContext({
         url: window.panelContext.getCurrentUrl() || chatSession.context.url || '',
