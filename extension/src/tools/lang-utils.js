@@ -5,6 +5,19 @@
 (function() {
   'use strict';
 
+  // All supported languages
+  const SUPPORTED_LANGUAGES = [
+    { code: 'zh', label: 'Chinese', native: '中文' },
+    { code: 'en', label: 'English', native: 'English' },
+    { code: 'ja', label: 'Japanese', native: '日本語' },
+    { code: 'ko', label: 'Korean', native: '한국어' },
+    { code: 'fr', label: 'French', native: 'Français' },
+    { code: 'de', label: 'German', native: 'Deutsch' },
+    { code: 'pt', label: 'Portuguese', native: 'Português' },
+    { code: 'es', label: 'Spanish', native: 'Español' },
+    { code: 'ru', label: 'Russian', native: 'Русский' },
+  ];
+
   /**
    * Get browser's display-language label (e.g. 'Chinese', 'Japanese', 'English').
    */
@@ -14,6 +27,7 @@
       'zh': 'Chinese', 'zh-CN': 'Chinese', 'zh-TW': 'Chinese', 'zh-HK': 'Chinese',
       'ja': 'Japanese', 'ko': 'Korean',
       'fr': 'French', 'de': 'German', 'es': 'Spanish', 'ru': 'Russian',
+      'pt': 'Portuguese',
       'en': 'English',
     };
     return map[lang] || map[lang.split('-')[0]] || 'English';
@@ -26,6 +40,12 @@
     const l = navigator.language || '';
     if (l.slice(0, 2) === 'zh') return 'zh';
     if (l.slice(0, 2) === 'ja') return 'ja';
+    if (l.slice(0, 2) === 'ko') return 'ko';
+    if (l.slice(0, 2) === 'fr') return 'fr';
+    if (l.slice(0, 2) === 'de') return 'de';
+    if (l.slice(0, 2) === 'pt') return 'pt';
+    if (l.slice(0, 2) === 'es') return 'es';
+    if (l.slice(0, 2) === 'ru') return 'ru';
     return 'en';
   }
 
@@ -40,11 +60,27 @@
     if (lang === 'auto') {
       if (browserLocale === 'Chinese') return 'zh';
       if (browserLocale === 'Japanese') return 'ja';
+      if (browserLocale === 'Korean') return 'ko';
+      if (browserLocale === 'French') return 'fr';
+      if (browserLocale === 'German') return 'de';
+      if (browserLocale === 'Portuguese') return 'pt';
+      if (browserLocale === 'Spanish') return 'es';
+      if (browserLocale === 'Russian') return 'ru';
       return 'en';
     }
-    if (lang === 'Chinese') return 'zh';
-    if (lang === 'Japanese') return 'ja';
-    return 'en';
+    // Map display labels to codes
+    const labelToCode = {
+      'Chinese': 'zh',
+      'English': 'en',
+      'Japanese': 'ja',
+      'Korean': 'ko',
+      'French': 'fr',
+      'German': 'de',
+      'Portuguese': 'pt',
+      'Spanish': 'es',
+      'Russian': 'ru',
+    };
+    return labelToCode[lang] || 'en';
   }
 
   /**
@@ -53,9 +89,8 @@
    * @returns {string} - Display label ('Chinese', 'Japanese', 'English')
    */
   function codeToLabel(langCode) {
-    if (langCode === 'zh') return 'Chinese';
-    if (langCode === 'ja') return 'Japanese';
-    return 'English';
+    const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+    return lang ? lang.label : 'English';
   }
 
   /**
@@ -64,8 +99,10 @@
    * @returns {string} - Display label with native script
    */
   function codeToLabelNative(langCode) {
-    if (langCode === 'zh') return 'Chinese (中文)';
-    if (langCode === 'ja') return 'Japanese (日本語)';
+    const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+    if (lang) {
+      return lang.code === 'en' ? lang.label : `${lang.label} (${lang.native})`;
+    }
     return 'English';
   }
 
@@ -123,5 +160,6 @@
   window.codeToLabelNative = codeToLabelNative;
   window.getTranslateLabel = getTranslateLabel;
   window.getReplyLabel = getReplyLabel;
+  window.SUPPORTED_LANGUAGES = SUPPORTED_LANGUAGES;
 
 })();
