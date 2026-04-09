@@ -169,7 +169,7 @@ test('Logic: background.js exists and has message handlers', async () => {
   const content = fs.readFileSync(bgPath, 'utf-8');
 
   // Check for key message handlers
-  const handlers = ['onMessage', 'sendMessage', 'openclaw'];
+  const handlers = ['onMessage', 'sendMessage', 'apiStream', 'apiCall'];
   for (const h of handlers) {
     if (!content.includes(h)) {
       throw new Error(`Missing handler: ${h}`);
@@ -179,9 +179,9 @@ test('Logic: background.js exists and has message handlers', async () => {
 });
 
 test('Logic: openclaw.js API client exists', async () => {
-  const apiPath = path.join(EXTENSION_PATH, 'src/tools/openclaw.js');
+  const apiPath = path.join(EXTENSION_PATH, 'src/tools/openai-compatible.js');
   if (!fs.existsSync(apiPath)) {
-    throw new Error('openclaw.js not found');
+    throw new Error('openai-compatible.js not found');
   }
 
   const content = fs.readFileSync(apiPath, 'utf-8');
@@ -191,7 +191,7 @@ test('Logic: openclaw.js API client exists', async () => {
       throw new Error(`Missing method: ${m}`);
     }
   }
-  console.log('   OpenClaw API client complete');
+  console.log('   OpenAI-compatible API client complete');
 });
 
 test('Logic: settings.js exists and exports required functions', async () => {
@@ -263,7 +263,7 @@ test('Integration: All source JS files exist', async () => {
     'shared/panel-context.js',
     'shared/tab-context-manager.js',
     'shared/settings.js',
-    'tools/openclaw.js',
+    'tools/openai-compatible.js',
     'tools/lang-utils.js',
     'tools/lru-cache.js',
   ];

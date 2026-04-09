@@ -1096,7 +1096,7 @@
   async function apiCall(prompt, { onChunk, toolName = 'default', systemPrompt = '' } = {}) {
     // Get current tab ID at request time
     // Note: sidepanel is an extension page, not a content script.
-    // We pass null for sourceTabId so openclaw.js uses runtime.sendMessage.
+    // We pass null for sourceTabId so openai-compatible.js uses runtime.sendMessage.
     const sourceTabId = null;
 
     return new Promise((resolve, reject) => {

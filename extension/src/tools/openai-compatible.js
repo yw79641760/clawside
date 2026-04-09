@@ -1,6 +1,6 @@
-// ClawSide - OpenClaw Gateway Client
-// Handles HTTP communication with the OpenClaw local gateway.
-// Docs: https://docs.openclaw.ai/gateway/openai-http-api
+// ClawSide - OpenAI Compatible API Client
+// Handles HTTP communication with local AI gateways (OpenClaw, Ollama, etc.).
+// Supports OpenAI-compatible APIs including streaming and auth.
 
 /**
  * Build the base URL for the OpenClaw gateway.

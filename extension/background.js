@@ -1,7 +1,7 @@
 // ClawSide - Service Worker (Background)
-// Handles message routing, panel behavior, and forwards API calls to tools/openclaw.js.
+// Handles message routing, panel behavior, and forwards API calls to tools/openai-compatible.js.
 
-import { apiStream, apiCall } from './src/tools/openclaw.js';
+import { apiStream, apiCall } from './src/tools/openai-compatible.js';
 
 // Cached side panel tab ID — registered by the panel itself on load.
 // Kept in storage so the SW can persist it across restarts.
