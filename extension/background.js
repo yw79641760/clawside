@@ -120,8 +120,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         // Phase 2: Test chat completions with first model
         const model = models[0]?.id;
         if (!model) {
-          // No models available, but endpoint is reachable - consider as no auth needed
-          return { port, authRequired: false };
+          // No models available - not a valid LLM gateway
+          return null;
         }
 
         // Test chat completions with discovered model
