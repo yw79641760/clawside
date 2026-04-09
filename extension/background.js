@@ -101,8 +101,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     const { ports, requestId } = msg;
     console.log('[ClawSide] scan: starting for ports:', ports);
 
-    // Scan each port and return results
-    Promise.all(ports.map(async (port) => {
+    // Scan each port and return results - use Promise.allSettled to not reject on timeout
+    const scanResults = await Promise.allSettled(ports.map(async (port) => {
       try {
         // Phase 1: Try getModels without auth token
         let models;
@@ -146,14 +146,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         // Other errors (connection refused, timeout) = port not available
         return null;
       }
-    })).then((results) => {
-      console.log('[ClawSide] scan: all done, results:', results);
-      const found = results.filter(Boolean);
-      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch((e) => console.log('[ClawSide] scan: sendMessage error', e));
-    }).catch((e) => {
-      console.log('[ClawSide] scan: promise error', e);
-      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found: [] }).catch(() => {});
-    });
+    }));
+
+    console.log('[ClawSide] scan: all done, results:', scanResults);
+    const results = scanResults
+      .filter(r => r.status === 'fulfilled')
+      .map(r => r.value)
+      .filter(Boolean);
+    const found = results.filter(Boolean);
+    chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch((e) => console.log('[ClawSide] scan: sendMessage error', e));
 
     sendResponse({ ok: true });
     return true;
