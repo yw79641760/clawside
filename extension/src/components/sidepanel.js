@@ -421,7 +421,7 @@
     console.log('[ClawSide] autoScanGateway: starting scan for ports:', ports);
 
     const found = await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Scan timeout')), 15000);
+      const timeout = setTimeout(() => reject(new Error('Scan timeout')), 60000);
 
       const handler = (msg) => {
         if (msg.requestId !== requestId) return true;
