@@ -559,7 +559,7 @@
       const token = settingAuthToken.value?.trim() || '';
 
       console.log('[ClawSide] Testing gateway connection on port:', portNum);
-      const models = await window.getModels(portNum, token);
+      const models = await window.openaiCompatible.getModels(portNum, token);
 
       const modelId = models[0].id;
       settings.model = modelId;
