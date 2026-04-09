@@ -489,7 +489,11 @@
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
-    if (settingModel) settingModel.value = settings.model || '';
+    console.log('[ClawSide] loadSettings: model =', settings.model, ', settingModel =', settingModel);
+    if (settingModel) {
+      settingModel.value = settings.model || '';
+      console.log('[ClawSide] loadSettings: settingModel.value =', settingModel.value);
+    }
     settingLanguage.value = settings.language || 'auto';
     settingAppearance.value = settings.appearance || 'system';
     updateTokenStatus();
