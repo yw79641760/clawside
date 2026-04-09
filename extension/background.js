@@ -120,6 +120,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
 
         // Phase 2: Test chat completions with first model
+        console.log('[ClawSide] scan: got models for port', port, ':', models.map(m => m.id));
         const model = models[0]?.id;
         if (!model) {
           // No models available - not a valid LLM gateway
@@ -146,9 +147,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return null;
       }
     })).then((results) => {
+      console.log('[ClawSide] scan: all done, results:', results);
       const found = results.filter(Boolean);
-      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch(() => {});
-    }).catch(() => {
+      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch((e) => console.log('[ClawSide] scan: sendMessage error', e));
+    }).catch((e) => {
+      console.log('[ClawSide] scan: promise error', e);
       chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found: [] }).catch(() => {});
     });
 
