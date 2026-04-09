@@ -11,11 +11,10 @@
 [![License](https://img.shields.io/github/license/yw79641760/clawside?color=MIT)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20114%2B-4285F4)]()
 [![Extension](https://img.shields.io/badge/Manifest-V3-34A853)]()
-[![Last Updated](https://img.shields.io/github/last-commit/yw79641760/clawside?color=orange)]()
 
 - 🔒 Completely local, privacy protected
 - 🚀 Practical tools, double your efficiency
-- 🦞 Agent-friendly, supports tons of local LLM
+- 🦞 Agent-friendly, supports any OpenAI Compatible API (OpenClaw, Ollama, Hermes Agent, etc.)
 
 ## Architecture
 
@@ -23,8 +22,8 @@
 Chrome Page
   ├─ Floating bubble (content script) → small inline popup with result
   └─ Side panel (extension icon) → full-featured standalone panel
-       ↓ HTTP (chrome-extension → 127.0.0.1:18789)
-       OpenClaw Gateway → LLM
+       ↓ HTTP (chrome-extension → 127.0.0.1:{port})
+       Local LLM/Agent Gateway → LLM
 ```
 
 Four interaction modes:
@@ -33,9 +32,13 @@ Four interaction modes:
 3. **Global page translation**: Click translate in radial menu → translate entire page with loading placeholders
 4. **Full side panel**: Click extension icon → full Translate/Summarize/Ask/History interface
 
-## Prerequisites
+## Prerequisites (any OpenAI Compatible Gateway)
 
-### Enable OpenClaw HTTP Endpoint
+ClawSide connects to any local LLM/Agent that provides an OpenAI-compatible HTTP endpoint (e.g., OpenClaw, Ollama, Hermes Agent).
+
+### Configure Your Gateway
+
+Enable the HTTP Gateway in your LLM/Agent configuration. Example for OpenClaw:
 
 Add to `~/.openclaw/openclaw.json`:
 
@@ -51,10 +54,12 @@ Add to `~/.openclaw/openclaw.json`:
 }
 ```
 
-Restart OpenClaw:
+Restart your gateway:
 ```bash
 openclaw gateway restart
 ```
+
+For other gateways (Ollama, Hermes, etc.), refer to their documentation to enable the HTTP endpoint.
 
 ## Quick Start
 
@@ -117,32 +122,23 @@ Click ⚙️ in side panel:
 ## Troubleshooting
 
 ### "Failed to fetch" / Network error
-- Is OpenClaw Gateway running? `curl http://127.0.0.1:18789/`
-- Is `chatCompletions.enabled: true` in config?
-- Restart OpenClaw after changing config
+- Is your gateway running? `curl http://127.0.0.1:{port}/`
+- Is HTTP endpoint enabled in your gateway config?
+- Restart gateway after changing config
 
 ### 401 Unauthorized
 - Enter your gateway token in ⚙️ settings
 
-### Bubble doesn't appear on text selection
-- Reload the extension: `chrome://extensions/` → reload icon
-- Check console for errors (Content script may have failed to load)
+### 403 Forbidden
+- Make sure your gateway is configured to allow requests from your browser's IP address and origin
 
-### Streaming not working
-- Ensure you're using `chrome.runtime.onMessage` instead of `chrome.tabs.onMessage` in content scripts
+### More Troubleshooting Tips
+- [ClawSide Troubleshooting](https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc)
 
 ## Requirements
 
 - Chrome 114+ (side panel API)
-- OpenClaw Gateway running locally
-- `gateway.http.endpoints.chatCompletions.enabled: true`
-
-## Chrome Web Store
-
-To publish to Chrome Web Store:
-1. Run `npm run build` to generate production bundle
-2. Zip the `extension/dist` folder
-3. Upload via [Chrome Developer Dashboard](https://developer.chrome.com/docs/extensions/publish)
+- Any local LLM/Agent with OpenAI-compatible HTTP endpoint
 
 ## License
 
