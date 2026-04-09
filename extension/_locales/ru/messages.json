@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Нажмите Суммировать, чтобы получить сводку страницы." },
   "emptyAsk": { "message": "Выделите текст или введите вопрос ниже." },
   "historyClear": { "message": "Очистить всё" },
-  "gatewayNote": { "message": "Расширение вызывает эндпоинт <code>/v1/chat/completions</code> OpenClaw. Требуется <code>gateway.http.endpoints.chatCompletions.enabled: true</code> в конфигурации." },
+  "gatewayNote": { "message": "Расширение ClawSide вызывает локальные (<code>127.0.0.1</code>) эндпоинты <code>/v1/chat/completions</code> и <code>/v1/models</code>. Включите HTTP Gateway в конфигурации локального LLM или Agent." },
   "translating": { "message": "Перевод" },
   "summarizing": { "message": "Суммирование" },
   "thinking": { "message": "Думаю" },

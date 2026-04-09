@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Klicken Sie auf Zusammenfassen, um eine Seitenübersicht zu erhalten." },
   "emptyAsk": { "message": "Wählen Sie Text oder geben Sie unten eine Frage ein." },
   "historyClear": { "message": "Alle löschen" },
-  "gatewayNote": { "message": "Die Erweiterung ruft den <code>/v1/chat/completions</code> Endpunkt von OpenClaw auf. Erfordert <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in Ihrer Konfiguration." },
+  "gatewayNote": { "message": "ClawSide-Erweiterung ruft lokale (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> und <code>/v1/models</code> Endpunkte auf. Aktivieren Sie HTTP Gateway in Ihrer lokalen LLM- oder Agent-Konfiguration." },
   "translating": { "message": "Übersetze" },
   "summarizing": { "message": "Fasse zusammen" },
   "thinking": { "message": "Denke" },

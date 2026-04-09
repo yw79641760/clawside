@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Click summarize to get a page summary." },
   "emptyAsk": { "message": "Select text or enter a question below." },
   "historyClear": { "message": "Clear All" },
-  "gatewayNote": { "message": "The extension calls OpenClaw's <code>/v1/chat/completions</code> endpoint. Requires <code>gateway.http.endpoints.chatCompletions.enabled: true</code> in your config." },
+  "gatewayNote": { "message": "ClawSide extension calls local (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> and <code>/v1/models</code> endpoints. Enable HTTP Gateway in your local LLM or Agent config." },
   "translating": { "message": "Translating" },
   "summarizing": { "message": "Summarizing" },
   "thinking": { "message": "Thinking" },
