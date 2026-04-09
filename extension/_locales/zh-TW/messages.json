@@ -56,6 +56,8 @@
   "chatInputPlaceholder": { "message": "在此輸入問題..." },
   "labelSettingsBasic": { "message": "基本" },
   "labelSettingsPrompts": { "message": "提示詞" },
+  "labelSettingsAbout": { "message": "關於" },
+  "labelDebugInfo": { "message": "調試資訊" },
   "labelFeedback": { "message": "回饋" },
   "feedbackText": { "message": "遇到問題或有建議？" },
   "labelToolTranslate": { "message": "翻譯" },

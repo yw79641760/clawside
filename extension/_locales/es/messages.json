@@ -56,6 +56,8 @@
   "chatInputPlaceholder": { "message": "Escribe tu pregunta aquí..." },
   "labelSettingsBasic": { "message": "General" },
   "labelSettingsPrompts": { "message": "Prompts" },
+  "labelSettingsAbout": { "message": "Acerca de" },
+  "labelDebugInfo": { "message": "Info de depuración" },
   "labelFeedback": { "message": "Comentarios" },
   "feedbackText": { "message": "¿Tienes preguntas o sugerencias?" },
   "labelToolTranslate": { "message": "Traducir" },

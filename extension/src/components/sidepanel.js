@@ -352,8 +352,58 @@
   function showSettingsSubTab(subtab) {
     $('settingsBasic')?.classList.toggle('hidden', subtab !== 'basic');
     $('settingsPrompts')?.classList.toggle('hidden', subtab !== 'prompts');
+    $('settingsAbout')?.classList.toggle('hidden', subtab !== 'about');
     $('settingsTabBasic')?.classList.toggle('active', subtab === 'basic');
     $('settingsTabPrompts')?.classList.toggle('active', subtab === 'prompts');
+    $('settingsTabAbout')?.classList.toggle('active', subtab === 'about');
+  }
+
+  // Update debug info display
+  async function updateDebugInfo() {
+    const version = chrome.runtime.getManifest?.()?.version || '1.0.0';
+    const ua = navigator.userAgent;
+    const chromeMatch = ua.match(/Chrome\/(\d+)/);
+    const chromeVersion = chromeMatch ? chromeMatch[1] : '—';
+
+    // Get current language setting
+    const lang = $('settingLanguage')?.value || 'auto';
+    const langText = lang === 'auto' ? 'Browser Language' : lang;
+
+    // Get gateway info
+    const port = $('settingBridgePort')?.value || '18789';
+    const gatewayText = `127.0.0.1:${port}`;
+
+    // Get current tab info
+    let tabInfo = '—';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url) {
+        const urlObj = new URL(tab.url);
+        tabInfo = urlObj.hostname || urlObj.href;
+        if (tabInfo.length > 50) tabInfo = tabInfo.substring(0, 50) + '...';
+      }
+    } catch {
+      // Ignore
+    }
+
+    $('debugVersion').textContent = version;
+    $('debugChrome').textContent = chromeVersion;
+    $('debugLanguage').textContent = langText;
+    $('debugGateway').textContent = gatewayText;
+    $('debugTab').textContent = tabInfo;
+  }
+
+  // Generate debug info text for clipboard
+  function generateDebugInfo() {
+    const lines = [
+      'ClawSide Debug Info',
+      `Version: ${$('debugVersion').textContent}`,
+      `Chrome: ${$('debugChrome').textContent}`,
+      `Language: ${$('debugLanguage').textContent}`,
+      `Gateway: ${$('debugGateway').textContent}`,
+      `Tab: ${$('debugTab').textContent}`,
+    ];
+    return lines.join('\n');
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -1543,6 +1593,18 @@
   // Settings sub-tabs
   $('settingsTabBasic')?.addEventListener('click', () => showSettingsSubTab('basic'));
   $('settingsTabPrompts')?.addEventListener('click', () => showSettingsSubTab('prompts'));
+  $('settingsTabAbout')?.addEventListener('click', () => {
+    showSettingsSubTab('about');
+    updateDebugInfo();
+  });
+
+  // Copy debug info button
+  $('copyDebugBtn')?.addEventListener('click', async () => {
+    const debugText = generateDebugInfo();
+    const btn = $('copyDebugBtn');
+    if (window.copyToClipboard) await window.copyToClipboard(debugText);
+    if (btn) showCopiedFeedback(btn);
+  });
 
   // Tool prompt reset buttons
   $('resetPromptTranslate')?.addEventListener('click', () => {

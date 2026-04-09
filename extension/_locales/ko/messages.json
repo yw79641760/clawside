@@ -56,6 +56,8 @@
   "chatInputPlaceholder": { "message": "여기에 질문을 입력하세요..." },
   "labelSettingsBasic": { "message": "일반" },
   "labelSettingsPrompts": { "message": "프롬프트" },
+  "labelSettingsAbout": { "message": "정보" },
+  "labelDebugInfo": { "message": "디버그 정보" },
   "labelFeedback": { "message": "피드백" },
   "feedbackText": { "message": "질문이나 제안이 있으신가요?" },
   "labelToolTranslate": { "message": "번역" },

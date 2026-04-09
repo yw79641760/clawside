@@ -56,6 +56,8 @@
   "chatInputPlaceholder": { "message": "Введите ваш вопрос здесь..." },
   "labelSettingsBasic": { "message": "Общие" },
   "labelSettingsPrompts": { "message": "Промпты" },
+  "labelSettingsAbout": { "message": "О программе" },
+  "labelDebugInfo": { "message": "Отладочная информация" },
   "labelFeedback": { "message": "Обратная связь" },
   "feedbackText": { "message": "Есть вопросы или предложения?" },
   "labelToolTranslate": { "message": "Перевести" },
