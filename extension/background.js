@@ -145,7 +145,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
 
       console.log('[ClawSide] scan: result:', found);
-      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch(() => {});
+      console.log('[ClawSide] scan: about to send message');
+      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found })
+        .then(() => console.log('[ClawSide] scan: message sent successfully'))
+        .catch((e) => console.log('[ClawSide] scan: sendMessage failed', e));
     })();
 
     // Return true to keep message channel open
