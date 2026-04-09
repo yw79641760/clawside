@@ -110,11 +110,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const errMsg = err.message || '';
         console.log('[ClawSide] scan port', port, 'error:', errMsg);
         // 401/403 means auth required (checked before model validation)
+        // Also handle empty 403 response (Ollama returns empty body on 403)
         if (errMsg.includes('401') || errMsg.includes('403')) {
           return { port, authRequired: true };
         }
         // 404 means endpoint reached but model not found - port is available
-        if (errMsg.includes('404') || errMsg.includes('not found')) {
+        if (errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('model_not_found')) {
           return { port, authRequired: false };
         }
         // Other errors (connection refused, timeout) = port not available
