@@ -969,6 +969,21 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.settings-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section-title-row .settings-section-title {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .debug-info {
   background: var(--surface);
   border: 1px solid var(--border);

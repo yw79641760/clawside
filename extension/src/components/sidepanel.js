@@ -361,13 +361,15 @@
   // Update debug info display
   async function updateDebugInfo() {
     const version = chrome.runtime.getManifest?.()?.version || '1.0.0';
+
+    // Get full Chrome version
     const ua = navigator.userAgent;
-    const chromeMatch = ua.match(/Chrome\/(\d+)/);
+    const chromeMatch = ua.match(/Chrome\/(\S+)/);
     const chromeVersion = chromeMatch ? chromeMatch[1] : '—';
 
-    // Get current language setting
+    // Get current language setting - show actual browser language for 'auto'
     const lang = $('settingLanguage')?.value || 'auto';
-    const langText = lang === 'auto' ? 'Browser Language' : lang;
+    const langText = lang === 'auto' ? browserLang : lang;
 
     // Get gateway info
     const port = $('settingBridgePort')?.value || '18789';
