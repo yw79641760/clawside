@@ -111,11 +111,11 @@ export async function apiCall(prompt, systemPrompt, port, token, toolName = 'def
 /**
  * Fetch available models from the gateway.
  */
-export async function getModels(port, token) {
+export async function getModels(port, token, signal) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
 
-  const response = await fetch(`${url}/v1/models`, { method: 'GET', headers });
+  const response = await fetch(`${url}/v1/models`, { method: 'GET', headers, signal });
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${await response.text()}`);

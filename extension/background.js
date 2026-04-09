@@ -106,18 +106,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       try {
         const scanResults = await Promise.allSettled(ports.map(async (port) => {
           try {
-            // Phase 1: Try getModels without auth token
+            // Phase 1: Try getModels without auth token (with timeout)
             let models;
             try {
               console.log('[ClawSide] scan: getModels', port);
-              models = await getModels(port, '');
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 3000);
+              models = await getModels(port, '', controller.signal);
+              clearTimeout(timeoutId);
             } catch (err) {
               const errMsg = err.message || '';
+              // Handle timeout/abort
+              if (errMsg.includes('abort') || err.name === 'AbortError') {
+                return null;
+              }
               // 401/403 means auth required
               if (errMsg.includes('401') || errMsg.includes('403')) {
                 return { port, authRequired: true };
               }
-              // Other errors (connection refused, timeout) = port not available
+              // Other errors (connection refused) = port not available
               return null;
             }
 
