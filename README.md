@@ -1,6 +1,11 @@
-# ClawSide
+<div style="text-align: center">
+  <picture>
+    <img src="extension/assets/icons/icon128.png" width="128" alt="ClawSide Logo">
+  </picture>
+  <h1>ClawSide</h1>
+  <p>Supercharge browsing with local AI</p>
+</div>
 
-![ClawSide Logo](extension/assets/icons/icon128.png)
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-Google%20Chrome?style=flat&logo=google-chrome&color=4285F4)](https://chrome.google.com/webstore/detail/clawside)
 [![License](https://img.shields.io/github/license/yw79641760/clawside?color=MIT)](LICENSE)
