@@ -553,27 +553,15 @@
     gatewayStatusEl.textContent = 'Checking...';
     gatewayStatusEl.style.color = 'var(--text)';
 
-    // Test directly from sidepanel to avoid service worker lifecycle issues
+    // Use getModels from openai-compatible.js
     try {
       const portNum = settingBridgePort.value?.trim() || DEFAULT_PORT;
       const token = settingAuthToken.value?.trim() || '';
-      const url = 'http://127.0.0.1:' + portNum + '/v1/models';
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      };
 
-      console.log('[ClawSide] Testing gateway connection:', url);
-      const res = await fetch(url, { method: 'GET', headers });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      console.log('[ClawSide] Gateway response:', data);
+      console.log('[ClawSide] Testing gateway connection on port:', portNum);
+      const models = await window.getModels(portNum, token);
 
-      if (!data?.data || !Array.isArray(data.data) || data.data.length === 0) {
-        throw new Error('Invalid response');
-      }
-
-      const modelId = data.data[0].id;
+      const modelId = models[0].id;
       settings.model = modelId;
 
       gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable (model: ' + modelId + ')';

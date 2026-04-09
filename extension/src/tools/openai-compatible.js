@@ -157,3 +157,35 @@ export async function apiCall(prompt, systemPrompt, port, token, toolName = 'def
   const data = await response.json();
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
+
+/**
+ * Fetch available models from the gateway.
+ *
+ * @param {string} port - Gateway port
+ * @param {string} token - Auth token
+ * @returns {Promise<Array<{id: string}>>} Array of model objects
+ */
+export async function getModels(port, token) {
+  const url = buildUrl(port);
+  const headers = buildHeaders(token);
+
+  const response = await fetch(`${url}/v1/models`, {
+    method: 'GET',
+    headers
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+
+  const data = await response.json();
+  if (!data?.data || !Array.isArray(data.data) || data.data.length === 0) {
+    throw new Error('Invalid response: no models available');
+  }
+
+  return data.data;
+}
+
+// Expose getModels for content scripts and side panel
+window.getModels = getModels;
