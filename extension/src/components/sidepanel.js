@@ -491,6 +491,13 @@
     settingAuthToken.value = settings.authToken || '';
     console.log('[ClawSide] loadSettings: model =', settings.model, ', settingModel =', settingModel);
     if (settingModel) {
+      // If model is set but no options exist, add it as an option first
+      if (settings.model && settingModel.options.length === 0) {
+        const option = document.createElement('option');
+        option.value = settings.model;
+        option.textContent = settings.model;
+        settingModel.appendChild(option);
+      }
       settingModel.value = settings.model || '';
       console.log('[ClawSide] loadSettings: settingModel.value =', settingModel.value);
     }
