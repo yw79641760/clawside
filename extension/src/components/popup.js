@@ -608,9 +608,6 @@
         content: pageContent
       }) : '';
 
-      var port = String(s.gatewayPort || '18789');
-      var token = String(s.authToken || '').trim();
-
       // Get loading text from i18n
       var loadingText = 'Thinking';
       try {
@@ -742,9 +739,6 @@
         type: 'clawside-api',
         prompt: prompt,
         systemPrompt: systemPrompt || '',
-        port: String(port || '18789'),
-        token: String(token || '').trim(),
-        model: s.model || '',
         requestId: requestId,
         sourceTabId: sourceTabId,
         toolName: toolName || 'default'

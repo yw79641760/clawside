@@ -947,9 +947,6 @@
         chrome.runtime.sendMessage({
           type: 'clawside-api',
           prompt: promptText,
-          port: settings.gatewayPort || DEFAULT_PORT,
-          token: settings.authToken || '',
-          model: settings.model || '',
           requestId,
           stream: true,
           toolName: 'ask'
@@ -1152,9 +1149,6 @@
         systemPrompt,
         toolName,
         sourceTabId,
-        port: settings.gatewayPort || DEFAULT_PORT,
-        token: settings.authToken || '',
-        model: settings.model || '',
         requestId
       });
     });

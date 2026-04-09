@@ -50,26 +50,28 @@ chrome.commands.onCommand.addListener((command) => {
 // === API calls (streaming + non-streaming) ===
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
-    const { prompt, systemPrompt, port, token, requestId, stream = true, toolName = 'default', sourceTabId, model } = msg;
-    // Get model from settings if not provided in message
-    const getModel = async () => {
-      if (model) return model;
-      const result = await chrome.storage.local.get(['clawside_settings']);
-      return result.clawside_settings?.model || 'openclaw';
-    };
-    getModel().then((finalModel) => {
+    const { prompt, systemPrompt, requestId, stream = true, toolName = 'default', sourceTabId } = msg;
+
+    // Get settings from storage (port, token, model)
+    chrome.storage.local.get(['clawside_settings']).then((result) => {
+      const settings = result.clawside_settings || {};
+      const port = settings.gatewayPort || '18789';
+      const token = settings.authToken || '';
+      const model = settings.model || 'openclaw';
+
       if (stream) {
-        apiStream(prompt, systemPrompt, port, token, requestId, toolName, finalModel, sourceTabId).catch((err) => {
+        apiStream(prompt, systemPrompt, port, token, requestId, toolName, model, sourceTabId).catch((err) => {
           chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
         });
       } else {
-        apiCall(prompt, systemPrompt, port, token, toolName, finalModel, requestId).then((result) => {
+        apiCall(prompt, systemPrompt, port, token, toolName, model, requestId).then((result) => {
           chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
         }).catch((err) => {
           chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
         });
       }
     });
+
     sendResponse({ ok: true });
     return true;
   }
