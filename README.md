@@ -2,6 +2,12 @@
 
 ![ClawSide Logo](extension/assets/icons/icon128.png)
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-Google%20Chrome?style=flat&logo=google-chrome&color=4285F4)](https://chrome.google.com/webstore/detail/clawside)
+[![License](https://img.shields.io/github/license/yw79641760/clawside?color=MIT)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Chrome%20114%2B-4285F4)]()
+[![Extension](https://img.shields.io/badge/Manifest-V3-34A853)]()
+[![Last Updated](https://img.shields.io/github/last-commit/yw79641760/clawside?color=orange)]()
+
 Chrome side panel extension that brings OpenClaw directly into your browser. Select text → floating bubble → instant results.
 
 ## Architecture
