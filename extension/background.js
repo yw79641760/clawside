@@ -96,15 +96,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
-  // Scan gateway ports (auto-scan on first run) - uses apiCall
+  // Scan gateway ports (auto-scan on first run) - uses getModels
   if (msg.type === 'clawside-scan') {
     const { ports, requestId } = msg;
 
     // Scan each port and return results
     Promise.all(ports.map(async (port) => {
       try {
-        // Use apiCall with empty token, stream=false
-        await apiCall('hi', '', port, '', 'default', 'openai/');
+        // Use getModels with empty token - GET /v1/models doesn't require model param
+        await getModels(port, '');
         return { port, authRequired: false };
       } catch (err) {
         const errMsg = err.message || '';
