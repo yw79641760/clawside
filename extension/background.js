@@ -101,7 +101,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     const { ports, requestId } = msg;
     console.log('[ClawSide] scan: starting for ports:', ports);
 
-    // Simple for-loop scan to avoid Promise.all issues
+    // Directly await inside listener to keep SW alive
     (async () => {
       const found = [];
 
@@ -116,16 +116,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             clearTimeout(timeoutId);
           } catch (err) {
             const errMsg = err.message || '';
-            // Timeout or connection error - skip this port
             if (errMsg.includes('abort') || err.name === 'AbortError' || errMsg.includes('Failed to fetch')) {
               continue;
             }
-            // 401/403 means auth required
             if (errMsg.includes('401') || errMsg.includes('403')) {
               found.push({ port, authRequired: true });
               continue;
             }
-            // Other errors - skip
             continue;
           }
 
@@ -141,10 +138,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             if (errMsg.includes('401') || errMsg.includes('403')) {
               found.push({ port, authRequired: true });
             }
-            // Other errors - skip
           }
         } catch (e) {
-          // Skip port on any error
+          // skip
         }
       }
 
@@ -152,7 +148,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch(() => {});
     })();
 
-    sendResponse({ ok: true });
+    // Return true to keep message channel open
     return true;
   }
 
