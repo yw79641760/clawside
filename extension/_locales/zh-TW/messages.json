@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "點擊摘要取得頁面摘要。" },
   "emptyAsk": { "message": "選取文字或於下方輸入問題。" },
   "historyClear": { "message": "清除全部" },
-  "gatewayNote": { "message": "ClawSide擴充功能呼叫本地(<code>127.0.0.1</code>)的<code>/v1/chat/completions</code>以及<code>/v1/models</code>介面。需於本地LLM或Agent設定中啟用HTTP Gateway。" },
+  "gatewayNote": { "message": "ClawSide擴充功能呼叫本地(<code>127.0.0.1</code>)的<code>/v1/chat/completions</code>以及<code>/v1/models</code>介面。需於本地LLM或Agent設定中啟用HTTP Gateway。詳見<a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">設定教學</a>。" },
   "translating": { "message": "翻譯中" },
   "summarizing": { "message": "摘要中" },
   "thinking": { "message": "思考中" },

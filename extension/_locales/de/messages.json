@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Klicken Sie auf Zusammenfassen, um eine Seitenübersicht zu erhalten." },
   "emptyAsk": { "message": "Wählen Sie Text oder geben Sie unten eine Frage ein." },
   "historyClear": { "message": "Alle löschen" },
-  "gatewayNote": { "message": "ClawSide-Erweiterung ruft lokale (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> und <code>/v1/models</code> Endpunkte auf. Aktivieren Sie HTTP Gateway in Ihrer lokalen LLM- oder Agent-Konfiguration." },
+  "gatewayNote": { "message": "ClawSide-Erweiterung ruft lokale (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> und <code>/v1/models</code> Endpunkte auf. Aktivieren Sie HTTP Gateway in Ihrer lokalen LLM- oder Agent-Konfiguration. Siehe <a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">Konfigurationsanleitung</a>." },
   "translating": { "message": "Übersetze" },
   "summarizing": { "message": "Fasse zusammen" },
   "thinking": { "message": "Denke" },

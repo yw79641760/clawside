@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Click summarize to get a page summary." },
   "emptyAsk": { "message": "Select text or enter a question below." },
   "historyClear": { "message": "Clear All" },
-  "gatewayNote": { "message": "ClawSide extension calls local (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> and <code>/v1/models</code> endpoints. Enable HTTP Gateway in your local LLM or Agent config." },
+  "gatewayNote": { "message": "ClawSide extension calls local (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> and <code>/v1/models</code> endpoints. Enable HTTP Gateway in your local LLM or Agent config. See <a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">Configuration Guide</a>." },
   "translating": { "message": "Translating" },
   "summarizing": { "message": "Summarizing" },
   "thinking": { "message": "Thinking" },
