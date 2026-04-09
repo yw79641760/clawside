@@ -505,6 +505,8 @@
     applyAppearance();
     await applyPanelLanguage();
     loadToolPrompts();
+    // Sync settings to csSettings for chat-session.js to access
+    window.csSettings._settings = settings;
   }
 
   function loadToolPrompts() {
@@ -787,13 +789,13 @@
         </div>
         <div class="message-actions-left">
           <button class="message-action-btn" data-action="edit" title="">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
           <button class="message-action-btn" data-action="copy" title="">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -801,11 +803,26 @@
         </div>
       `;
 
-      // Set i18n titles for user message action buttons
+      // Set i18n titles for user message action buttons and wire events
       const editBtn = div.querySelector('[data-action="edit"]');
       const copyBtn = div.querySelector('[data-action="copy"]');
       editBtn.title = i18n('editMessage');
       copyBtn.title = i18n('copy');
+
+      // Edit button: enable editing the message content
+      editBtn.addEventListener('click', () => {
+        const chatInput = $('chatInput');
+        if (chatInput) {
+          chatInput.value = content;
+          chatInput.focus();
+        }
+      });
+
+      // Copy button: copy message content to clipboard
+      copyBtn.addEventListener('click', () => {
+        window.copyToClipboard(content);
+        showCopiedFeedback(copyBtn);
+      });
     } 
     // Assistant message: copy icon on right outside bubble
     else {
@@ -816,7 +833,7 @@
         </div>
         <div class="message-actions-right">
           <button class="message-action-btn" data-action="copy" title="">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -912,7 +929,7 @@
       const actionsHtml = `
         <div class="message-actions-right">
           <button class="message-action-btn" data-action="copy" title="">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -975,7 +992,7 @@
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
-      const promptText = chatSession.buildPrompt();
+      const promptText = await chatSession.buildPrompt();
 
       // Make API call
       let accumulatedContent = '';
@@ -1268,7 +1285,7 @@
         }
       });
       const result = translateStreaming.getRawText();
-      const historyKey = `cs_history_translate_${window.hashUrl(text)}`;
+      const historyKey = `cs_history_${window.hashUrl(targetLangLabel + text)}`;
       await addHistoryItem({
         id: crypto.randomUUID(),
         key: historyKey,
@@ -1910,6 +1927,8 @@
     applyLanguage();
     await applyPanelLanguage();
     await chrome.storage.local.set({ clawside_settings: settings });
+    // Sync to csSettings for chat-session.js
+    window.csSettings._settings = settings;
   });
   settingAppearance.addEventListener('change', async () => {
     settings.appearance = settingAppearance.value || 'system';
@@ -2275,7 +2294,7 @@
   function showCopiedFeedback(button) {
     const originalHtml = button.innerHTML;
     button.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     `;

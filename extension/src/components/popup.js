@@ -71,7 +71,7 @@
     pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>',
     pinFilled: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path></svg>',
     edit: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
-    send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
+    send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
     openExternal: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>'
   };
 
@@ -651,7 +651,7 @@
       };
 
       // Use the existing apiCall function with streaming
-      apiCall(prompt, port, token, systemPrompt, onChunk, 'ask').then(function() {
+      apiCall(prompt, systemPrompt, onChunk, 'ask').then(function() {
         // Done - streaming completed
         // Store assistant message
         popupMessages.push({ role: 'assistant', content: fullText, from: 'ask' });
@@ -709,7 +709,7 @@
   }
 
   // === API Call (streaming via background script) ===
-  function apiCall(prompt, port, token, systemPrompt, onChunk, toolName) {
+  function apiCall(prompt, systemPrompt, onChunk, toolName) {
     return new Promise(function (resolve, reject) {
       var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       var fullText = '';
@@ -753,8 +753,6 @@
 
     var stored = await chrome.storage.local.get(['clawside_settings']);
     var s = stored.clawside_settings || { gatewayPort: '18789', authToken: '', language: 'auto', translateLanguage: 'auto' };
-    var port = String(s.gatewayPort || '18789');
-    var token = String(s.authToken || '').trim();
 
     var fullText = '';
     var onStreamChunk = function (chunk) {
@@ -801,7 +799,7 @@
           content: pageContent
         });
         try {
-          await apiCall(prompt, port, token, systemPrompt, onStreamChunk, 'translate');
+          await apiCall(prompt, systemPrompt, onStreamChunk, 'translate');
         } catch (err) {
           console.error('[popup] apiCall error:', err);
           setPopupError(err.message);
@@ -820,7 +818,7 @@
           url: pageUrl,
           content: pageContent
         });
-        await apiCall(prompt, port, token, '', onStreamChunk, 'summarize');
+        await apiCall(prompt, '', onStreamChunk, 'summarize');
       } else if (action === 'ask') {
         // Ask popup has its own handleAskSubmit to process chat messages
         // No need to call API here - handleAskSubmit will do it

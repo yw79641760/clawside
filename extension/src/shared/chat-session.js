@@ -110,7 +110,7 @@
     //   Assistant:
     // @param {boolean} includeFullContext - if true, include full page context (title + url + content) for first ask
     //                                       if false, include only title + url (for follow-up questions)
-    buildPrompt() {
+    async buildPrompt() {
       // Get ask prompt template from settings
       var templates = window.csSettings ? window.csSettings.getPromptTemplates(window.csSettings.getDefaultSettings(), 'ask') : null;
       if (!templates) {
@@ -142,10 +142,10 @@
       var question = lastUserMsg ? lastUserMsg.content : '';
 
       // Prepare variables for prompt template
-      // Use lang-utils to get reply language label directly from settings
+      // Use lang-utils to get reply language label from actual saved settings
       var langLabel = 'English';
       if (window.getReplyLabel && window.csSettings) {
-        var currentSettings = window.csSettings.getDefaultSettings();
+        var currentSettings = window.csSettings._settings || window.csSettings.getDefaultSettings();
         langLabel = window.getReplyLabel(currentSettings);
       }
       var promptVars = {

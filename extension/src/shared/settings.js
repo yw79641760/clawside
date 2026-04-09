@@ -39,7 +39,7 @@
       system: 'You are ClawSide\'s text summarizer, a concise AI that extracts key information from text.\n' +
         '- Output only what is present in the content; do not invent or infer missing details\n' +
         '- If content is empty or inaccessible, say "Unable to summarize — content not available."',
-      user: 'Summarize the page content or Text to summarize, depending on whether "Text to summarize" is provided.\n' +
+      user: 'Summarize in {lang} the page content or Text to summarize, depending on whether "Text to summarize" is provided.\n\n' +
         'Use this structure:\n' +
         '- **Overview**: 1-2 sentences (omit if text has no meaningful content)\n' +
         '- **Key Points**: 2-6 bullet points (adjust based on content richness)\n' +
@@ -160,7 +160,8 @@
     getPromptTemplate: getPromptTemplate,
     getPromptTemplates: getPromptTemplates,
     getGlobalTranslatePrompt: getGlobalTranslatePrompt,
-    applyPrompt: applyPromptVariables
+    applyPrompt: applyPromptVariables,
+    _settings: null  // Will be set by sidepanel.js after loading settings
   };
 
 })();
