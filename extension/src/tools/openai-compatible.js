@@ -187,5 +187,10 @@ export async function getModels(port, token) {
   return data.data;
 }
 
-// Expose getModels for content scripts and side panel
-window.getModels = getModels;
+// Also expose as global for non-module contexts (content scripts, side panel)
+if (typeof window !== 'undefined') {
+  window.getModels = getModels;
+  window.buildUrl = buildUrl;
+  window.buildHeaders = buildHeaders;
+  window.buildBody = buildBody;
+}
