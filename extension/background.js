@@ -108,9 +108,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return { port, authRequired: false };
       } catch (err) {
         const errMsg = err.message || '';
-        // 401/403 means auth required
+        // 401/403 means auth required (checked before model validation)
         if (errMsg.includes('401') || errMsg.includes('403')) {
           return { port, authRequired: true };
+        }
+        // 404 means endpoint reached but model not found - port is available
+        if (errMsg.includes('404') || errMsg.includes('not found')) {
+          return { port, authRequired: false };
         }
         // Other errors (connection refused, timeout) = port not available
         return null;
