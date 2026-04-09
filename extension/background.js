@@ -101,8 +101,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     const { ports, requestId } = msg;
     console.log('[ClawSide] scan: starting for ports:', ports);
 
-    // Directly await inside listener to keep SW alive
-    (async () => {
+    // Use setTimeout to allow listener to return first, then run async code
+    setTimeout(async () => {
       const found = [];
 
       for (const port of ports) {
@@ -149,7 +149,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found })
         .then(() => console.log('[ClawSide] scan: message sent successfully'))
         .catch((e) => console.log('[ClawSide] scan: sendMessage failed', e));
-    })();
+    }, 0);
 
     // Return true to keep message channel open
     return true;
