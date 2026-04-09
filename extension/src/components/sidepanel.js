@@ -458,6 +458,7 @@
         settings = {
           gatewayPort: found.port,
           authToken: found.authRequired ? '' : '',
+          model: '',
           language: 'auto',
           translateLanguage: 'auto',
           appearance: 'system',
@@ -475,7 +476,15 @@
         }
       }
     } else {
-      settings = result.clawside_settings;
+      settings = {
+        gatewayPort: result.clawside_settings?.gatewayPort || DEFAULT_PORT,
+        authToken: result.clawside_settings?.authToken || '',
+        model: result.clawside_settings?.model || '',
+        language: result.clawside_settings?.language || 'auto',
+        translateLanguage: result.clawside_settings?.translateLanguage || 'auto',
+        appearance: result.clawside_settings?.appearance || 'system',
+        toolPrompts: result.clawside_settings?.toolPrompts || {}
+      };
     }
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
@@ -1816,6 +1825,7 @@
     saveTimer = setTimeout(() => {
       settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
       settings.authToken = settingAuthToken.value.trim();
+      settings.model = settingModel ? settingModel.value : '';
       settings.language = settingLanguage.value || 'auto';
       settings.appearance = settingAppearance.value || 'system';
       chrome.storage.local.set({ clawside_settings: settings });
