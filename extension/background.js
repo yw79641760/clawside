@@ -108,6 +108,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return { port, authRequired: false };
       } catch (err) {
         const errMsg = err.message || '';
+        console.log('[ClawSide] scan port', port, 'error:', errMsg);
         // 401/403 means auth required (checked before model validation)
         if (errMsg.includes('401') || errMsg.includes('403')) {
           return { port, authRequired: true };

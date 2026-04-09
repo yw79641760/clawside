@@ -418,6 +418,7 @@
   async function autoScanGateway() {
     const ports = ['1234', '1337', '4000', '4200', '5000', '5001', '7860', '8000', '8080', '8642', '11434', '18789'];
     const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    console.log('[ClawSide] autoScanGateway: starting scan for ports:', ports);
 
     const found = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Scan timeout')), 15000);
@@ -428,6 +429,7 @@
         chrome.runtime.onMessage.removeListener(handler);
 
         if (msg.type === 'clawside-scan-result') {
+          console.log('[ClawSide] autoScanGateway: scan result:', msg.found);
           resolve(msg.found);
         }
         return true;
