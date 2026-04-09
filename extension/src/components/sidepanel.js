@@ -1821,9 +1821,6 @@
       settings.authToken = newToken;
       settings.language = settingLanguage.value || 'auto';
       settings.appearance = settingAppearance.value || 'system';
-      if (settings.model) {
-        settings.model = settings.model;
-      }
       chrome.storage.local.set({ clawside_settings: settings });
       updateTokenStatus();
       applyAppearance();
