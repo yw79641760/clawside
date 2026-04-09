@@ -480,7 +480,7 @@
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
-    settingModel.value = settings.model || '';
+    if (settingModel) settingModel.value = settings.model || '';
     settingLanguage.value = settings.language || 'auto';
     settingAppearance.value = settings.appearance || 'system';
     updateTokenStatus();
