@@ -96,19 +96,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
-  // Scan gateway ports (auto-scan on first run) - uses getModels to discover model
+  // Scan gateway ports (auto-scan on first run) - uses apiCall
   if (msg.type === 'clawside-scan') {
     const { ports, requestId } = msg;
 
     // Scan each port and return results
     Promise.all(ports.map(async (port) => {
       try {
-        // First get models to discover available model
-        const models = await getModels(port, '');
-        const model = models[0]?.id || 'llama2'; // fallback to common model name
-
-        // Then test chat completions with discovered model
-        await apiCall('hi', '', port, '', 'default', model);
+        // Use apiCall with 'default' model and empty token
+        await apiCall('hi', '', port, '', 'default', 'default');
         return { port, authRequired: false };
       } catch (err) {
         const errMsg = err.message || '';
@@ -116,7 +112,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         if (errMsg.includes('401') || errMsg.includes('403')) {
           return { port, authRequired: true };
         }
-        // Other errors (connection refused, timeout, model not found) = port not available
+        // Other errors (connection refused, timeout) = port not available
         return null;
       }
     })).then((results) => {
