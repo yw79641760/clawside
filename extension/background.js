@@ -99,6 +99,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Scan gateway ports (auto-scan on first run) - uses apiCall
   if (msg.type === 'clawside-scan') {
     const { ports, requestId } = msg;
+    console.log('[ClawSide] scan: starting for ports:', ports);
 
     // Scan each port and return results
     Promise.all(ports.map(async (port) => {
@@ -106,6 +107,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         // Phase 1: Try getModels without auth token
         let models;
         try {
+          console.log('[ClawSide] scan: getModels', port);
           models = await getModels(port, '');
         } catch (err) {
           const errMsg = err.message || '';
