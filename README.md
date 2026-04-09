@@ -133,4 +133,4 @@ To publish to Chrome Web Store:
 
 ## License
 
-MIT
+[MIT](LICENSE)
