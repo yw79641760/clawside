@@ -913,10 +913,7 @@
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
       const promptText = chatSession.buildPrompt();
-      
-      const port = settings.gatewayPort || DEFAULT_PORT;
-      const token = settings.authToken || '';
-      
+
       // Make API call
       let accumulatedContent = '';
       
@@ -950,8 +947,9 @@
         chrome.runtime.sendMessage({
           type: 'clawside-api',
           prompt: promptText,
-          port,
-          token,
+          port: settings.gatewayPort || DEFAULT_PORT,
+          token: settings.authToken || '',
+          model: settings.model || '',
           requestId,
           stream: true,
           toolName: 'ask'
@@ -1156,6 +1154,7 @@
         sourceTabId,
         port: settings.gatewayPort || DEFAULT_PORT,
         token: settings.authToken || '',
+        model: settings.model || '',
         requestId
       });
     });

@@ -28,21 +28,19 @@ export function buildHeaders(token) {
 /**
  * Build the common request body for chat completions.
  * @param {string} prompt - User prompt
+ * @param {string} model - Model ID from settings (e.g., "openclaw", "llama2", "gemma")
  * @param {string} toolName - Tool identifier (default/summarize/translate/ask)
  * @param {string} systemPrompt - Optional system prompt
  * @returns {Object} Chat completion body
- * @see https://docs.openclaw.ai/gateway/openai-http-api#chat-completions
  */
-export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
+export function buildBody(prompt, model = 'openclaw', toolName = 'default', systemPrompt = '') {
   const messages = [];
   if (systemPrompt) {
     messages.push({ role: 'system', content: systemPrompt });
   }
   messages.push({ role: 'user', content: prompt });
   return {
-    // Model routing: "openclaw" or "openclaw/<agentId>" for specific agent
-    // Empty string defaults to "openclaw" (default agent)
-    model: 'openclaw',
+    model: model || 'openclaw',
     // Session format: clawside:{toolName}
     // @see https://docs.openclaw.ai/gateway/openai-http-api#authentication
     user: 'clawside:' + toolName,
@@ -62,14 +60,15 @@ export function buildBody(prompt, toolName = 'default', systemPrompt = '') {
  * @param {string} token - Auth token
  * @param {string} requestId - Request identifier for response routing
  * @param {string} toolName - Tool identifier (default/summarize/translate/ask)
+ * @param {string} model - Model ID (e.g., "openclaw", "llama2")
  * @param {number|null} sourceTabId - Tab ID for content script response routing
  * @returns {Promise<void>}
  */
-export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', sourceTabId = null) {
+export async function apiStream(prompt, systemPrompt, port, token, requestId, toolName = 'default', model = 'openclaw', sourceTabId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
-    ...buildBody(prompt, toolName, systemPrompt),
+    ...buildBody(prompt, model, toolName, systemPrompt),
     stream: true
   };
 
@@ -132,14 +131,15 @@ export async function apiStream(prompt, systemPrompt, port, token, requestId, to
  * @param {string} port - Gateway port
  * @param {string} token - Auth token
  * @param {string} toolName - Tool identifier
+ * @param {string} model - Model ID (e.g., "openclaw", "llama2")
  * @param {string} requestId - Request identifier for response routing
  * @returns {Promise<string>} Assistant response
  */
-export async function apiCall(prompt, systemPrompt, port, token, toolName = 'default', requestId = null) {
+export async function apiCall(prompt, systemPrompt, port, token, toolName = 'default', model = 'openclaw', requestId = null) {
   const url = buildUrl(port);
   const headers = buildHeaders(token);
   const body = {
-    ...buildBody(prompt, toolName, systemPrompt),
+    ...buildBody(prompt, model, toolName, systemPrompt),
     stream: false
   };
 
