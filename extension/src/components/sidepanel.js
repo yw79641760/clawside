@@ -61,7 +61,7 @@
   const i18n = window.i18n || ((key) => key);
   // Flag to track if pending messages were already loaded (to prevent double init)
   let _pendingMessagesLoaded = false;
-  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
+  let settings = { gatewayPort: DEFAULT_PORT, authToken: '', model: '', language: 'auto', translateLanguage: 'auto', appearance: 'system', toolPrompts: {} };
 
   // Per-tool deferred context backfill marker, keyed by current page URL.
   const deferredContextBackfillUrl = {
@@ -557,25 +557,28 @@
     try {
       const portNum = settingBridgePort.value?.trim() || DEFAULT_PORT;
       const token = settingAuthToken.value?.trim() || '';
-      const url = 'http://127.0.0.1:' + portNum + '/v1/chat/completions';
+      const url = 'http://127.0.0.1:' + portNum + '/v1/models';
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       };
-      const body = JSON.stringify({
-        model: 'openclaw',
-        user: 'clawside:test',
-        messages: [{ role: 'user', content: 'Reply with OK only.' }],
-        stream: false
-      });
 
-      const res = await fetch(url, { method: 'POST', headers, body });
+      console.log('[ClawSide] Testing gateway connection:', url);
+      const res = await fetch(url, { method: 'GET', headers });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      if (!data.choices?.[0]?.message?.content) throw new Error('Invalid response');
+      console.log('[ClawSide] Gateway response:', data);
 
-      gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable';
+      if (!data?.data || !Array.isArray(data.data) || data.data.length === 0) {
+        throw new Error('Invalid response');
+      }
+
+      const modelId = data.data[0].id;
+      settings.model = modelId;
+
+      gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable (model: ' + modelId + ')';
       gatewayStatusEl.style.color = 'var(--success)';
+      autoSave();
     } catch (err) {
       console.error('[ClawSide] Test connection error:', err);
       const errMsg = err.message || '';
@@ -1818,6 +1821,9 @@
       settings.authToken = newToken;
       settings.language = settingLanguage.value || 'auto';
       settings.appearance = settingAppearance.value || 'system';
+      if (settings.model) {
+        settings.model = settings.model;
+      }
       chrome.storage.local.set({ clawside_settings: settings });
       updateTokenStatus();
       applyAppearance();
