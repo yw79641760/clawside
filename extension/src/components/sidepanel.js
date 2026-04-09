@@ -415,7 +415,9 @@
   // === Settings ===
   // === Auto Scan Gateway ===
   async function autoScanGateway() {
-    const ports = ['18789', '18790', '18791'];
+    const ports = ['8642', '11434', '18789'];
+    const found = [];
+
     for (const port of ports) {
       try {
         const controller = new AbortController();
@@ -431,13 +433,17 @@
           signal: controller.signal
         });
         clearTimeout(tid);
-        if (res.ok) return { port, authRequired: false };
-        if (res.status === 401 || res.status === 403) return { port, authRequired: true };
+        // 200 = no auth needed, 401/403 = auth required
+        if (res.ok) {
+          found.push({ port, authRequired: false });
+        } else if (res.status === 401 || res.status === 403) {
+          found.push({ port, authRequired: true });
+        }
       } catch {
         // Port unreachable or timeout — try next
       }
     }
-    return null;
+    return found;
   }
 
   async function loadSettings() {
@@ -1871,31 +1877,41 @@
   if (scanBtn) {
     scanBtn.addEventListener('click', async () => {
       scanBtn.disabled = true;
-      scanBtn.textContent = 'Scanning...';
+      const originalText = scanBtn.textContent;
+      scanBtn.innerHTML = svgIcon('loading');
       const scanStatusEl = $('gatewayStatus');
       const statusBar = $('gatewayStatusBar');
       if (scanStatusEl) {
         statusBar.classList.remove('hidden');
-        scanStatusEl.textContent = 'Scanning...';
+        scanStatusEl.textContent = i18n('scanning') || 'Scanning...';
         scanStatusEl.style.color = 'var(--text)';
       }
       const found = await autoScanGateway();
       scanBtn.disabled = false;
-      scanBtn.textContent = 'Scan';
-      if (found) {
-        settingBridgePort.value = found.port;
-        settings.gatewayPort = found.port;
+      scanBtn.innerHTML = originalText;
+      if (found && found.length > 0) {
+        // Auto-fill first found port
+        settingBridgePort.value = found[0].port;
+        settings.gatewayPort = found[0].port;
         settings.authToken = '';
         settingAuthToken.value = '';
         updateTokenStatus();
+
+        // Show all found gateways
         if (scanStatusEl) {
-          scanStatusEl.innerHTML = `Gateway found on port ${found.port}${found.authRequired ? ' \u2014 token required' : ' \u2014 no auth needed'}`;
+          const lines = found.map(g => {
+            const msg = g.authRequired
+              ? i18n('gatewayFoundWithToken').replace('{port}', g.port)
+              : i18n('gatewayFound').replace('{port}', g.port);
+            return msg;
+          });
+          scanStatusEl.innerHTML = lines.join('<br>');
           scanStatusEl.style.color = 'var(--success)';
         }
         autoSave();
       } else {
         if (scanStatusEl) {
-          scanStatusEl.textContent = 'No gateway found on localhost';
+          scanStatusEl.textContent = i18n('gatewayNotFound');
           scanStatusEl.style.color = 'var(--error)';
         }
       }
