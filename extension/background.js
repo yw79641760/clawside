@@ -1,7 +1,7 @@
 // ClawSide - Service Worker (Background)
 // Handles message routing, panel behavior, and forwards API calls to tools/openai-compatible.js.
 
-import { apiStream, apiCall } from './src/tools/openai-compatible.js';
+import { apiStream, apiCall, getModels } from './src/tools/openai-compatible.js';
 
 // Cached side panel tab ID — registered by the panel itself on load.
 // Kept in storage so the SW can persist it across restarts.
@@ -70,6 +70,26 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
         });
       }
+    });
+
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  // Get available models from gateway
+  if (msg.type === 'clawside-models') {
+    const { requestId } = msg;
+
+    chrome.storage.local.get(['clawside_settings']).then((result) => {
+      const settings = result.clawside_settings || {};
+      const port = settings.gatewayPort || '18789';
+      const token = settings.authToken || '';
+
+      getModels(port, token).then((models) => {
+        chrome.runtime.sendMessage({ type: 'clawside-models-result', requestId, models }).catch(() => {});
+      }).catch((err) => {
+        chrome.runtime.sendMessage({ type: 'clawside-models-error', requestId, error: err.message }).catch(() => {});
+      });
     });
 
     sendResponse({ ok: true });

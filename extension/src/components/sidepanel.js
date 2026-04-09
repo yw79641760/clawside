@@ -553,13 +553,29 @@
     gatewayStatusEl.textContent = 'Checking...';
     gatewayStatusEl.style.color = 'var(--text)';
 
-    // Use getModels from openai-compatible.js
+    // Use message-based call to background (same pattern as apiCall)
     try {
-      const portNum = settingBridgePort.value?.trim() || DEFAULT_PORT;
-      const token = settingAuthToken.value?.trim() || '';
+      const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
 
-      console.log('[ClawSide] Testing gateway connection on port:', portNum);
-      const models = await window.openaiCompatible.getModels(portNum, token);
+      const models = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Request timeout')), 30000);
+
+        const handler = (msg) => {
+          if (msg.requestId !== requestId) return true;
+          clearTimeout(timeout);
+          chrome.runtime.onMessage.removeListener(handler);
+
+          if (msg.type === 'clawside-models-result') {
+            resolve(msg.models);
+          } else if (msg.type === 'clawside-models-error') {
+            reject(new Error(msg.error));
+          }
+          return true;
+        };
+
+        chrome.runtime.onMessage.addListener(handler);
+        chrome.runtime.sendMessage({ type: 'clawside-models', requestId });
+      });
 
       const modelId = models[0].id;
       settings.model = modelId;
