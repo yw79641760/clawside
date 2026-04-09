@@ -28,7 +28,7 @@
   "labelPort": { "message": "Agent HTTP Gateway Port" },
   "gatewayFound": { "message": "Gateway found on port {port}" },
   "gatewayFoundWithToken": { "message": "Gateway found on port {port} — token required" },
-  "scanning": { "message": "Scanning..." },
+  "scanning": { "message": "Scanning" },
   "gatewayNotFound": { "message": "No gateway found. Please check port and token in settings." },
   "gatewayNotFound": { "message": "No gateway found. Please check port and token in settings." },
   "saveSettings": { "message": "Save Settings" },

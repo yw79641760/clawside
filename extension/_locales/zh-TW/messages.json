@@ -28,7 +28,7 @@
   "labelPort": { "message": "Agent HTTP Gateway 連接埠" },
   "gatewayFound": { "message": "在連接埠 {port} 找到 Gateway" },
   "gatewayFoundWithToken": { "message": "在連接埠 {port} 找到 Gateway — 需要權杖" },
-  "scanning": { "message": "掃描中..." },
+  "scanning": { "message": "掃描中" },
   "gatewayNotFound": { "message": "找不到 Gateway，請檢查設定中的連接埠和權杖。" },
   "saveSettings": { "message": "儲存設定" },
   "loading": { "message": "處理中..." },

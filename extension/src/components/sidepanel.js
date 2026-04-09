@@ -415,7 +415,7 @@
   // === Settings ===
   // === Auto Scan Gateway ===
   async function autoScanGateway() {
-    const ports = ['8642', '11434', '18789'];
+    const ports = ['4200', '8642', '11434', '18789'];
     const found = [];
 
     for (const port of ports) {

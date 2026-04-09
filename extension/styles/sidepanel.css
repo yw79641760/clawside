@@ -1125,6 +1125,12 @@ body {
 
 .port-row input[type="number"] {
   flex: 1;
+  width: 100px;
+}
+
+.port-row button {
+  min-width: 70px;
+  height: 32px;
 }
 
 .token-status {

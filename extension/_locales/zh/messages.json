@@ -28,7 +28,7 @@
   "labelPort": { "message": "Agent HTTP Gateway 端口" },
   "gatewayFound": { "message": "在端口 {port} 找到 Gateway" },
   "gatewayFoundWithToken": { "message": "在端口 {port} 找到 Gateway — 需要 Token" },
-  "scanning": { "message": "扫描中..." },
+  "scanning": { "message": "扫描中" },
   "gatewayNotFound": { "message": "未找到 Gateway，请检查设置中的端口和 Token。" },
   "saveSettings": { "message": "保存设置" },
   "loading": { "message": "处理中..." },

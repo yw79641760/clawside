@@ -28,7 +28,7 @@
   "labelPort": { "message": "Port de la passerelle HTTP Agent" },
   "gatewayFound": { "message": "Passerelle trouvée sur le port {port}" },
   "gatewayFoundWithToken": { "message": "Passerelle trouvée sur le port {port} — token requis" },
-  "scanning": { "message": "Scan en cours..." },
+  "scanning": { "message": "Scan en cours" },
   "gatewayNotFound": { "message": "Passerelle non trouvée. Veuillez vérifier le port et le token dans les paramètres." },
   "saveSettings": { "message": "Enregistrer" },
   "loading": { "message": "Traitement..." },
