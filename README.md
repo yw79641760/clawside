@@ -14,8 +14,8 @@
 [![Last Updated](https://img.shields.io/github/last-commit/yw79641760/clawside?color=orange)]()
 
 - 🔒 Completely local, privacy protected
-- ⚡ Practical tools, double your efficiency
-- 🤖 Agent-friendly, supports OpenClaw/Hermes/OpenFang and more
+- 🚀 Practical tools, double your efficiency
+- 🦞 Agent-friendly, supports OpenClaw/Hermes/OpenFang and more
 
 ## Architecture
 
