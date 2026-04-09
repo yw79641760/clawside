@@ -103,21 +103,43 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // Scan each port and return results
     Promise.all(ports.map(async (port) => {
       try {
-        // Use apiCall with 'default' model and empty token
-        await apiCall('hi', '', port, '', 'default', 'default');
-        return { port, authRequired: false };
+        // Phase 1: Try getModels without auth token
+        try {
+          await getModels(port, '');
+        } catch (err) {
+          const errMsg = err.message || '';
+          // 401/403 means auth required
+          if (errMsg.includes('401') || errMsg.includes('403')) {
+            return { port, authRequired: true };
+          }
+          // Other errors (connection refused, timeout) = port not available
+          return null;
+        }
+
+        // Phase 2: Get models, then test chat completions with first model
+        const models = await getModels(port, '');
+        const model = models[0]?.id;
+        if (!model) {
+          // No models available, but endpoint is reachable - consider as no auth needed
+          return { port, authRequired: false };
+        }
+
+        // Test chat completions with discovered model
+        try {
+          await apiCall('hi', '', port, '', 'default', model);
+          return { port, authRequired: false };
+        } catch (err) {
+          const errMsg = err.message || '';
+          // 401/403 means auth required
+          if (errMsg.includes('401') || errMsg.includes('403')) {
+            return { port, authRequired: true };
+          }
+          // Other errors = port not available
+          return null;
+        }
       } catch (err) {
         const errMsg = err.message || '';
         console.log('[ClawSide] scan port', port, 'error:', errMsg);
-        // 401 means auth required (checked before model validation)
-        if (errMsg.includes('401')) {
-          return { port, authRequired: true };
-        }
-        // 403 with empty body (Ollama returns empty 403 when model not found)
-        // or 404/not found means endpoint is reachable
-        if (errMsg.includes('403') || errMsg.includes('404') || errMsg.includes('not found') || errMsg.includes('model_not_found')) {
-          return { port, authRequired: false };
-        }
         // Other errors (connection refused, timeout) = port not available
         return null;
       }
