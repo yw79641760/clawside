@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "ポート {port} で Gateway が見つかりました" },
   "gatewayFoundWithToken": { "message": "ポート {port} で Gateway が見つかりました — トークンが必要" },
   "scanning": { "message": "スキャン中" },
-  "gatewayNotFound": { "message": "Gateway が見つかりません。設定でポートとトークンを確認してください。" },
+  "gatewayNotFound": { "message": "Gateway が見つかりません。ポートとトークン（必要な場合）を確認して手動で入力してください。" },
   "saveSettings": { "message": "設定を保存" },
   "loading": { "message": "処理中..." },
   "emptyHistory": { "message": "履歴がありません。任意のページでテキストを選択して始めましょう！" },

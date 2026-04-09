@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "在連接埠 {port} 找到 Gateway" },
   "gatewayFoundWithToken": { "message": "在連接埠 {port} 找到 Gateway — 需要權杖" },
   "scanning": { "message": "掃描中" },
-  "gatewayNotFound": { "message": "找不到 Gateway，請檢查設定中的連接埠和權杖。" },
+  "gatewayNotFound": { "message": "找不到 Gateway，請檢查連接埠和權杖（如有需要）並手動輸入。" },
   "saveSettings": { "message": "儲存設定" },
   "loading": { "message": "處理中..." },
   "emptyHistory": { "message": "暫無歷史記錄，在任意頁面選取文字即可開始！" },

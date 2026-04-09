@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "Gateway encontrado en el puerto {port}" },
   "gatewayFoundWithToken": { "message": "Gateway encontrado en el puerto {port} — token requerido" },
   "scanning": { "message": "Escaneando" },
-  "gatewayNotFound": { "message": "Gateway no encontrado. Por favor verifica el puerto y el token en la configuración." },
+  "gatewayNotFound": { "message": "Gateway no encontrado. Por favor verifica el puerto y el token (si es necesario) e ingrésalo manualmente." },
   "saveSettings": { "message": "Guardar" },
   "loading": { "message": "Procesando..." },
   "emptyHistory": { "message": "Sin historial aún. ¡Selecciona texto en cualquier página para comenzar!" },

@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "Passerelle trouvée sur le port {port}" },
   "gatewayFoundWithToken": { "message": "Passerelle trouvée sur le port {port} — token requis" },
   "scanning": { "message": "Scan en cours" },
-  "gatewayNotFound": { "message": "Passerelle non trouvée. Veuillez vérifier le port et le token dans les paramètres." },
+  "gatewayNotFound": { "message": "Passerelle non trouvée. Veuillez vérifier le port et le token (si nécessaire) et les saisir manuellement." },
   "saveSettings": { "message": "Enregistrer" },
   "loading": { "message": "Traitement..." },
   "emptyHistory": { "message": "Pas encore d'historique. Sélectionnez du texte sur n'importe quelle page pour commencer!" },

@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "Gateway auf Port {port} gefunden" },
   "gatewayFoundWithToken": { "message": "Gateway auf Port {port} gefunden — Token erforderlich" },
   "scanning": { "message": "Scannen" },
-  "gatewayNotFound": { "message": "Gateway nicht gefunden. Bitte Port und Token in den Einstellungen überprüfen." },
+  "gatewayNotFound": { "message": "Gateway nicht gefunden. Bitte Port und Token (falls erforderlich) überprüfen und manuell eingeben." },
   "saveSettings": { "message": "Speichern" },
   "loading": { "message": "Verarbeitung..." },
   "emptyHistory": { "message": "Noch kein Verlauf. Wählen Sie Text auf einer beliebigen Seite, um zu beginnen!" },

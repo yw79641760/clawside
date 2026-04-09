@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "Gateway найден на порту {port}" },
   "gatewayFoundWithToken": { "message": "Gateway найден на порту {port} — требуется токен" },
   "scanning": { "message": "Сканирование..." },
-  "gatewayNotFound": { "message": "Gateway не найден. Проверьте порт и токен в настройках." },
+  "gatewayNotFound": { "message": "Gateway не найден. Проверьте порт и токен (при необходимости) и введите вручную." },
   "saveSettings": { "message": "Сохранить" },
   "loading": { "message": "Обработка..." },
   "emptyHistory": { "message": "История пуста. Выделите текст на любой странице, чтобы начать!" },

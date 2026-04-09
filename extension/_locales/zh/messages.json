@@ -29,7 +29,7 @@
   "gatewayFound": { "message": "在端口 {port} 找到 Gateway" },
   "gatewayFoundWithToken": { "message": "在端口 {port} 找到 Gateway — 需要 Token" },
   "scanning": { "message": "扫描中" },
-  "gatewayNotFound": { "message": "未找到 Gateway，请检查设置中的端口和 Token。" },
+  "gatewayNotFound": { "message": "未找到 Gateway，请检查端口和 Token（如需要）并手动输入。" },
   "saveSettings": { "message": "保存设置" },
   "loading": { "message": "处理中..." },
   "emptyHistory": { "message": "暂无历史记录，在任意页面选中文本即可开始！" },
