@@ -96,6 +96,36 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
 
+  // Scan gateway ports (auto-scan on first run) - uses apiCall
+  if (msg.type === 'clawside-scan') {
+    const { ports, requestId } = msg;
+
+    // Scan each port and return results
+    Promise.all(ports.map(async (port) => {
+      try {
+        // Use apiCall with empty token, stream=false
+        await apiCall('hi', '', port, '', 'default', 'openai/');
+        return { port, authRequired: false };
+      } catch (err) {
+        const errMsg = err.message || '';
+        // 401/403 means auth required
+        if (errMsg.includes('401') || errMsg.includes('403')) {
+          return { port, authRequired: true };
+        }
+        // Other errors (connection refused, timeout) = port not available
+        return null;
+      }
+    })).then((results) => {
+      const found = results.filter(Boolean);
+      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch(() => {});
+    }).catch(() => {
+      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found: [] }).catch(() => {});
+    });
+
+    sendResponse({ ok: true });
+    return true;
+  }
+
   // Side panel registers its own tabId on load (persisted so SW can use it after restart).
   if (msg.type === 'panel-ready' && msg.panelTabId) {
     _panelTabId = msg.panelTabId;

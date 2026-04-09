@@ -416,33 +416,26 @@
   // === Auto Scan Gateway ===
   async function autoScanGateway() {
     const ports = ['4200', '8642', '11434', '18789'];
-    const found = [];
+    const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
 
-    for (const port of ports) {
-      try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`http://127.0.0.1:${port}/v1/chat/completions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'openai/',
-            messages: [{ role: 'user', content: 'hi' }],
-            stream: false
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(tid);
-        // 200 = no auth needed, 401/403 = auth required
-        if (res.ok) {
-          found.push({ port, authRequired: false });
-        } else if (res.status === 401 || res.status === 403) {
-          found.push({ port, authRequired: true });
+    const found = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Scan timeout')), 15000);
+
+      const handler = (msg) => {
+        if (msg.requestId !== requestId) return true;
+        clearTimeout(timeout);
+        chrome.runtime.onMessage.removeListener(handler);
+
+        if (msg.type === 'clawside-scan-result') {
+          resolve(msg.found);
         }
-      } catch {
-        // Port unreachable or timeout — try next
-      }
-    }
+        return true;
+      };
+
+      chrome.runtime.onMessage.addListener(handler);
+      chrome.runtime.sendMessage({ type: 'clawside-scan', ports, requestId });
+    });
+
     return found;
   }
 
