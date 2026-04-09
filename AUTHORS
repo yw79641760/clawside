@@ -1,0 +1,7 @@
+# AUTHORS
+
+# Main Author
+Wei YAN <yw79641760@gmail.com> (Original author, Maintainer)
+
+# This software is a Chrome Extension with no external runtime dependencies.
+# Development only uses puppeteer-core for testing.
