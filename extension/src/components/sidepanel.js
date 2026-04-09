@@ -485,6 +485,12 @@
   async function checkGatewayStatus() {
     const statusBar = $('gatewayStatusBar');
     statusBar.classList.remove('hidden');
+
+    // Disable button and show loading
+    testConnBtn.disabled = true;
+    const originalText = testConnBtn.textContent;
+    testConnBtn.innerHTML = originalText + ' ' + svgIcon('loading');
+
     // Clear previous status to give visual feedback that button was clicked
     gatewayStatusEl.textContent = 'Checking...';
     gatewayStatusEl.style.color = 'var(--text)';
@@ -523,6 +529,10 @@
         gatewayStatusEl.textContent = '✗ ' + errMsg;
       }
       gatewayStatusEl.style.color = 'var(--error)';
+    } finally {
+      // Re-enable button and restore original text
+      testConnBtn.disabled = false;
+      testConnBtn.textContent = originalText;
     }
   }
 
