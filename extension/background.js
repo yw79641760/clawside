@@ -102,59 +102,69 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     console.log('[ClawSide] scan: starting for ports:', ports);
 
     // Scan each port and return results - use Promise.allSettled to not reject on timeout
-    const scanResults = await Promise.allSettled(ports.map(async (port) => {
+    (async () => {
       try {
-        // Phase 1: Try getModels without auth token
-        let models;
-        try {
-          console.log('[ClawSide] scan: getModels', port);
-          models = await getModels(port, '');
-        } catch (err) {
-          const errMsg = err.message || '';
-          // 401/403 means auth required
-          if (errMsg.includes('401') || errMsg.includes('403')) {
-            return { port, authRequired: true };
-          }
-          // Other errors (connection refused, timeout) = port not available
-          return null;
-        }
+        const scanResults = await Promise.allSettled(ports.map(async (port) => {
+          try {
+            // Phase 1: Try getModels without auth token
+            let models;
+            try {
+              console.log('[ClawSide] scan: getModels', port);
+              models = await getModels(port, '');
+            } catch (err) {
+              const errMsg = err.message || '';
+              // 401/403 means auth required
+              if (errMsg.includes('401') || errMsg.includes('403')) {
+                return { port, authRequired: true };
+              }
+              // Other errors (connection refused, timeout) = port not available
+              return null;
+            }
 
-        // Phase 2: Test chat completions with first model
-        console.log('[ClawSide] scan: got models for port', port, ':', models.map(m => m.id));
-        const model = models[0]?.id;
-        if (!model) {
-          // No models available - not a valid LLM gateway
-          return null;
-        }
+            // Phase 2: Test chat completions with first model
+            console.log('[ClawSide] scan: got models for port', port, ':', models.map(m => m.id));
+            const model = models[0]?.id;
+            if (!model) {
+              // No models available - not a valid LLM gateway
+              return null;
+            }
 
-        // Test chat completions with discovered model
-        try {
-          await apiCall('hi', '', port, '', 'default', model);
-          return { port, authRequired: false };
-        } catch (err) {
-          const errMsg = err.message || '';
-          // 401/403 means auth required
-          if (errMsg.includes('401') || errMsg.includes('403')) {
-            return { port, authRequired: true };
+            // Test chat completions with discovered model
+            try {
+              await apiCall('hi', '', port, '', 'default', model);
+              return { port, authRequired: false };
+            } catch (err) {
+              const errMsg = err.message || '';
+              // 401/403 means auth required
+              if (errMsg.includes('401') || errMsg.includes('403')) {
+                return { port, authRequired: true };
+              }
+              // Other errors = port not available
+              return null;
+            }
+          } catch (err) {
+            const errMsg = err.message || '';
+            console.log('[ClawSide] scan port', port, 'error:', errMsg);
+            // Other errors (connection refused, timeout) = port not available
+            return null;
           }
-          // Other errors = port not available
-          return null;
-        }
-      } catch (err) {
-        const errMsg = err.message || '';
-        console.log('[ClawSide] scan port', port, 'error:', errMsg);
-        // Other errors (connection refused, timeout) = port not available
-        return null;
+        }));
+
+        console.log('[ClawSide] scan: all done, results:', scanResults);
+        const results = scanResults
+          .filter(r => r.status === 'fulfilled')
+          .map(r => r.value)
+          .filter(Boolean);
+        console.log('[ClawSide] scan: filtered results:', results);
+        const found = results.filter(Boolean);
+        console.log('[ClawSide] scan: sending result:', found);
+        chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).then(() => {
+          console.log('[ClawSide] scan: message sent');
+        }).catch((e) => console.log('[ClawSide] scan: sendMessage error', e));
+      } catch (e) {
+        console.log('[ClawSide] scan: error', e);
       }
-    }));
-
-    console.log('[ClawSide] scan: all done, results:', scanResults);
-    const results = scanResults
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value)
-      .filter(Boolean);
-    const found = results.filter(Boolean);
-    chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found }).catch((e) => console.log('[ClawSide] scan: sendMessage error', e));
+    })();
 
     sendResponse({ ok: true });
     return true;
