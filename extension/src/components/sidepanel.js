@@ -1809,16 +1809,8 @@
   function autoSave() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      const newToken = settingAuthToken.value.trim();
-      // Skip save if token unchanged (avoid overwriting with stale empty value)
-      if (newToken === settings.authToken &&
-          (settingBridgePort.value.trim() || DEFAULT_PORT) === settings.gatewayPort &&
-          (settingLanguage.value || 'auto') === settings.language &&
-          (settingAppearance.value || 'system') === settings.appearance) {
-        return;
-      }
       settings.gatewayPort = settingBridgePort.value.trim() || DEFAULT_PORT;
-      settings.authToken = newToken;
+      settings.authToken = settingAuthToken.value.trim();
       settings.language = settingLanguage.value || 'auto';
       settings.appearance = settingAppearance.value || 'system';
       chrome.storage.local.set({ clawside_settings: settings });
