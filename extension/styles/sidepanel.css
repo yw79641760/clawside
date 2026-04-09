@@ -1135,6 +1135,29 @@ body {
   padding: 0 12px;
 }
 
+.test-conn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-conn-row .model-select {
+  flex: 1;
+  width: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.test-conn-row .btn-primary {
+  flex: 1;
+  width: 50%;
+  min-width: 120px;
+}
+
 .token-status {
   font-size: 12px;
   font-weight: 600;

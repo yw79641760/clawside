@@ -15,7 +15,7 @@
 
 - 🔒 Completely local, privacy protected
 - 🚀 Practical tools, double your efficiency
-- 🦞 Agent-friendly, supports OpenClaw/Hermes/OpenFang and more
+- 🦞 Agent-friendly, supports tons of local LLM
 
 ## Architecture
 

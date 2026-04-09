@@ -227,6 +227,7 @@
   // Settings
   const settingBridgePort = $('settingBridgePort');
   const settingAuthToken = $('settingAuthToken');
+  const settingModel = $('settingModel');
   const toggleTokenBtn = $('toggleTokenBtn');
   const tokenStatusEl = $('tokenStatus');
   const gatewayStatusEl = $('gatewayStatus');
@@ -479,6 +480,7 @@
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
+    settingModel.value = settings.model || '';
     settingLanguage.value = settings.language || 'auto';
     settingAppearance.value = settings.appearance || 'system';
     updateTokenStatus();
@@ -570,7 +572,18 @@
         chrome.runtime.sendMessage({ type: 'clawside-models', requestId });
       });
 
+      // Populate model dropdown with available models
+      settingModel.innerHTML = '';
+      models.forEach((model) => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.id;
+        settingModel.appendChild(option);
+      });
+
+      // Default to first model
       const modelId = models[0].id;
+      settingModel.value = modelId;
       settings.model = modelId;
 
       gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable (model: ' + modelId + ')';
@@ -583,6 +596,8 @@
         gatewayStatusEl.textContent = '✗ Token rejected by gateway';
       } else if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg === 'timeout') {
         gatewayStatusEl.textContent = '✗ Cannot reach gateway — check port';
+      } else if (errMsg.includes('no models')) {
+        gatewayStatusEl.textContent = '✗ No models available';
       } else {
         gatewayStatusEl.textContent = '✗ ' + errMsg;
       }
@@ -1857,6 +1872,14 @@
     toggleTokenBtn.innerHTML = isPassword ? svgIcon('eyeoff') : svgIcon('eye');
   });
   testConnBtn.addEventListener('click', checkGatewayStatus);
+
+  // Model selection change - save to settings
+  settingModel.addEventListener('change', () => {
+    if (settingModel.value) {
+      settings.model = settingModel.value;
+      autoSave();
+    }
+  });
 
   const scanBtn = $('scanGatewayBtn');
   if (scanBtn) {

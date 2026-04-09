@@ -311,7 +311,12 @@
             Status: <span id="gatewayStatus">—</span>
           </div>
 
-          <button class="btn-primary" id="testConnBtn" aria-label="Test connection">Test Connection</button>
+          <div class="test-conn-row">
+            <select id="settingModel" class="model-select" aria-label="Model">
+              <option value="">—</option>
+            </select>
+            <button class="btn-primary" id="testConnBtn" aria-label="Test connection">Test Connection</button>
+          </div>
           <div class="status-msg hidden" id="testConnStatus" aria-live="polite"></div>
 
           <div class="setting-note" id="gatewayNote" style="margin-top:12px">
