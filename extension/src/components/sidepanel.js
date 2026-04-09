@@ -489,17 +489,19 @@
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
-    console.log('[ClawSide] loadSettings: model =', settings.model, ', settingModel =', settingModel);
+    console.log('[ClawSide] loadSettings: model =', settings.model, ', settingModel.options.length =', settingModel ? settingModel.options.length : 'N/A');
     if (settingModel) {
       // If model is set but no options exist, add it as an option first
       if (settings.model && settingModel.options.length === 0) {
+        console.log('[ClawSide] loadSettings: adding option for', settings.model);
         const option = document.createElement('option');
         option.value = settings.model;
         option.textContent = settings.model;
         settingModel.appendChild(option);
       }
+      console.log('[ClawSide] loadSettings: before setValue, value =', settingModel.value, ', model =', settings.model);
       settingModel.value = settings.model || '';
-      console.log('[ClawSide] loadSettings: settingModel.value =', settingModel.value);
+      console.log('[ClawSide] loadSettings: after setValue, value =', settingModel.value);
     }
     settingLanguage.value = settings.language || 'auto';
     settingAppearance.value = settings.appearance || 'system';
