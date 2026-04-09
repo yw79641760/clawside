@@ -418,7 +418,6 @@
   async function autoScanGateway() {
     const ports = ['1234', '1337', '4000', '4200', '5000', '5001', '7860', '8000', '8080', '8642', '11434', '18789'];
     const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    console.log('[ClawSide] autoScanGateway: starting scan for ports:', ports);
 
     const found = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Scan timeout')), 60000);
@@ -429,7 +428,6 @@
         chrome.runtime.onMessage.removeListener(handler);
 
         if (msg.type === 'clawside-scan-result') {
-          console.log('[ClawSide] autoScanGateway: scan result:', msg.found);
           resolve(msg.found);
         }
         return true;
@@ -491,17 +489,14 @@
 
     settingBridgePort.value = settings.gatewayPort || DEFAULT_PORT;
     settingAuthToken.value = settings.authToken || '';
-    console.log('[ClawSide] loadSettings: model =', settings.model, ', settingModel.options.length =', settingModel ? settingModel.options.length : 'N/A');
     if (settingModel && settings.model) {
       // Clear all options and add the saved model
-      console.log('[ClawSide] loadSettings: clearing and adding option for', settings.model);
       settingModel.innerHTML = '';
       const option = document.createElement('option');
       option.value = settings.model;
       option.textContent = settings.model;
       settingModel.appendChild(option);
       settingModel.value = settings.model;
-      console.log('[ClawSide] loadSettings: after setValue, value =', settingModel.value);
     }
     settingLanguage.value = settings.language || 'auto';
     settingAppearance.value = settings.appearance || 'system';
@@ -574,8 +569,9 @@
     try {
       const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
 
+      // Phase 1: Get models via getModels
       const models = await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Request timeout')), 30000);
+        const timeout = setTimeout(() => reject(new Error('Request timeout')), 60000);
 
         const handler = (msg) => {
           if (msg.requestId !== requestId) return true;
@@ -603,11 +599,44 @@
         settingModel.appendChild(option);
       });
 
-      // Default to first model
-      const modelId = models[0].id;
-      settingModel.value = modelId;
-      settings.model = modelId;
+      // Determine which model to use
+      let modelId;
+      const savedModel = settings.model;
+      const matchedModel = models.find(m => m.id === savedModel);
+      if (matchedModel) {
+        modelId = matchedModel.id;
+        settingModel.value = modelId;
+      } else {
+        // Use first model if saved model not found
+        modelId = models[0].id;
+        settingModel.value = modelId;
+        settings.model = modelId;
+        await chrome.storage.local.set({ clawside_settings: settings });
+      }
 
+      // Phase 2: Test connection via apiCall with determined model
+      const requestId2 = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Request timeout')), 60000);
+
+        const handler = (msg) => {
+          if (msg.requestId !== requestId2) return true;
+          clearTimeout(timeout);
+          chrome.runtime.onMessage.removeListener(handler);
+
+          if (msg.type === 'clawside-api-result') {
+            resolve(msg.result);
+          } else if (msg.type === 'clawside-api-error') {
+            reject(new Error(msg.error));
+          }
+          return true;
+        };
+
+        chrome.runtime.onMessage.addListener(handler);
+        chrome.runtime.sendMessage({ type: 'clawside-api', prompt: 'hi', systemPrompt: '', requestId: requestId2, stream: false });
+      });
+
+      // Success - connection works
       gatewayStatusEl.innerHTML = svgIcon('check') + ' Gateway reachable (model: ' + modelId + ')';
       gatewayStatusEl.style.color = 'var(--success)';
       autoSave();

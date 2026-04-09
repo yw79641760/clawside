@@ -99,57 +99,48 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Scan gateway ports (auto-scan on first run)
   if (msg.type === 'clawside-scan') {
     const { ports, requestId } = msg;
-    console.log('[ClawSide] scan: starting for ports:', ports);
 
-    // Use setTimeout to allow listener to return first, then run async code
-    setTimeout(async () => {
-      const found = [];
+    const found = [];
 
-      for (const port of ports) {
-        try {
-          // Phase 1: getModels with 3s timeout
-          let models;
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            models = await getModels(port, '', controller.signal);
-            clearTimeout(timeoutId);
-          } catch (err) {
-            const errMsg = err.message || '';
-            if (errMsg.includes('abort') || err.name === 'AbortError' || errMsg.includes('Failed to fetch')) {
-              continue;
-            }
-            if (errMsg.includes('401') || errMsg.includes('403')) {
-              found.push({ port, authRequired: true });
-              continue;
-            }
-            continue;
-          }
-
-          // Phase 2: test chat with first model
+    // Process each port sequentially using Promise chain
+    const processPort = (port) => {
+      return getModels(port, '')
+        .then((models) => {
+          // Phase 1 success: get first model
           const model = models[0]?.id;
-          if (!model) continue;
-
-          try {
-            await apiCall('hi', '', port, '', 'default', model);
-            found.push({ port, authRequired: false });
-          } catch (err) {
-            const errMsg = err.message || '';
-            if (errMsg.includes('401') || errMsg.includes('403')) {
-              found.push({ port, authRequired: true });
-            }
+          if (!model) {
+            return;
           }
-        } catch (e) {
-          // skip
-        }
-      }
+          // Phase 2: test chat with first model
+          return apiCall('hi', '', port, '', 'default', model)
+            .then(() => {
+              found.push({ port, authRequired: false });
+            })
+            .catch((err) => {
+              const errMsg = err.message || '';
+              if (errMsg.includes('401') || errMsg.includes('403')) {
+                found.push({ port, authRequired: true });
+              }
+            });
+        })
+        .catch((err) => {
+          const errMsg = err.message || '';
+          if (errMsg.includes('401') || errMsg.includes('403')) {
+            found.push({ port, authRequired: true });
+          }
+          // Other errors: skip this port
+        });
+    };
 
-      console.log('[ClawSide] scan: result:', found);
-      console.log('[ClawSide] scan: about to send message');
-      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found })
-        .then(() => console.log('[ClawSide] scan: message sent successfully'))
-        .catch((e) => console.log('[ClawSide] scan: sendMessage failed', e));
-    }, 0);
+    // Run all ports with unified timeout
+    const scanTimeout = new Promise((resolve) => setTimeout(resolve, 10000)); // 10秒超时
+
+    Promise.race([
+      Promise.all(ports.map(processPort)).then(() => 'done'),
+      scanTimeout.then(() => 'timeout')
+    ]).then((result) => {
+      chrome.runtime.sendMessage({ type: 'clawside-scan-result', requestId, found });
+    });
 
     // Return true to keep message channel open
     return true;
