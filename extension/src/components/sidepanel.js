@@ -415,7 +415,7 @@
   // === Settings ===
   // === Auto Scan Gateway ===
   async function autoScanGateway() {
-    const ports = ['1234', '4200', '5001', '7860', '8080', '8642', '11434', '18789'];
+    const ports = ['1234', '1337', '4000', '4200', '5000', '5001', '7860', '8000', '8080', '8642', '11434', '18789'];
     const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
 
     const found = await new Promise((resolve, reject) => {
