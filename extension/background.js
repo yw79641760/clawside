@@ -104,8 +104,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     Promise.all(ports.map(async (port) => {
       try {
         // Phase 1: Try getModels without auth token
+        let models;
         try {
-          await getModels(port, '');
+          models = await getModels(port, '');
         } catch (err) {
           const errMsg = err.message || '';
           // 401/403 means auth required
@@ -116,8 +117,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           return null;
         }
 
-        // Phase 2: Get models, then test chat completions with first model
-        const models = await getModels(port, '');
+        // Phase 2: Test chat completions with first model
         const model = models[0]?.id;
         if (!model) {
           // No models available, but endpoint is reachable - consider as no auth needed
