@@ -341,6 +341,7 @@
         systemPrompt: promptData.systemPrompt,
         port: settings.gatewayPort,
         token: settings.authToken,
+        model: settings.model || '',
         requestId: requestId,
         toolName: 'translate',
         sourceTabId: currentTabId // Send current tab ID for response routing

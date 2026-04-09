@@ -744,6 +744,7 @@
         systemPrompt: systemPrompt || '',
         port: String(port || '18789'),
         token: String(token || '').trim(),
+        model: s.model || '',
         requestId: requestId,
         sourceTabId: sourceTabId,
         toolName: toolName || 'default'
