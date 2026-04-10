@@ -1006,9 +1006,44 @@ body {
   font-size: 12px;
 }
 
+.link-btn {
+  text-decoration: none;
+}
+
+.link-btn:not(.muted):hover {
+  text-decoration: underline;
+}
+
 .link-btn.muted {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.link-btn.legal-link {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.link-btn.legal-link:hover {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
+.link-btn.version-link {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.link-btn.version-link:hover {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
+.about-version-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .link-btn.muted svg {
@@ -1026,17 +1061,18 @@ body {
 
 .link-btn.muted:hover {
   color: var(--text-muted);
+  text-decoration: underline;
 }
 
 .link-btn.muted:hover svg {
-  stroke: var(--text-muted);
-  fill: var(--text-muted);
+  stroke: var(--text-muted) !important;
+  fill: none !important;
 }
 
 .bmc-qr {
   display: none;
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   width: 120px;
@@ -1046,6 +1082,7 @@ body {
   background: var(--surface);
   padding: 4px;
   z-index: 100;
+  margin-top: 8px;
 }
 
 .bmc-link {

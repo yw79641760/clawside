@@ -15,7 +15,7 @@ assignees: ''
 - **Version**:
 - **Chrome Version**:
 - **Debug Info**:
- > Copied from Side Panel → About → Debug Info → Click to Copy 
+ > Copy from Extension Side Panel → Settings → About → Debug Info → Click to Copy 
 #### Steps to Reproduce
 1. Step one
 2. Step two
