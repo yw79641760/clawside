@@ -1003,7 +1003,57 @@ body {
 
 .text-muted {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.link-btn.muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.link-btn.muted svg {
+  stroke: var(--text-muted);
+  fill: none;
+  width: 12px;
+  height: 12px;
+}
+
+.link-btn.muted svg[fill="currentColor"],
+.link-btn.muted svg [fill="currentColor"] {
+  fill: var(--text-muted);
+  stroke: none;
+}
+
+.link-btn.muted:hover {
+  color: var(--text-muted);
+}
+
+.link-btn.muted:hover svg {
+  stroke: var(--text-muted);
+  fill: var(--text-muted);
+}
+
+.bmc-qr {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: 4px;
+  z-index: 100;
+}
+
+.bmc-link {
+  position: relative;
+}
+
+.bmc-link:hover .bmc-qr {
+  display: block;
 }
 
 .settings-section-title {

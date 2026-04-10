@@ -135,8 +135,9 @@
     // Settings sub-tabs
     $('labelSettingsBasic') && ($('labelSettingsBasic').textContent = i18n('labelSettingsBasic'));
     $('labelSettingsPrompts') && ($('labelSettingsPrompts').textContent = i18n('labelSettingsPrompts'));
+    $('labelSettingsAbout') && ($('labelSettingsAbout').textContent = i18n('labelSettingsAbout'));
     // Feedback
-    $('labelFeedback') && ($('labelFeedback').textContent = i18n('labelFeedback'));
+    $('labelFeedback') && ($('labelFeedback').textContent = i18n('supportFeedback'));
     $('feedbackText') && ($('feedbackText').textContent = i18n('feedbackText'));
     // Tools settings
     $('labelToolTranslate') && ($('labelToolTranslate').textContent = i18n('labelToolTranslate'));
@@ -1702,6 +1703,11 @@
     // Update about version display
     const version = chrome.runtime.getManifest?.()?.version || '1.0.0';
     if ($('aboutVersion')) $('aboutVersion').textContent = `Version ${version}`;
+    // Update Chrome Web Store link with runtime ID
+    const cwsLink = document.querySelector('[data-cws-link]');
+    if (cwsLink && chrome.runtime?.id) {
+      cwsLink.href = `https://chromewebstore.google.com/detail/clawside/${chrome.runtime.id}`;
+    }
   });
 
   // Copy debug info button
