@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "ClawSide",
   "version": "1.0.0",
-  "description": "Connect your browser to local OpenClaw for translation, summarization, and memory",
+  "description": "Supercharge browsing with local AI - translate, summarize, and ask about any webpage",
   "icons": {
     "16": "assets/icons/icon16.png",
     "32": "assets/icons/icon32.png",
