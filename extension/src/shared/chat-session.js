@@ -81,10 +81,16 @@
       return msg;
     }
 
-    // Check if conversation has previous ask messages
+    // Check if conversation has previous ask messages (not summarize context)
     hasPreviousAsk() {
-      // Check if any message has from='ask'
-      return this.messages.some(msg => msg.from === 'ask');
+      // Check for completed ask exchanges: assistant messages with from='ask' and non-empty content
+      // User's just-added message hasn't been responded to yet, so we only check assistant with content
+      return this.messages.some(msg =>
+        msg.from === 'ask' &&
+        msg.role === 'assistant' &&
+        msg.content &&
+        String(msg.content).trim().length > 0
+      );
     }
 
     // Update last assistant message (for streaming)

@@ -584,9 +584,11 @@
     var pageUrl = window.location.href;
     var pageTitle = document.title;
 
-    // Check if PREVIOUS messages had from='ask' (before this new message)
+    // Check if previous messages had completed ask exchanges (assistant with from='ask' and non-empty content)
     // If no previous ask messages, include page content
-    var hasPreviousAsk = popupMessages.slice(0, -1).some(msg => msg.from === 'ask');
+    var hasPreviousAsk = popupMessages.some(msg =>
+      msg.from === 'ask' && msg.role === 'assistant' && msg.content && msg.content.trim().length > 0
+    );
     // Get page content from TCM (shared across extension)
     var currentCtx = window.tabContextManager ? window.tabContextManager.getCurrent() : null;
     var pageContent = hasPreviousAsk ? '' : (currentCtx ? (currentCtx.content || '').slice(0, 8000) : '');

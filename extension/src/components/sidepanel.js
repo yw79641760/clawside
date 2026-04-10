@@ -987,20 +987,17 @@
   async function sendChatMessage() {
     const question = chatInput.value.trim();
     if (!question || !chatSession) return;
-    
+
     // Disable input during request
     chatInput.disabled = true;
     chatSendBtn.disabled = true;
-    
+
     try {
       // Add user message
       addUserMessage(question);
       chatInput.value = '';
       updateChatInputState();
-      
-      // Add assistant placeholder
-      addAssistantMessagePlaceholder();
-      
+
       // Build prompt with conversation history
       // Use chatSession.hasPreviousAsk() to include page context only on first message
       await loadSettings();
@@ -1010,7 +1007,11 @@
         content: window.panelContext.getCurrentPageContent() || chatSession.context.content || '',
         selectedText: window.panelContext.getSelectedText() || chatSession.context.selectedText || ''
       });
+
       const promptText = await chatSession.buildPrompt();
+
+      // Add assistant placeholder AFTER buildPrompt so it doesn't affect hasPreviousAsk()
+      addAssistantMessagePlaceholder();
 
       // Make API call
       let accumulatedContent = '';
