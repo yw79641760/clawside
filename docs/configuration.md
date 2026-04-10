@@ -1,9 +1,3 @@
-# ClawSide Troubleshooting
-
-Tags: Tech
-AI custom autofill: Guide to connect OpenClaw, Ollama, and Hermes-Agent APIs.
-Published: April 9, 2026
-
 # How to connect ClawSide🦞 with LLM/Agent🤖️
 
 ## OpenClaw

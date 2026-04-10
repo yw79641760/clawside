@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "要約をクリックしてページ概要を取得。" },
   "emptyAsk": { "message": "テキストを選択するか、下で質問を入力。" },
   "historyClear": { "message": "すべてクリア" },
-  "gatewayNote": { "message": "ClawSide拡張機能はローカル(<code>127.0.0.1</code>)の<code>/v1/chat/completions</code>と<code>/v1/models</code>エンドポイントを呼び出します。ローカルLLMまたはAgent設定でHTTP Gatewayを有効にしてください。<a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">設定ガイド</a>を参照してください。" },
+  "gatewayNote": { "message": "ClawSide拡張機能はローカル(<code>127.0.0.1</code>)の<code>/v1/chat/completions</code>と<code>/v1/models</code>エンドポイントを呼び出します。ローカルLLMまたはAgent設定でHTTP Gatewayを有効にしてください。<a href=\"https://clawside.yanwei.xyz/configuration\" target=\"_blank\">設定ガイド</a>を参照してください。" },
   "translating": { "message": "翻訳中" },
   "summarizing": { "message": "要約中" },
   "thinking": { "message": "思考中" },

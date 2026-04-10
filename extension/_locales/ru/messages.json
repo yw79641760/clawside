@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Нажмите Суммировать, чтобы получить сводку страницы." },
   "emptyAsk": { "message": "Выделите текст или введите вопрос ниже." },
   "historyClear": { "message": "Очистить всё" },
-  "gatewayNote": { "message": "Расширение ClawSide вызывает локальные (<code>127.0.0.1</code>) эндпоинты <code>/v1/chat/completions</code> и <code>/v1/models</code>. Включите HTTP Gateway в конфигурации локального LLM или Agent. Подробнее в <a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">руководстве по настройке</a>." },
+  "gatewayNote": { "message": "Расширение ClawSide вызывает локальные (<code>127.0.0.1</code>) эндпоинты <code>/v1/chat/completions</code> и <code>/v1/models</code>. Включите HTTP Gateway в конфигурации локального LLM или Agent. Подробнее в <a href=\"https://clawside.yanwei.xyz/configuration\" target=\"_blank\">руководстве по настройке</a>." },
   "translating": { "message": "Перевод" },
   "summarizing": { "message": "Суммирование" },
   "thinking": { "message": "Думаю" },

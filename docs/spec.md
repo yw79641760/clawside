@@ -85,6 +85,10 @@ LLM (configured provider)
 - **Side panel flow**: Select target language → click Translate → result in card
 - **Output**: Translated text with copy button
 - **History**: Stored in `clawside_chat_{tabId}_{urlHash}`
+- **Global page translation** (radial menu): Translates all paragraphs on page
+  - Batch size: 10 paragraphs per request
+  - Shows loading/error placeholders for each paragraph
+  - Translation toggle: clicking translate again when translation is showing will hide it; clicking when hidden will re-show without re-requesting LLM
 
 ### 4.3 Page Summarization
 
@@ -120,7 +124,11 @@ LLM (configured provider)
 ### 4.7 Settings
 
 - **Trigger**: Click gear icon in action bar
-- **Options**: Gateway port, auth token, language preference, tool prompt customization
+- **Options**: Gateway port, auth token, language preference, tool prompt customization, appearance theme
+- **Sub-tabs**: Basic, Prompts, About
+  - **Basic**: Gateway port, auth token, language, appearance (theme), test connection button
+  - **Prompts**: Tool prompt customization (translate/summarize/ask prompt templates with {lang}, {text}, {content} placeholders)
+  - **About**: Version info, changelog link, license, support/feedback links, debug info display
 
 ---
 
@@ -256,6 +264,15 @@ Response: streaming { choices: [{delta: {content: "..."}}] }
 - Gateway: 127.0.0.1:port
 - Page URL: current tab URL
 - Collapsible display with copy button
+
+### Two-Phase Connection Test
+```
+1. GET /v1/models → Check gateway availability and get available models
+2. POST /v1/chat/completions → Test API call with determined model
+```
+- If saved model exists in available models, use it
+- Otherwise, default to first available model
+- Unified 60 second timeout for both phases
 
 ---
 

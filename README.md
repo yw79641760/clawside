@@ -133,7 +133,7 @@ Click ⚙️ in side panel:
 - Make sure your gateway is configured to allow requests from your browser's IP address and origin
 
 ### More Troubleshooting Tips
-- [ClawSide Troubleshooting](https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc)
+- [ClawSide Troubleshooting](https://clawside.yanwei.xyz/troubleshooting)
 
 ## Requirements
 

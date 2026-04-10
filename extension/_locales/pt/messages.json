@@ -38,7 +38,7 @@
   "emptySummarize": { "message": "Clique em resumir para obter um resumo da página." },
   "emptyAsk": { "message": "Selecione texto ou digite uma pergunta abaixo." },
   "historyClear": { "message": "Limpar tudo" },
-  "gatewayNote": { "message": "ClawSide extensão chama os endpoints locais (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> e <code>/v1/models</code>. Habilite HTTP Gateway na sua configuração de LLM ou Agent local. Ver <a href=\"https://blog.yanwei.xyz/ClawSide-Troubleshooting-33d0dd81fce680cd8e4bff14fd4f0cfc\" target=\"_blank\">guia de configuração</a>." },
+  "gatewayNote": { "message": "ClawSide extensão chama os endpoints locais (<code>127.0.0.1</code>) <code>/v1/chat/completions</code> e <code>/v1/models</code>. Habilite HTTP Gateway na sua configuração de LLM ou Agent local. Ver <a href=\"https://clawside.yanwei.xyz/configuration\" target=\"_blank\">guia de configuração</a>." },
   "translating": { "message": "Traduzindo" },
   "summarizing": { "message": "Resumindo" },
   "thinking": { "message": "Pensando" },
