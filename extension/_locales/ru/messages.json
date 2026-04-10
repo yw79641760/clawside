@@ -65,6 +65,7 @@
   "labelSettingsAbout": { "message": "О программе" },
   "labelDebugInfo": { "message": "Отладочная информация" },
   "labelFeedback": { "message": "Обратная связь" },
+  "supportFeedback": { "message": "Поддержка и обратная связь" },
   "feedbackText": { "message": "Есть вопросы или предложения?" },
   "labelToolTranslate": { "message": "Перевести" },
   "labelToolSummarize": { "message": "Суммировать" },

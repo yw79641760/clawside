@@ -1699,6 +1699,9 @@
   $('settingsTabAbout')?.addEventListener('click', () => {
     showSettingsSubTab('about');
     updateDebugInfo();
+    // Update about version display
+    const version = chrome.runtime.getManifest?.()?.version || '1.0.0';
+    if ($('aboutVersion')) $('aboutVersion').textContent = `Version ${version}`;
   });
 
   // Copy debug info button

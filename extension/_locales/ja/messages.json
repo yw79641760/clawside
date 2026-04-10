@@ -65,6 +65,7 @@
   "labelSettingsAbout": { "message": "概要" },
   "labelDebugInfo": { "message": "デバッグ情報" },
   "labelFeedback": { "message": "フィードバック" },
+  "supportFeedback": { "message": "サポートとフィードバック" },
   "feedbackText": { "message": "問題が発生したり提案がありますか？" },
   "labelToolTranslate": { "message": "翻訳" },
   "labelToolSummarize": { "message": "要約" },

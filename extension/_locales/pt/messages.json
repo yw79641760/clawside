@@ -65,6 +65,7 @@
   "labelSettingsAbout": { "message": "Sobre" },
   "labelDebugInfo": { "message": "Info de depuração" },
   "labelFeedback": { "message": "Feedback" },
+  "supportFeedback": { "message": "Suporte e feedback" },
   "feedbackText": { "message": "Tem perguntas ou sugestões?" },
   "labelToolTranslate": { "message": "Traduzir" },
   "labelToolSummarize": { "message": "Resumir" },

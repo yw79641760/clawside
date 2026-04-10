@@ -65,6 +65,7 @@
   "labelSettingsAbout": { "message": "關於" },
   "labelDebugInfo": { "message": "調試資訊" },
   "labelFeedback": { "message": "回饋" },
+  "supportFeedback": { "message": "支持與回饋" },
   "feedbackText": { "message": "遇到問題或有建議？" },
   "labelToolTranslate": { "message": "翻譯" },
   "labelToolSummarize": { "message": "摘要" },
