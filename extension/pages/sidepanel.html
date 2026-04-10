@@ -431,19 +431,25 @@
 
           <!-- Debug Info -->
           <div class="settings-section" style="margin-top:24px">
-            <div class="settings-section-title-row">
-              <div class="settings-section-title" id="labelDebugInfo">调试信息</div>
-              <button class="btn-icon" id="copyDebugBtn" aria-label="Copy debug info">
-                <svg width="16" height="16" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>
-              </button>
-            </div>
-            <div class="debug-info" id="debugInfo">
-              <div class="debug-row"><span class="debug-label">Version:</span><span class="debug-value" id="debugVersion">—</span></div>
-              <div class="debug-row"><span class="debug-label">Chrome:</span><span class="debug-value" id="debugChrome">—</span></div>
-              <div class="debug-row"><span class="debug-label">Language:</span><span class="debug-value" id="debugLanguage">—</span></div>
-              <div class="debug-row"><span class="debug-label">Gateway:</span><span class="debug-value" id="debugGateway">—</span></div>
-              <div class="debug-row"><span class="debug-label">Tab:</span><span class="debug-value" id="debugTab">—</span></div>
-            </div>
+            <details class="debug-details">
+              <summary class="debug-summary">
+                <span>调试信息</span>
+                <button class="btn-icon debug-copy-btn" id="copyDebugBtn" aria-label="Copy debug info">
+                  <svg width="14" height="14" class="btn-icon-svg" viewBox="0 0 24 24"><use href="#cs-icon-copy"></use></svg>
+                </button>
+              </summary>
+              <div class="debug-info" id="debugInfo">
+                <div class="debug-row"><span class="debug-label">Extension ID:</span><span class="debug-value" id="debugExtId">—</span></div>
+                <div class="debug-row"><span class="debug-label">Extension Version:</span><span class="debug-value" id="debugVersion">—</span></div>
+                <div class="debug-row"><span class="debug-label">User-Agent:</span><span class="debug-value" id="debugChrome">—</span></div>
+                <div class="debug-row"><span class="debug-label">OS / Platform:</span><span class="debug-value" id="debugPlatform">—</span></div>
+                <div class="debug-row"><span class="debug-label">Language:</span><span class="debug-value" id="debugLanguage">—</span></div>
+                <div class="debug-row"><span class="debug-label">Connection:</span><span class="debug-value" id="debugConn">—</span></div>
+                <div class="debug-row"><span class="debug-label">Language Setting:</span><span class="debug-value" id="debugLanguageSetting">—</span></div>
+                <div class="debug-row"><span class="debug-label">Gateway:</span><span class="debug-value" id="debugGateway">—</span></div>
+                <div class="debug-row"><span class="debug-label">Page URL:</span><span class="debug-value" id="debugPageUrl">—</span></div>
+              </div>
+            </details>
           </div>
         </div>
       </section>

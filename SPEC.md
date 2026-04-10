@@ -170,14 +170,21 @@ LLM (configured provider)
 ### Chrome Extension (Manifest V3)
 
 **Key Components**:
-- `extension/src/components/sidepanel.js` — Main UI, tabs, chat, auto-trigger
+- `extension/src/components/sidepanel.js` — Main UI, tabs, chat, auto-trigger, debug info
 - `extension/src/components/popup.js` — Floating bubble, action dispatch
 - `extension/src/components/dock.js` — Radial menu
 - `extension/src/shared/chat-session.js` — Per-tab+URL chat management
 - `extension/src/shared/panel-context.js` — Page context management
 - `extension/src/shared/tab-context-manager.js` — Tab context with LRU cache
-- `extension/background.js` — Service worker, message routing
+- `extension/src/shared/settings.js` — Unified settings management with {lang} support
+- `extension/background.js` — Service worker, Promise chain scan, message routing
 - `extension/src/tools/icons.js` — SVG icon system with injectSprite
+- `extension/src/tools/openclaw.js` — HTTP client for OpenClaw gateway
+- `extension/src/tools/page.js` — Page parser & translation injector
+- `extension/src/tools/appearance.js` — Theme handling and CSS injection
+- `extension/src/tools/lru-cache.js` — Generic LRU cache base class
+- `extension/src/tools/chat-lru-cache.js` — Chat message persistence with LRU eviction
+- `extension/src/tools/context-lru-cache.js` — Tab context storage with LRU cache
 
 ### Storage Keys
 
@@ -186,7 +193,11 @@ LLM (configured provider)
 | `clawside_settings` | User settings (port, token, language, prompts) |
 | `clawside_chat_{tabId}_{urlHash}` | Chat history per tab+URL (max 50) |
 | `clawside_summarize_{tabId}_{urlHash}` | Summarize results per tab+URL |
-| `_pendingTab`, `_pendingAction` | Panel-open flow (temporary) |
+| `cs_history_ask_{tabId}_{urlHash}` | Ask history deduplication key |
+| `cs_history_translate_{textHash}` | Translate history deduplication key (includes targetLang prefix) |
+| `cs_history_summarize_{tabId}_{urlHash}` | Summarize history deduplication key |
+| `_pendingTab`, `_pendingAction`, `_pendingMessages` | Panel-open flow (temporary) |
+| `_tabCtxData`, `_tabCtxVersion` | Tab context persistence (internal) |
 
 ### LRU Cache
 
@@ -203,9 +214,23 @@ Body: { model: "openclaw/main", messages: [{role:"user", content: "<prompt>"}] }
 Response: streaming { choices: [{delta: {content: "..."}}] }
 ```
 
+**Two-Phase Connection Test**
+```
+1. GET /v1/models → Check gateway availability
+2. POST /v1/chat/completions → Actual API call
+```
+
+**Scan Logic**
+- Uses Promise chain pattern (.then/.catch)
+- Unified 10 second timeout
+- Graceful fallback handling
+
 ### Floating Bubble
 - Created by content script on text selection (250ms debounce)
-- Positioned via `getBoundingClientRect()` + viewport clamping
+- Positioned at **horizontal center** of selected text (`rect.left + rect.width/2 - bubbleWidth/2`)
+- Default: appears **below** selection (`rect.bottom + 6px`)
+- If insufficient space below: appears **above** selection (`rect.top - 28 - 6`)
+- Horizontal bounds clamped to viewport edges (min 8px, max vw-100px)
 - Auto-hides on click outside or selection cleared
 - z-index: 2147483647 (max safe integer)
 
@@ -213,6 +238,24 @@ Response: streaming { choices: [{delta: {content: "..."}}] }
 - Icons stored in `extension/assets/icons/icons.svg` as symbols
 - Loaded via `injectSprite()` in sidepanel init
 - Usage: `<svg><use href="#cs-icon-name"></use></svg>`
+- All icons use consistent stroke-width (1.5)
+
+### Language Resolution
+- Priority: settings.language → navigator.language → fallback
+- Supports "auto" mode (uses browser language)
+- {lang} placeholder injected into prompt templates
+
+### Debug Info (About Tab)
+- Extension ID: chrome.runtime.id
+- Extension Version: manifest.json version
+- User-Agent: navigator.userAgent (full string)
+- OS / Platform: navigator.userAgentData?.platform
+- Language: navigator.language
+- Connection: navigator.connection.effectiveType + rtt
+- Language Setting: settings.language value
+- Gateway: 127.0.0.1:port
+- Page URL: current tab URL
+- Collapsible display with copy button
 
 ---
 

@@ -362,49 +362,67 @@
   // Update debug info display
   async function updateDebugInfo() {
     const version = chrome.runtime.getManifest?.()?.version || '1.0.0';
+    const extId = chrome.runtime.id || '—';
 
-    // Get full Chrome version
+    // Get full User-Agent string
     const ua = navigator.userAgent;
-    const chromeMatch = ua.match(/Chrome\/(\S+)/);
-    const chromeVersion = chromeMatch ? chromeMatch[1] : '—';
 
     // Get current language setting - show actual browser language for 'auto'
     const lang = $('settingLanguage')?.value || 'auto';
     const langText = lang === 'auto' ? browserLang : lang;
+
+    // Get browser language and platform
+    const browserLangStr = navigator.language || '—';
+    const platform = navigator.userAgentData?.platform || navigator.platform || '—';
+
+    // Get connection info
+    let connInfo = '—';
+    if (navigator.connection) {
+      const conn = navigator.connection;
+      const effectiveType = conn.effectiveType || 'unknown';
+      const rtt = conn.rtt !== undefined ? `${conn.rtt}ms` : 'unknown';
+      connInfo = `${effectiveType} (${rtt})`;
+    }
 
     // Get gateway info
     const port = $('settingBridgePort')?.value || '18789';
     const gatewayText = `127.0.0.1:${port}`;
 
     // Get current tab info
-    let tabInfo = '—';
+    let tabUrl = '—';
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab?.url) {
-        const urlObj = new URL(tab.url);
-        tabInfo = urlObj.hostname || urlObj.href;
-        if (tabInfo.length > 50) tabInfo = tabInfo.substring(0, 50) + '...';
+        tabUrl = tab.url;
       }
     } catch {
       // Ignore
     }
 
     $('debugVersion').textContent = version;
-    $('debugChrome').textContent = chromeVersion;
-    $('debugLanguage').textContent = langText;
+    $('debugExtId').textContent = extId;
+    $('debugChrome').textContent = ua;
+    $('debugPlatform').textContent = platform;
+    $('debugLanguage').textContent = browserLangStr;
+    $('debugConn').textContent = connInfo;
+    $('debugLanguageSetting').textContent = langText;
     $('debugGateway').textContent = gatewayText;
-    $('debugTab').textContent = tabInfo;
+    $('debugPageUrl').textContent = tabUrl;
   }
 
   // Generate debug info text for clipboard
   function generateDebugInfo() {
     const lines = [
       'ClawSide Debug Info',
-      `Version: ${$('debugVersion').textContent}`,
-      `Chrome: ${$('debugChrome').textContent}`,
+      `Extension ID: ${$('debugExtId').textContent}`,
+      `Extension Version: ${$('debugVersion').textContent}`,
+      `User-Agent: ${$('debugChrome').textContent}`,
+      `OS / Platform: ${$('debugPlatform').textContent}`,
       `Language: ${$('debugLanguage').textContent}`,
+      `Connection: ${$('debugConn').textContent}`,
+      `Language Setting: ${$('debugLanguageSetting').textContent}`,
       `Gateway: ${$('debugGateway').textContent}`,
-      `Tab: ${$('debugTab').textContent}`,
+      `Page URL: ${$('debugPageUrl').textContent}`,
     ];
     return lines.join('\n');
   }
@@ -1683,7 +1701,8 @@
   });
 
   // Copy debug info button
-  $('copyDebugBtn')?.addEventListener('click', async () => {
+  $('copyDebugBtn')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
     const debugText = generateDebugInfo();
     const btn = $('copyDebugBtn');
     if (window.copyToClipboard) await window.copyToClipboard(debugText);
