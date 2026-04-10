@@ -1,4 +1,6 @@
 {
+  "extension_name": { "message": "ClawSide", "description": "Extension name" },
+  "extension_description": { "message": "Supercharge browsing with local AI — translate, summarize, and ask about any webpage.", "description": "Extension description" },
   "tabTranslate": { "message": "Translate" },
   "tabSummarize": { "message": "Summarize" },
   "tabAsk": { "message": "Ask" },

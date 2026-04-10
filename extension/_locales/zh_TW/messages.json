@@ -1,4 +1,6 @@
 {
+  "extension_name": { "message": "ClawSide", "description": "Extension name" },
+  "extension_description": { "message": "用本地 AI 增強瀏覽體驗 — 翻譯、摘要、提問任何網頁。", "description": "Extension description" },
   "tabTranslate": { "message": "翻譯" },
   "tabSummarize": { "message": "摘要" },
   "tabAsk": { "message": "提問" },
