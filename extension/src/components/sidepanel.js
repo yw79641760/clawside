@@ -1851,13 +1851,25 @@
       const summary = summarizeStreaming.getRawText();
       if (!summary) return;
 
+      // Initialize chat session BEFORE switching tabs
+      // This ensures we have a valid session before showTab('ask') might create a new one
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id && !chatSession) {
+        const url = tab.url || '';
+        chatSession = await window.chatSessionManager.getSession(tab.id, url);
+        chatSession.setContext({
+          url: window.panelContext.getCurrentUrl() || url,
+          title: window.panelContext.getCurrentPageTitle() || '',
+          content: window.panelContext.getCurrentPageContent() || '',
+          selectedText: window.panelContext.getSelectedText() || ''
+        });
+      }
+
       // Switch to Ask tab
       showTab('ask');
 
       // Get current session and add summarize context
       if (chatSession) {
-        // Get current tab info
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         const currentTabId = tab?.id;
         const currentUrl = window.panelContext.getCurrentUrl();
 
@@ -1873,6 +1885,7 @@
         chatSession.addUserMessage('Here is the summary of the current page:', timestamp, 'summarize');
         // Add assistant message with the summarize result
         chatSession.addAssistantMessage(summary, timestamp, 'summarize');
+
         chatSession.save();
         renderChatMessages();
 
