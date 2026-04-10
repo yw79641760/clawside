@@ -57,6 +57,6 @@ ClawSide is built upon the shoulders of the open source community. We acknowledg
 
 ## License
 
-ClawSide itself is licensed under the MIT License. See [LICENSE](../LICENSE) for details.
+ClawSide itself is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 This credits document is provided for transparency and to comply with open source license attribution requirements.
