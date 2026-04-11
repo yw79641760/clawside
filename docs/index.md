@@ -7,7 +7,9 @@ feature_image: "/assets/images/hero.jpg"
 excerpt: "Supercharge browsing with local AI — translate, summarize, and ask about any webpage, right from your browser."
 ---
 
+{::nomarkdown}
 {% include button-chrome.html %} {% include button.html text="View on GitHub" icon="github" link="https://github.com/yw79641760/clawside" color="#24292e" %}
+{:/}
 
 ## What is ClawSide?
 
