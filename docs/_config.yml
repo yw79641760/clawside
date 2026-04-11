@@ -119,17 +119,17 @@ favicons: # Favicons are also used in the manifest file. Syntax is 'size: path'
 
 # 9. Site navigation
 navigation_header:
-- title: Home
+- title: Getting Started
   url: /
-- title: Elements
-  url: /elements/
-- title: Blog
-  url: /blog/
-- title: Categories
-  url: /categories/
-- title: Search
-  url: /search/
-- title: Fork ClawSide
+- title: Changelog
+  url: /changelog/
+- title: Troubleshooting
+  url: /troubleshooting/
+- title: Configuration
+  url: /configuration/
+- title: Support
+  url: /support/
+- title: GitHub
   url: https://github.com/yw79641760/clawside
 
 navigation_footer:
