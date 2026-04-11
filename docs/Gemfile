@@ -1,3 +1,10 @@
 source "https://rubygems.org"
 
-gemspec
+gem "jekyll-remote-theme"
+gem "jekyll-sitemap"
+gem "jekyll-mentions"
+gem "jekyll-seo-tag"
+gem "jekyll-redirect-from"
+gem "jekyll-feed"
+gem "jekyll-commonmark"
+gem "jemoji"

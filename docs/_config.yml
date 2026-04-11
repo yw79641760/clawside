@@ -24,6 +24,7 @@ exclude:
 
 # 2. Installed Gems
 plugins:
+- jekyll-remote-theme
 - jekyll-sitemap
 - jekyll-mentions
 - jekyll-paginate
@@ -91,7 +92,7 @@ defaults:
 # 7. Site settings
 encoding: utf-8 # Make sure the encoding is right
 lang: en-GB # Set the site language
-theme: daviddarnes/alembic@main
+remote_theme: daviddarnes/alembic@main
 title: "ClawSide" # Site name or title, also used in jekyll-seo-tag
 logo: "../extension/assets/icons/icons48.png" # Site logo, also used in jekyll-seo-tag
 description: "Supercharge browsing with local AI" # Site description and default description, also used in jekyll-seo-tag
