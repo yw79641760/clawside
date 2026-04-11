@@ -3,7 +3,7 @@ title: ClawSide
 feature_text: |
   ## ClawSide 
   Supercharge browsing with local AI
-feature_image: "https://picsum.photos/1300/400?image=989"
+feature_image: "/assets/images/hero.jpg"
 excerpt: "Supercharge browsing with local AI — translate, summarize, and ask about any webpage, right from your browser."
 ---
 
