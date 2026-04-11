@@ -94,7 +94,7 @@ encoding: utf-8 # Make sure the encoding is right
 lang: en-GB # Set the site language
 remote_theme: daviddarnes/alembic@main
 title: "ClawSide" # Site name or title, also used in jekyll-seo-tag
-logo: "../extension/assets/icons/icons48.png" # Site logo, also used in jekyll-seo-tag
+logo: "assets/icons/icon48.png" # Site logo, also used in jekyll-seo-tag
 description: "Supercharge browsing with local AI" # Site description and default description, also used in jekyll-seo-tag
 url: "https://clawside.yanwei.xyz" # Site url, also used in jekyll-seo-tag
 baseurl: ""
@@ -110,12 +110,12 @@ css_inline: true # Will insert all styles into a single <style> block in the <he
 
 # 8. Site favicons & manifest icons
 favicons: # Favicons are also used in the manifest file. Syntax is 'size: path'
-  16: '../extension/assets/icons/icon16.png'
-  32: '../extension/assets/icons/icon32.png'
-  48: '../extension/assets/icons/icon48.png'
-  128: '../extension/assets/icons/icon128.png'
-  256: '../extension/assets/icons/icon256.png'
-  512: '../extension/assets/icons/icon512.png'
+  16: 'assets/icons/icon16.png'
+  32: 'assets/icons/icon32.png'
+  48: 'assets/icons/icon48.png'
+  128: 'assets/icons/icon128.png'
+  256: 'assets/icons/icon256.png'
+  512: 'assets/icons/icon512.png'
 
 # 9. Site navigation
 navigation_header:
