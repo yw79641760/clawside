@@ -8,7 +8,7 @@ excerpt: "Supercharge browsing with local AI — translate, summarize, and ask a
 ---
 
 {::nomarkdown}
-{% include button-chrome.html %} {% include button.html text="View on GitHub" icon="github" link="https://github.com/yw79641760/clawside" color="#24292e" %}
+{% include button.html text="Install on Chrome" icon="chrome" link="https://chrome.google.com/webstore/detail/clawside" color="#4285F4" %} {% include button.html text="View on GitHub" icon="github" link="https://github.com/yw79641760/clawside" color="#24292e" %}
 {:/}
 
 ## What is ClawSide?
