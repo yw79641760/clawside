@@ -7,16 +7,7 @@ feature_image: "/assets/images/hero.jpg"
 excerpt: "Supercharge browsing with local AI — translate, summarize, and ask about any webpage, right from your browser."
 ---
 
-<a class="button" href="https://chrome.google.com/webstore/detail/clawside" style="background: #4285F4">
-  <svg width="16" height="16" viewBox="-10 -10 276 276" style="vertical-align: middle">
-    <circle cx="128" cy="128" r="64" fill="#fff"/>
-    <path d="M96 183.4A63.7 63.7 0 0 1 72.6 160L17.2 64A128 128 0 0 0 128 256l55.4-96A64 64 0 0 1 96 183.4Z" fill="#0F9D58"/>
-    <path d="M192 128a63.7 63.7 0 0 1-8.6 32L128 256A128 128 0 0 0 238.9 64h-111a64 64 0 0 1 64 64Z" fill="#F4B400"/>
-    <circle cx="128" cy="128" r="52" fill="#1a73e8"/>
-    <path d="M96 72.6a63.7 63.7 0 0 1 32-8.6h110.8a128 128 0 0 0-221.7 0l55.5 96A64 64 0 0 1 96 72.6Z" fill="#DB4437"/>
-  </svg>
-  Install on Chrome
-</a> {% include button.html text="View on GitHub" icon="github" link="https://github.com/yw79641760/clawside" color="#24292e" %}
+{% include button-chrome.html %} {% include button.html text="View on GitHub" icon="github" link="https://github.com/yw79641760/clawside" color="#24292e" %}
 
 ## What is ClawSide?
 
