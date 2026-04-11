@@ -1,14 +1,13 @@
-# ClawSide Troubleshooting
+---
+title: Troubleshooting
+layout: page
+---
 
-Tags: Tech
-AI custom autofill: Guide to connect OpenClaw, Ollama, and Hermes-Agent APIs.
-Published: April 9, 2026
+## How to connect ClawSide with LLM/Agent
 
-# How to connect ClawSide🦞 with LLM/Agent🤖️
+### OpenClaw
 
-## OpenClaw
-
-OpenClaw’s Gateway can serve a small OpenAI-compatible Chat Completions endpoint.This endpoint is **disabled by default.**
+OpenClaw's Gateway can serve a small OpenAI-compatible Chat Completions endpoint. This endpoint is **disabled by default.**
 
 1. Stop openclaw gateway
 
@@ -16,7 +15,7 @@ OpenClaw’s Gateway can serve a small OpenAI-compatible Chat Completions endpoi
 openclaw gateway stop
 ```
 
-1. To enable it, you maybe edit `~/.openclaw/openclaw.json` to enable `gateway.http.endpoints.chatCompletions.enabled` as `true` .
+2. To enable it, edit `~/.openclaw/openclaw.json` to enable `gateway.http.endpoints.chatCompletions.enabled` as `true`.
 
 ```json
 {
@@ -26,7 +25,7 @@ openclaw gateway stop
     "bind": "loopback",
     "auth": {
       "mode": "token",
-      "token": "${YOUR_GATEWAY_AUTH_TOKEN}"
+      "token": "${YOUR...TOKEN}"
     },
     "http": {
       "endpoints": {
@@ -39,42 +38,30 @@ openclaw gateway stop
 }
 ```
 
-1. Rerun openclaw gateway
+3. Restart openclaw gateway
 
 ```bash
 openclaw gateway start
 ```
 
-Reference:
+Reference: [OpenClaw Gateway docs](https://docs.openclaw.ai/gateway/openai-http-api)
 
-1. https://docs.openclaw.ai/gateway/openai-http-api
+### Ollama
 
-## Ollama
+No authentication is required when accessing Ollama's API locally via `http://localhost:11434`. Ollama allows cross-origin requests from `127.0.0.1` and `0.0.0.0` by default.
 
-No authentication is required when accessing Ollama’s API locally via [`http://localhost:11434`](http://localhost:11434/). Ollama allows cross-origin requests from `127.0.0.1` and `0.0.0.0` by default. Additional origins can be configured with `OLLAMA_ORIGINS`.
-
-For browser extensions, you’ll need to explicitly allow the extension’s origin pattern. Set `OLLAMA_ORIGINS` to include `chrome-extension://`*, `moz-extension://`*, and `safari-web-extension://*` if you wish to allow all browser extensions access, or specific extensions as needed:
+For browser extensions, set `OLLAMA_ORIGINS` to include `chrome-extension://*`:
 
 ```bash
-# Allow all Chrome, Firefox, and Safari extensions
-OLLAMA_ORIGINS=chrome-extension://*,moz-extension://*,safari-web-extension://* ollama serve
+# Allow all Chrome extensions
+OLLAMA_ORIGINS=chrome-extension://* ollama serve
 ```
 
-or solve this problem more thoroughly
+References:
+- [Ollama API Authentication](https://docs.ollama.com/api/authentication)
+- [Ollama CORS FAQ](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama)
 
-```bash
-# Allow all origins
-OLLAMA_ORIGINS=* ollama serve
-```
-
-Reference: 
-
-1. https://docs.ollama.com/api/authentication
-2. https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama
-
-## Hermes-Agent
-
-Enable hermes api server and allow chrome extension visiting are as follows:
+### Hermes-Agent
 
 1. Stop hermes gateway
 
@@ -82,7 +69,7 @@ Enable hermes api server and allow chrome extension visiting are as follows:
 hermes gateway stop
 ```
 
-1. Edit `~/.hermes/.env` file and append these following lines behind.
+2. Edit `~/.hermes/.env` and append:
 
 ```bash
 # Enable Hermes HTTP Gateway
@@ -93,13 +80,12 @@ API_SERVER_KEY=123456
 GATEWAY_ALLOW_ALL_USERS=true
 ```
 
-1. Rerun hermes gateway
+3. Restart hermes gateway
 
 ```bash
 hermes gateway start
 ```
 
-Reference: 
-
-1. https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server?_highlight=api_server#configuration
-2. https://hermes-agent.nousresearch.com/docs/developer-guide/gateway-internals?_highlight=gateway_allow_all_users#authorization
+References:
+- [Hermes-Agent API Server](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)
+- [Hermes-Agent Gateway Internals](https://hermes-agent.nousresearch.com/docs/developer-guide/gateway-internals)

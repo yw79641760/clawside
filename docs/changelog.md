@@ -1,4 +1,7 @@
-# Changelog
+---
+title: Changelog
+layout: page
+---
 
 All notable changes to ClawSide will be documented in this file.
 

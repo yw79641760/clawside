@@ -1,9 +1,7 @@
-# ClawSide Support 🦞
-
-Tags: Support
-Published: April 10, 2026
-
-# Get Help & Support
+---
+title: Support
+layout: page
+---
 
 ## Need Help?
 
