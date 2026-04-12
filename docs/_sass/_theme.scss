@@ -64,8 +64,15 @@ body {
   max-height: 4rem;
   @include flexbox;
   @include align-items(center);
+  gap: 0.75rem;
   img {
     max-height: 5rem;
+  }
+  .logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--textColour);
+    letter-spacing: -0.02em;
   }
 }
 
