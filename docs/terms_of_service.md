@@ -1,4 +1,7 @@
-# ClawSide Terms of Service
+---
+title: Terms of Service
+layout: page
+---
 
 ## Acceptance of Terms
 

@@ -1,4 +1,7 @@
-# Credits
+---
+title: Credits
+layout: page
+---
 
 ## Open Source Licenses
 

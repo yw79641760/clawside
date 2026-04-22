@@ -1,11 +1,15 @@
-# AUTHORS
+---
+title: Authors
+layout: page
+---
 
-# Main Author
+## Main Author
+
 Wei YAN <me@yanwei.xyz> (Original author, Maintainer)
 
-# ==============================================================================
-# Included Libraries
-# ==============================================================================
+---
+
+## Included Libraries
 
 This software includes or links to:
 

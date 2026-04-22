@@ -1,4 +1,7 @@
-# ClawSide 🦞
+---
+title: Description
+layout: page
+---
 
 Supercharge your browsing with local AI — translate, summarize, and ask about any webpage.
 

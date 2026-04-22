@@ -1,4 +1,7 @@
-# ClawSide — SPEC.md
+---
+title: Specification
+layout: page
+---
 
 ## 1. Concept & Vision
 
