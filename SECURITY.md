@@ -49,7 +49,6 @@ ClawSide is designed with privacy as a core principle:
 - `scripting` — To inject content scripts for page translation
 - `tabs` — To manage extension tab interactions
 - `webNavigation` — To track page navigation
-- `downloads` — To download chat history
 - `host_permissions: http://127.0.0.1:18789/*` — To communicate with your local AI gateway only
 
 ## Update Policy

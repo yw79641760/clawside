@@ -18,8 +18,7 @@
     "activeTab",
     "scripting",
     "tabs",
-    "webNavigation",
-    "downloads"
+    "webNavigation"
   ],
   "host_permissions": [
     "http://127.0.0.1:18789/*"
