@@ -1,4 +1,7 @@
-# ClawSide Privacy Policy
+---
+title: Privacy Policy
+layout: page
+---
 
 **Last Updated: 2026-04-21**
 
