@@ -1,0 +1,20 @@
+{
+  "name": "clawside-extension",
+  "version": "1.0.2",
+  "description": "ClawSide - Chrome Extension for local AI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["chrome-extension", "ai", "local-ai"],
+  "author": "Wei YAN",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chrome": "^0.1.40",
+    "@vitejs/plugin-legacy": "^8.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}
