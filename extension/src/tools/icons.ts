@@ -1,12 +1,31 @@
-// ClawSide - Icons
-// Single source of truth for all SVG icon markup.
-// All icons reference the inline <symbol> sprite defined in sidepanel.html.
-// For content scripts: ensure the sprite is injected into the page first (see tools/appearance.js).
+/**
+ * ClawSide - Icons
+ * Single source of truth for all SVG icon markup.
+ * All icons reference the inline <symbol> sprite defined in sidepanel.html.
+ * For content scripts: ensure the sprite is injected into the page first (see tools/appearance.js).
+ */
 
-const ICON_NAMES = ['translate', 'summarize', 'ask', 'export', 'copy', 'check', 'delete', 'eye', 'eyeoff', 'history', 'settings', 'loading', 'error', 'cancel'];
+export const ICON_NAMES = [
+  'translate',
+  'summarize',
+  'ask',
+  'export',
+  'copy',
+  'check',
+  'delete',
+  'eye',
+  'eyeoff',
+  'history',
+  'settings',
+  'loading',
+  'error',
+  'cancel',
+] as const;
+
+export type IconName = (typeof ICON_NAMES)[number];
 
 /** SVG markup map: iconName → <svg> string for use in innerHTML. */
-const SVG = {
+export const SVG: Record<IconName, string> = {
   translate:  '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-translate"></use></svg>',
   summarize:  '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-summarize"></use></svg>',
   ask:        '<svg class="cs-icon" width="16" height="16" viewBox="0 0 24 24"><use href="#cs-icon-ask"></use></svg>',
@@ -24,17 +43,15 @@ const SVG = {
 };
 
 /** Get SVG markup for an icon by name. Returns '' if not found. */
-function svgIcon(name) {
-  return SVG[name] || '';
+export function svgIcon(name: IconName | string): string {
+  return SVG[name as IconName] || '';
 }
 
-// Expose globals for non-module scripts (sidepanel.html uses <script> not type="module")
-window.SVG = SVG;
-window.svgIcon = svgIcon;
-window.injectSprite = injectSprite;
-
-/** Content script: inject the SVG sprite into the page DOM so <use href="#cs-icon-..."> resolves. */
-async function injectSprite(spriteUrl) {
+/**
+ * Content script: inject the SVG sprite into the page DOM so <use href="#cs-icon-..."> resolves.
+ * @param spriteUrl - URL to the SVG sprite file
+ */
+export async function injectSprite(spriteUrl: string): Promise<void> {
   if (document.getElementById('cs-sprite')) return;
   try {
     const res = await fetch(spriteUrl);
@@ -43,5 +60,12 @@ async function injectSprite(spriteUrl) {
     wrapper.style.cssText = 'display:none';
     wrapper.innerHTML = text;
     document.body.appendChild(wrapper);
-  } catch { /* sprite unavailable, icons fall back to empty string */ }
+  } catch {
+    /* sprite unavailable, icons fall back to empty string */
+  }
 }
+
+// Expose globals for non-module scripts (sidepanel.html uses <script> not type="module")
+window.SVG = SVG;
+window.svgIcon = svgIcon;
+window.injectSprite = injectSprite;
