@@ -43,7 +43,7 @@ See our [Configuration Guide](configuration) for step-by-step instructions.
 
 ## Rate Us ⭐
 
-If ClawSide helps you, please leave a review on the [Chrome Web Store](https://chromewebstore.google.com/detail/clawside/). Your support helps others discover ClawSide!
+If ClawSide helps you, please leave a review on the [Chrome Web Store](https://chromewebstore.google.com/detail/clawside/mogffnoajeldmepekpaenegdfandigch). Your support helps others discover ClawSide!
 
 ## Support the Project ☕
 

@@ -7,7 +7,7 @@
 </div>
 
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-Google%20Chrome?style=flat&logo=google-chrome&color=4285F4)](https://chrome.google.com/webstore/detail/clawside)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-Google%20Chrome?style=flat&logo=google-chrome&color=4285F4)](https://chromewebstore.google.com/detail/clawside/mogffnoajeldmepekpaenegdfandigch)
 [![License](https://img.shields.io/github/license/yw79641760/clawside?color=MIT)](docs/LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20114%2B-4285F4)]()
 [![Extension](https://img.shields.io/badge/Manifest-V3-34A853)]()
