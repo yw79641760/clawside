@@ -1,11 +1,22 @@
 // ClawSide - Full Side Panel Logic
-// Shared modules loaded via <script> in sidepanel.html:
-//   src/tools/icons.js        → window.SVG, window.svgIcon()
-//   src/tools/browser.js      → getBrowserLocale(), copyToClipboard(), resolveLang(), getBrowserLang()
-//   src/tools/streaming-result.js  → window.StreamingResult
-//   src/shared/chat-session.js → ChatSession, chatSessionManager
-
+// All dependencies are imported and bundled by Vite into sidepanel.js
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// Import side-effect modules that set window globals
+import '../tools/icons';
+import '../tools/browser';
+import '../tools/lang-utils';
+import '../tools/streaming-result';
+import '../tools/url-utils';
+import '../shared/chat-session';
+import '../shared/panel-context';
+import '../shared/tab-context-manager';
+import '../tools/chat-lru-cache';
+
+// Also import settings to set window.csSettings
+import '../shared/settings';
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
 // SECTION 1: Config & Constants
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -31,8 +42,8 @@
   let currentChatMessageId = null;
 
   // === Apply Prompt with special variables (hasSelection, hasContent) ===
-  var DEFAULT_PROMPTS = window.csSettings.DEFAULT_PROMPTS;
-  var DEFAULT_PORT = window.csSettings.DEFAULT_PORT;
+  var DEFAULT_PROMPTS: any = { translate: { system: '', user: '' }, summarize: { system: '', user: '' }, ask: { system: '', user: '' }, globalTranslate: { system: '', user: '' } };
+  var DEFAULT_PORT = '18789';
 
   function applyPrompt(template, vars) {
     if (!template) return '';

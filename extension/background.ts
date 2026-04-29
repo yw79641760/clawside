@@ -1,11 +1,13 @@
-// ClawSide - Service Worker (Background)
-// Handles message routing, panel behavior, and forwards API calls to tools/openai-compatible.js.
+/**
+ * ClawSide - Service Worker (Background)
+ * Handles message routing, panel behavior, and forwards API calls to tools/openai-compatible.ts.
+ */
 
-import { apiStream, apiCall, getModels } from './src/tools/openai-compatible.js';
+import { apiStream, apiCall, getModels } from './src/tools/openai-compatible.ts';
 
 // Cached side panel tab ID — registered by the panel itself on load.
 // Kept in storage so the SW can persist it across restarts.
-let _panelTabId = null;
+let _panelTabId: number | null = null;
 
 // === Initialize Side Panel behavior ===
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err) => {
@@ -50,21 +52,29 @@ chrome.commands.onCommand.addListener((command) => {
 // === API calls (streaming + non-streaming) ===
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'clawside-api') {
-    const { prompt, systemPrompt, requestId, stream = true, toolName = 'default', sourceTabId } = msg;
+    const { prompt, systemPrompt, requestId, stream = true, toolName = 'default', sourceTabId } = msg as {
+      type: string;
+      prompt: string;
+      systemPrompt?: string;
+      requestId: string;
+      stream?: boolean;
+      toolName?: string;
+      sourceTabId?: number;
+    };
 
     // Get settings from storage (port, token, model)
     chrome.storage.local.get(['clawside_settings']).then((result) => {
-      const settings = result.clawside_settings || {};
+      const settings = (result as any).clawside_settings || {};
       const port = settings.gatewayPort || '18789';
       const token = settings.authToken || '';
       const model = settings.model || 'openclaw';
 
       if (stream) {
-        apiStream(prompt, systemPrompt, port, token, requestId, toolName, model, sourceTabId).catch((err) => {
+        apiStream(prompt, systemPrompt || '', port, token, requestId, toolName || 'default', model, sourceTabId).catch((err) => {
           chrome.runtime.sendMessage({ type: 'clawside-stream-error', requestId, error: err.message }).catch(() => {});
         });
       } else {
-        apiCall(prompt, systemPrompt, port, token, toolName, model, requestId).then((result) => {
+        apiCall(prompt, systemPrompt || '', port, token, toolName || 'default', model, requestId).then((result) => {
           chrome.runtime.sendMessage({ type: 'clawside-api-result', requestId, result }).catch(() => {});
         }).catch((err) => {
           chrome.runtime.sendMessage({ type: 'clawside-api-error', requestId, error: err.message }).catch(() => {});
@@ -78,10 +88,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Get available models from gateway
   if (msg.type === 'clawside-models') {
-    const { requestId } = msg;
+    const { requestId } = msg as { type: string; requestId: string };
 
     chrome.storage.local.get(['clawside_settings']).then((result) => {
-      const settings = result.clawside_settings || {};
+      const settings = (result as any).clawside_settings || {};
       const port = settings.gatewayPort || '18789';
       const token = settings.authToken || '';
 
@@ -98,12 +108,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Scan gateway ports (auto-scan on first run)
   if (msg.type === 'clawside-scan') {
-    const { ports, requestId } = msg;
+    const { ports, requestId } = msg as { type: string; ports: string[]; requestId: string };
 
-    const found = [];
+    const found: { port: string; authRequired: boolean }[] = [];
 
     // Process each port sequentially using Promise chain
-    const processPort = (port) => {
+    const processPort = (port: string) => {
       return getModels(port, '')
         .then((models) => {
           // Phase 1 success: get first model
@@ -147,9 +157,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   // Side panel registers its own tabId on load (persisted so SW can use it after restart).
-  if (msg.type === 'panel-ready' && msg.panelTabId) {
-    _panelTabId = msg.panelTabId;
-    chrome.storage.local.set({ _panelTabId: msg.panelTabId });
+  if (msg.type === 'panel-ready' && (msg as any).panelTabId) {
+    _panelTabId = (msg as any).panelTabId;
+    chrome.storage.local.set({ _panelTabId: (msg as any).panelTabId });
     // Pending tab data (if any) is read by the panel's own storage.onChanged listener.
     // No sendMessage needed — eliminates "channel closed" errors when panel reloads.
     sendResponse({ ok: true });
@@ -161,7 +171,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // pending data via its storage.onChanged listener (handlePendingTab).
   // No direct chrome.tabs.sendMessage, which fails when the panel refreshes.
   if (msg.type === 'panel-open-with-tab') {
-    const { tab, url, title, text, action, messages } = msg;
+    const { tab, url, title, text, action, messages } = msg as {
+      type: string;
+      tab?: string;
+      url?: string;
+      title?: string;
+      text?: string;
+      action?: string;
+      messages?: any[];
+    };
     chrome.storage.local.set({
       _pendingTab:   tab,
       _pendingUrl:   url   || '',
@@ -181,12 +199,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Forward tab-switch message to an already-open side panel
   if (msg.type === 'OPEN_TAB_IN_PANEL') {
     chrome.storage.local.set({
-      _pendingTab: msg.tab,
-      _pendingUrl: msg.url || '',
-      _pendingTitle: msg.title || '',
-      _pendingText: msg.text || ''
+      _pendingTab: (msg as any).tab,
+      _pendingUrl: (msg as any).url || '',
+      _pendingTitle: (msg as any).title || '',
+      _pendingText: (msg as any).text || ''
     });
-    return true;
+    // No response needed - using storage bridge
+    return false;
   }
 
   // Content script bootstrap: request current active tab info.
@@ -208,7 +227,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true; // keep message channel open for async sendResponse
   }
 
-  return true;
+  // For any other message types that don't need a response, return false to close channel immediately
+  return false;
 });
 
 // === Broadcast panel-state to content scripts (panel closed by any means) ===
